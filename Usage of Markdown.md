@@ -79,10 +79,10 @@
         `[an example][]`
         `[an example]: http://example.com/`
       </pre>
-12. 倾斜：
+12. 倾斜：  
     `_name_`  
     `*name*`
-13. 加粗：
+13. 加粗：  
     `__name__`  
     `**name**`
 14. 添加代码，使用\`或者\`\` ;  
