@@ -8,4 +8,6 @@
 * survival of the fittest //适者生存
 * if I'm hearing you correctly //如果我没听错
 * There is nothing like //没什么比得上
+* day-to-day grind //日复一日的苦差事
+* double-edged sword //双刃剑
 </pre>
