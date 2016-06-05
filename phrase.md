@@ -10,4 +10,7 @@
 * There is nothing like //没什么比得上
 * day-to-day grind //日复一日的苦差事
 * double-edged sword //双刃剑
+* every once in a while //每隔一段时间
+* from time to time //不时
+* 
 </pre>
