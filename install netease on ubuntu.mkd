@@ -1,11 +1,11 @@
 # 网易云音乐linux版下载及ubuntu下安装
 ---
 [网易云音乐下载](http://music.163.com/#/download)  
-点击上方进行下载链接
+点击上方链接进行下载
 
 下载对应deb包，使用快捷键ctrl+alt+t打开终端，打开下载目录  
 执行以下命令：  
-``sudo dpkg -i netease-cloud-music_0.9.0-1_amd64.deb``  
+`sudo dpkg -i netease-cloud-music_0.9.0-1_amd64.deb` 
 
 如果出现以下错误：
 ```
@@ -26,7 +26,7 @@ Rebuilding /usr/share/applications/bamf-2.index...
 netease-cloud-music
 ```
 那么执行如下命令：  
-    ``sudo apt-get -f install``
+    `sudo apt-get -f install`
 
 下面是个人安装成功的屏幕截图：  
 ![netease-cloud-music](http://o7s72jtji.bkt.clouddn.com/netease.png)
