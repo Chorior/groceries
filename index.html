@@ -1,0 +1,238 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Markdown by Chorior</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Markdown</h1>
+        <p>Markdown学习总结</p>
+
+        <p class="view"><a href="https://github.com/Chorior/groceries">View the Project on GitHub <small>Chorior/groceries</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/Chorior/groceries/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/Chorior/groceries/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/Chorior/groceries">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="usage-of-markdown" class="anchor" href="#usage-of-markdown" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage of Markdown</h1>
+
+<hr>
+
+<blockquote>
+<p>作者：彭侦<br>
+链接：<a href="https://github.com/Chorior/groceries/blob/master/Usage%20of%20Markdown.md">https://github.com/Chorior/groceries/blob/master/Usage%20of%20Markdown.md</a></p>
+</blockquote>
+
+<p>一直听说Markdown写东西方便,github上也有支持,所以自学了Markdown,发现真的挺简单的。下面是我的个人总结</p>
+
+<h2>
+<a id="本文结构" class="anchor" href="#%E6%9C%AC%E6%96%87%E7%BB%93%E6%9E%84" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>本文结构</h2>
+
+<ul>
+<li><a href="#Markdown%E7%AE%80%E4%BB%8B">Markdown简介</a></li>
+<li><a href="#Markdown%E7%BC%96%E8%BE%91%E5%99%A8">Markdown编辑器</a></li>
+<li><a href="#Markdown%E5%9F%BA%E6%9C%AC%E8%AF%AD%E6%B3%95">Markdown基本语法</a></li>
+</ul>
+
+<h2 id="Markdown简介">
+<a id="markdown简介" class="anchor" href="#markdown%E7%AE%80%E4%BB%8B" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Markdown简介</h2>  
+
+<p>Markdown的优点是易读和易写，它的语法借鉴了一些已存在的text-to-HTML过滤器(包括Setext, atx, Textile, reStructuredText, Grutatext, and EtText)，它设计的最大灵感来源于纯文本邮件格式，它的主要意图是被用以网络格式的编写，它的语法可以说是HTML的子集，但HTML是发布的格式，Markdown是写的格式，如果有Markdown没有包含的语法,你可以直接使用HTML语法；  </p>
+
+<p>Markdown自动转换特殊字符:<br>
+    &amp;如果不在HTML中会被自动转换为<code>&amp;amp</code>;<br>
+    &lt;如果没有格式的话会被自动转换为<code>&amp;lt</code>；  </p>
+
+<p>但是在HTML中不会自动转换，需要自己转换，这使得Markdown很容易进行HTML代码的编写；</p>
+
+<h2 id="Markdown编辑器">
+<a id="markdown编辑器" class="anchor" href="#markdown%E7%BC%96%E8%BE%91%E5%99%A8" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Markdown编辑器</h2>  
+
+<ol>
+<li>linux:<br>
+  ReText,Atom<br>
+</li>
+<li>Windows:<br>
+  MarkdownPad,MarkPad,MarkEditor</li>
+</ol>
+
+<h2 id="Markdown基本语法">
+<a id="markdown基本语法" class="anchor" href="#markdown%E5%9F%BA%E6%9C%AC%E8%AF%AD%E6%B3%95" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Markdown基本语法</h2> 
+
+<ul>
+<li>段落：用空格或者tab缩进;</li>
+<li>换行：<br>
+
+<ol>
+<li>使用<code>&lt;br&gt;&lt;/br&gt;</code>;<br>
+</li>
+<li>行尾使用两个或更多空格，然后enter;</li>
+</ol>
+</li>
+<li>
+<p>两种标题格式：</p>
+
+<ul>
+<li>
+<p>Setext-style: 
+一级标题用等号标注，二级标题用破折号，如下所示：</p>
+
+<pre>
+This is an H1  
+=============  
+
+This is an H2  
+------------- 
+</pre>  </li>
+<li>Atx-style:<br>
+使用一到六个#号，代表1-6级标题：
+<pre>
+# title1
+## title2
+### title3
+</pre>
+你可以选择关闭Atx-style标题，只要在后面加上相应#符号即可：
+<pre>
+# title1 #
+## title2 ##
+### title3 ###
+</pre>
+</li>
+</ul>
+</li>
+<li>引用： 使用&lt;符号，嵌套引用加上相应个数的&lt;即可：</li>
+</ul>
+
+<pre><code>     &gt; This is a blockquote with two paragraphs. Lorem ipsum dolor sit amet,
+     &gt;&gt; consectetuer adipiscing elit. Aliquam hendrerit mi posuere lectus.
+     &gt;&gt;&gt; Vestibulum enim wisi, viverra nec, fringilla in, laoreet vitae, risus.
+     &gt;
+     &gt; Donec sit amet nisl. Aliquam semper ipsum sit amet velit. Suspendisse
+     &gt; id sem consectetuer libero luctus adipiscing.
+</code></pre>
+
+<ul>
+<li>列表：
+
+<ul>
+<li>无序列表，使用*，+，-加空格 </li>
+<li>有序列表，数字（第一个数字最好是1,但不影响最终结果）加空格</li>
+</ul>
+</li>
+</ul>
+
+<pre><code>    * Green   
+    + Blue   
+    -  Red   
+
+    1. Green   
+    3. Blue   
+    8. Red 
+</code></pre>
+
+<ul>
+<li>使用<code>\.</code>显示点号,<code>\*</code>显示*号；</li>
+<li>代码块： 每行缩进4个空格或一个tab;代码块直到不再缩进或到达文章最后时结束；</li>
+<li>分割线（水平线），使用3个或以上*号或-号：</li>
+</ul>
+
+<pre><code>    ***
+    ---
+    ******
+    ---------------
+</code></pre>
+
+<ul>
+<li>
+<p>链接，Markdown使用两种链接方式，行内链接（inline）和参考链接（refrence）:  </p>
+
+<ul>
+<li>
+<p>行内链接：  </p>
+
+<pre>
+[an example](http://example.com/ "Title")，Title是可选的；
+</pre>
+</li>
+<li>
+<p>参考链接：
+使用两个方括号定义，第二个方括号的内容必须在另一个地方定义：  </p>
+
+<pre>
+[an example] [id]
+[id]: http://example.com/  "Optional Title Here"
+</pre>
+
+<p>或者：  </p>
+
+<pre>
+[an example][]
+[an example]: http://example.com/
+</pre>
+</li>
+</ul>
+</li>
+<li>倾斜：</li>
+</ul>
+
+<pre><code>    _name_  
+    *name*
+</code></pre>
+
+<ul>
+<li>加粗： </li>
+</ul>
+
+<pre><code>    __name__  
+    **name**
+</code></pre>
+
+<ul>
+<li>添加代码，使用`或者``` ;<br>
+</li>
+<li>添加图片：</li>
+</ul>
+
+<pre><code>      ![Alt text](/path/to/img.jpg "Optional title")
+ 或者：  
+      ![Alt text][id]
+      [id]: url/to/image  "Optional title attribute"
+</code></pre>
+
+<ul>
+<li>自动转换链接：<br>
+</li>
+</ul>
+
+<pre><code>  &lt;http://example.com/&gt;  
+  &lt;address@example.com&gt;
+</code></pre>
+
+<ul>
+<li>使用\+特殊符号显示特殊符号。</li>
+</ul>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/Chorior">Chorior</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
