@@ -241,17 +241,17 @@ drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  6 20:00 ../
     * INSTALL指令      
       * 用于定义安装规则,安装的内容可以包括目标二进制、动态库、静态库以及文件、目录、脚本等;
       * 目标文件的安装
-        ```
-        INSTALL(TARGETS targets...
-          [[ARCHIVE|LIBRARY|RUNTIME]
-            [DESTINATION <dir>]
-            [PERMISSIONS permissions...]
-            [CONFIGURATIONS
-          [Debug|Release|...]]
-            [COMPONENT <component>]
-            [OPTIONAL]
-            ] [...])
-        ```
+       ```
+       INSTALL(TARGETS targets...
+         [[ARCHIVE|LIBRARY|RUNTIME]
+           [DESTINATION <dir>]
+           [PERMISSIONS permissions...]
+           [CONFIGURATIONS
+         [Debug|Release|...]]
+           [COMPONENT <component>]
+           [OPTIONAL]
+           ] [...])
+       ```
         * ARCHIVE特指静态库,LIBRARY特指动态库,RUNTIME特指可执行目标二进制;
         * DESTINATION定义了安装的路径,如果路径以/开头,那么指的是绝对路径,这时候CMAKE_INSTALL_PREFIX其实就无效了;
           * 如果你希望使用CMAKE_INSTALL_PREFIX来定义安装路径,就要写成相对路径,即不要以/开头,那么安装后的路径就是`${CMAKE_INSTALL_PREFIX}/<DESTINATION>`定义的路径;
@@ -263,36 +263,36 @@ drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  6 20:00 ../
           )
           ```
       * 普通文件的安装
-        ```
-        INSTALL(FILES files... DESTINATION <dir>
-          [PERMISSIONS permissions...]
-          [CONFIGURATIONS [Debug|Release|...]]
-          [COMPONENT <component>]
-          [RENAME <name>] [OPTIONAL])
-        ```
+       ```
+       INSTALL(FILES files... DESTINATION <dir>
+         [PERMISSIONS permissions...]
+         [CONFIGURATIONS [Debug|Release|...]]
+         [COMPONENT <component>]
+         [RENAME <name>] [OPTIONAL])
+       ```
         * 文件名是此指令所在路径下的相对路径;
         * 如果不定义权限PERMISSIONS,安装后的权限为644;
       * 非目标文件的可执行程序安装(比如脚本之类)
-        ```
-        INSTALL(PROGRAMS files... DESTINATION <dir>
-          [PERMISSIONS permissions...]
-          [CONFIGURATIONS [Debug|Release|...]]
-          [COMPONENT <component>]
-          [RENAME <name>] [OPTIONAL])
-        ```
+       ```
+       INSTALL(PROGRAMS files... DESTINATION <dir>
+         [PERMISSIONS permissions...]
+         [CONFIGURATIONS [Debug|Release|...]]
+         [COMPONENT <component>]
+         [RENAME <name>] [OPTIONAL])
+       ```
         * 文件名是此指令所在路径下的相对路径;
         * 如果不定义权限PERMISSIONS,安装后的权限为755;
       * 目录的安装
-        ```
-        INSTALL(DIRECTORY dirs... DESTINATION <dir>
-          [FILE_PERMISSIONS permissions...]
-          [DIRECTORY_PERMISSIONS permissions...]
-          [USE_SOURCE_PERMISSIONS]
-          [CONFIGURATIONS [Debug|Release|...]]
-          [COMPONENT <component>]
-          [[PATTERN <pattern> | REGEX <regex>]
-          [EXCLUDE] [PERMISSIONS permissions...]] [...])
-        ```
+       ```
+       INSTALL(DIRECTORY dirs... DESTINATION <dir>
+         [FILE_PERMISSIONS permissions...]
+         [DIRECTORY_PERMISSIONS permissions...]
+         [USE_SOURCE_PERMISSIONS]
+         [CONFIGURATIONS [Debug|Release|...]]
+         [COMPONENT <component>]
+         [[PATTERN <pattern> | REGEX <regex>]
+         [EXCLUDE] [PERMISSIONS permissions...]] [...])
+       ```
         * DIRECTORY后面连接的是所在source目录的相对路径,如果目录名(假设为abc)不以/结尾，那么这个目录将被安装为目标路径下的abc,如果目录名以/结尾,代表将这个目录中的内容安装到目标路径，但不包括这个目录本身;
         * PATTERN用于使用正则表达式进行过滤;
         * PERMISSIONS用于指定PATTERN过滤后的文件权限;
