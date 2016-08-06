@@ -240,7 +240,7 @@ drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  6 20:00 ../
       * 默认定义是/usr/local;
     * INSTALL指令      
       * 用于定义安装规则,安装的内容可以包括目标二进制、动态库、静态库以及文件、目录、脚本等;
-      * **目标文件的安装**
+      * __目标文件的安装__
        ```
        INSTALL(TARGETS targets...
          [[ARCHIVE|LIBRARY|RUNTIME]
@@ -262,7 +262,7 @@ drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  6 20:00 ../
           ARCHIVE DESTINATION libstatic
           )
           ```
-      * **普通文件的安装**
+      * __普通文件的安装__
        ```
        INSTALL(FILES files... DESTINATION <dir>
          [PERMISSIONS permissions...]
@@ -272,7 +272,7 @@ drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  6 20:00 ../
        ```
         * 文件名是此指令所在路径下的相对路径;
         * 如果不定义权限PERMISSIONS,安装后的权限为644;
-      * **非目标文件的可执行程序安装(比如脚本之类)**
+      * __非目标文件的可执行程序安装(比如脚本之类)__
        ```
        INSTALL(PROGRAMS files... DESTINATION <dir>
          [PERMISSIONS permissions...]
@@ -282,7 +282,7 @@ drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  6 20:00 ../
        ```
         * 文件名是此指令所在路径下的相对路径;
         * 如果不定义权限PERMISSIONS,安装后的权限为755;
-      * **目录的安装**
+      * __目录的安装__
        ```
        INSTALL(DIRECTORY dirs... DESTINATION <dir>
          [FILE_PERMISSIONS permissions...]
@@ -307,7 +307,7 @@ drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  6 20:00 ../
           * 将icons目录安装到`<prefix>/share/myproj`,将scripts/中的内容安装到`<prefix>/share/myproj`;
           * 不包含目录名为CVS的目录;
           * 对于scripts/*文件指定权限为OWNER_EXECUTE、OWNER_WRITE、OWNER_READ、GROUP_EXECUTE、GROUP_READ(750);
-      * **安装时CMAKE脚本的执行**
+      * __安装时CMAKE脚本的执行__
         * `INSTALL([[SCRIPT <file>] [CODE <code>]] [...])`;
         * SCRIPT参数用于在安装时调用cmake脚本文件(也就是`<abc>.cmake`文件);
         * CODE参数用于执行CMAKE指令，必须以双引号括起来;
