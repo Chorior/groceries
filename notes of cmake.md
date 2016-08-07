@@ -10,6 +10,8 @@
   * [cmake安装](#cmake安装)
   * [简单示例](#简单示例)
   * [进阶示例](#进阶示例)
+  * [动态库](#动态库)
+  * [添加静态库](#添加静态库)
 
 <h2 id="前言">前言</h2>
 
@@ -314,4 +316,224 @@ drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  6 20:00 ../
         ```
         INSTALL(CODE "MESSAGE(\"Sample install message.\")")
         ```
-      
+<h2 id="动态库">动态库</h2>
+
+* 工程结构
+```
+.:
+总用量 20
+drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  7 13:56 ./
+drwxr-xr-x 9 pengzhen pengzhen 4096 Aug  6 10:13 ../
+drwxrwxr-x 2 pengzhen pengzhen 4096 Aug  7 13:57 build/
+-rw-rw-r-- 1 pengzhen pengzhen   40 Aug  7 11:10 CMakeLists.txt
+drwxrwxr-x 2 pengzhen pengzhen 4096 Aug  7 11:16 lib/
+./build:
+总用量 12
+drwxrwxr-x 2 pengzhen pengzhen 4096 Aug  7 13:57 ./
+drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  7 13:56 ../
+-rwxrwxr-x 1 pengzhen pengzhen   94 Aug  6 10:22 clear.sh*
+./lib:
+总用量 20
+drwxrwxr-x 2 pengzhen pengzhen 4096 Aug  7 11:16 ./
+drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  7 13:56 ../
+-rw-rw-r-- 1 pengzhen pengzhen   70 Aug  7 11:15 CMakeLists.txt
+-rw-rw-r-- 1 pengzhen pengzhen   72 Aug  7 11:16 hello.cpp
+-rw-rw-r-- 1 pengzhen pengzhen   84 Aug  7 11:09 hello.h
+```
+* 工程内容
+  * CMakeLists.txt
+  ```
+  PROJECT(HELLOLIB)
+  ADD_SUBDIRECTORY(lib)
+  ```
+  * lib/hello.h
+  ```C++
+  #ifndef _HELLO_H_
+  #define _HELLO_H_
+  #include <iostream>
+  void HelloFunc();
+  #endif
+  ```
+  * lib/hello.cpp
+  ```C++
+  #include "hello.h"
+  void HelloFunc()
+  {
+  	std::cout << "Hello cmake!\n";
+  }
+  ```
+  * lib/CMakeLists.txt
+  ```
+  SET(LIBHELLO_SRC hello.cpp)
+  ADD_LIBRARY(hello SHARED ${LIBHELLO_SRC})
+  ```
+* 构建
+  * `cd build/`;
+  * `cmake ..`;
+  * `make`;
+* 构建结果
+```
+.:
+总用量 20
+drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  7 13:56 ./
+drwxr-xr-x 9 pengzhen pengzhen 4096 Aug  6 10:13 ../
+drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  7 14:06 build/
+-rw-rw-r-- 1 pengzhen pengzhen   40 Aug  7 11:10 CMakeLists.txt
+drwxrwxr-x 2 pengzhen pengzhen 4096 Aug  7 11:16 lib/
+./build:
+总用量 44
+drwxrwxr-x 4 pengzhen pengzhen  4096 Aug  7 14:06 ./
+drwxrwxr-x 4 pengzhen pengzhen  4096 Aug  7 13:56 ../
+-rwxrwxr-x 1 pengzhen pengzhen    94 Aug  6 10:22 clear.sh*
+-rw-rw-r-- 1 pengzhen pengzhen 11940 Aug  7 14:06 CMakeCache.txt
+drwxrwxr-x 4 pengzhen pengzhen  4096 Aug  7 14:06 CMakeFiles/
+-rw-rw-r-- 1 pengzhen pengzhen  1548 Aug  7 14:06 cmake_install.cmake
+drwxrwxr-x 3 pengzhen pengzhen  4096 Aug  7 14:06 lib/
+-rw-rw-r-- 1 pengzhen pengzhen  4145 Aug  7 14:06 Makefile
+./build/lib:
+总用量 36
+drwxrwxr-x 3 pengzhen pengzhen 4096 Aug  7 14:06 ./
+drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  7 14:06 ../
+drwxrwxr-x 3 pengzhen pengzhen 4096 Aug  7 14:06 CMakeFiles/
+-rw-rw-r-- 1 pengzhen pengzhen  989 Aug  7 14:06 cmake_install.cmake
+-rwxrwxr-x 1 pengzhen pengzhen 8560 Aug  7 14:06 libhello.so*
+-rw-rw-r-- 1 pengzhen pengzhen 5198 Aug  7 14:06 Makefile
+./lib:
+总用量 20
+drwxrwxr-x 2 pengzhen pengzhen 4096 Aug  7 11:16 ./
+drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  7 13:56 ../
+-rw-rw-r-- 1 pengzhen pengzhen   70 Aug  7 11:15 CMakeLists.txt
+-rw-rw-r-- 1 pengzhen pengzhen   72 Aug  7 11:16 hello.cpp
+-rw-rw-r-- 1 pengzhen pengzhen   84 Aug  7 11:09 hello.h
+```
+* 语法解析
+  * 如果你要指定libhello.so生成的位置
+    * 在主工程文件CMakeLists.txt中修改`ADD_SUBDIRECTORY(lib)`指令来指定一个编译输出位置;
+    * 在lib/CMakeLists.txt中添加`SET(LIBRARY_OUTPUT_PATH <path>)`来指定一个新的位置;
+  * ADD_LIBRARY指令
+    * 语法
+    ```
+    ADD_LIBRARY(libname [SHARED|STATIC|MODULE]
+      [EXCLUDE_FROM_ALL]
+        source1 source2 ... sourceN)
+    ```
+    * 你不需要写全libhello.so,只需要填写hello即可,cmake系统会自动为你生成libhello.X;
+    * SHARED: 动态库;
+    * STATIC: 静态库;
+    * MODULE: 在使用dyld的系统有效,如果不支持dyld,则被当作SHARED对待;
+      * dyld: the Dynamic Link Editor, is the binary loader for Darwin (Mac OS X);
+    * EXCLUDE_FROM_ALL: 这个库不会被默认构建,除非有其他的组件依赖或者手工构建;
+
+<h2 id="添加静态库">添加静态库</h2>
+
+* 按照一般的习惯,静态库名字跟动态库名字应该是一致的,只不过后缀是.a罢了;
+* 使用上面工程,修改lib/CMakeLists.txt
+```
+SET(LIBHELLO_SRC hello.cpp)
+ADD_LIBRARY(hello SHARED  ${LIBHELLO_SRC})
+ADD_LIBRARY(hello STATIC  ${LIBHELLO_SRC})
+```
+* 构建结果
+```
+.:
+总用量 20
+drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  7 13:56 ./
+drwxr-xr-x 9 pengzhen pengzhen 4096 Aug  6 10:13 ../
+drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  7 14:33 build/
+-rw-rw-r-- 1 pengzhen pengzhen   40 Aug  7 11:10 CMakeLists.txt
+drwxrwxr-x 2 pengzhen pengzhen 4096 Aug  7 14:33 lib/
+./build:
+总用量 44
+drwxrwxr-x 4 pengzhen pengzhen  4096 Aug  7 14:33 ./
+drwxrwxr-x 4 pengzhen pengzhen  4096 Aug  7 13:56 ../
+-rwxrwxr-x 1 pengzhen pengzhen    94 Aug  6 10:22 clear.sh*
+-rw-rw-r-- 1 pengzhen pengzhen 11940 Aug  7 14:33 CMakeCache.txt
+drwxrwxr-x 4 pengzhen pengzhen  4096 Aug  7 14:33 CMakeFiles/
+-rw-rw-r-- 1 pengzhen pengzhen  1548 Aug  7 14:33 cmake_install.cmake
+drwxrwxr-x 3 pengzhen pengzhen  4096 Aug  7 14:33 lib/
+-rw-rw-r-- 1 pengzhen pengzhen  4145 Aug  7 14:33 Makefile
+./build/lib:
+总用量 28
+drwxrwxr-x 3 pengzhen pengzhen 4096 Aug  7 14:33 ./
+drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  7 14:33 ../
+drwxrwxr-x 3 pengzhen pengzhen 4096 Aug  7 14:33 CMakeFiles/
+-rw-rw-r-- 1 pengzhen pengzhen  989 Aug  7 14:33 cmake_install.cmake
+-rw-rw-r-- 1 pengzhen pengzhen 2710 Aug  7 14:33 libhello.a
+-rw-rw-r-- 1 pengzhen pengzhen 5198 Aug  7 14:33 Makefile
+./lib:
+总用量 20
+drwxrwxr-x 2 pengzhen pengzhen 4096 Aug  7 14:33 ./
+drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  7 13:56 ../
+-rw-rw-r-- 1 pengzhen pengzhen  114 Aug  7 14:33 CMakeLists.txt
+-rw-rw-r-- 1 pengzhen pengzhen   72 Aug  7 11:16 hello.cpp
+-rw-rw-r-- 1 pengzhen pengzhen   84 Aug  7 11:09 hello.h
+```
+* 问题: 没有生成静态库libhello.a
+  * 原因: hello作为一个target是不能重名的,静态库构建指令无效;
+  * 解决方法
+    * SET_TARGET_PROPERTIES指令
+      * 语法
+      ```
+      SET_TARGET_PROPERTIES(target1 target2 ...
+        PROPERTIES prop1 value1
+        prop2 value2 ...)
+      ```
+      * 用来设置输出的名称,对于动态库,还可以用来指定动态库版本和API版本;
+    * 修改lib/CMakeLists.txt
+    ```
+    SET(LIBHELLO_SRC hello.cpp)
+    ADD_LIBRARY(hello SHARED  ${LIBHELLO_SRC})
+    ADD_LIBRARY(hello_static STATIC  ${LIBHELLO_SRC})
+    SET_TARGET_PROPERTIES(hello_static PROPERTIES OUTPUT_NAME "hello")
+    ```
+    * 构建结果
+    ```
+    .:
+    总用量 44
+    drwxrwxr-x 4 pengzhen pengzhen  4096 Aug  7 14:49 ./
+    drwxrwxr-x 4 pengzhen pengzhen  4096 Aug  7 13:56 ../
+    -rwxrwxr-x 1 pengzhen pengzhen    94 Aug  6 10:22 clear.sh*
+    -rw-rw-r-- 1 pengzhen pengzhen 12000 Aug  7 14:49 CMakeCache.txt
+    drwxrwxr-x 4 pengzhen pengzhen  4096 Aug  7 14:49 CMakeFiles/
+    -rw-rw-r-- 1 pengzhen pengzhen  1548 Aug  7 14:49 cmake_install.cmake
+    drwxrwxr-x 3 pengzhen pengzhen  4096 Aug  7 14:49 lib/
+    -rw-rw-r-- 1 pengzhen pengzhen  4600 Aug  7 14:49 Makefile
+    ./lib:
+    总用量 40
+    drwxrwxr-x 3 pengzhen pengzhen 4096 Aug  7 14:49 ./
+    drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  7 14:49 ../
+    drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  7 14:49 CMakeFiles/
+    -rw-rw-r-- 1 pengzhen pengzhen  989 Aug  7 14:49 cmake_install.cmake
+    -rw-rw-r-- 1 pengzhen pengzhen 2638 Aug  7 14:49 libhello.a
+    -rwxrwxr-x 1 pengzhen pengzhen 8560 Aug  7 14:49 libhello.so*
+    -rw-rw-r-- 1 pengzhen pengzhen 6186 Aug  7 14:49 Makefile
+    ```
+    * 其它
+      * `GET_TARGET_PROPERTY(VAR target property)`
+      ```
+      GET_TARGET_PROPERTY(OUTPUT_VALUE hello_static OUTPUT_NAME)
+      ```
+        * 如果没有这个属性定义,则返回NOTFOUND;
+      * cmake在构建一个新的target时,会尝试清理掉其他使用这个名字的库(老版本?),所以在构建libhello.a时,就会清理掉libhello.so
+        * 解决方法,在lib/CMakeLists.txt中添加
+        ```
+        SET_TARGET_PROPERTIES(hello PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+        SET_TARGET_PROPERTIES(hello_static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+        ```
+* 动态库版本号
+  * `SET_TARGET_PROPERTIES(hello PROPERTIES VERSION 1.2 SOVERSION 1)`;
+    * VERSION指代动态库版本,SOVERSION指代API版本;
+    * 示例,在lib/CMakeLists.txt中添加添加上诉指令
+    ```
+    ~/Documents/cmake/build 15:03$ ll lib/
+    总用量 40
+    drwxrwxr-x 3 pengzhen pengzhen 4096 Aug  7 15:03 ./
+    drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  7 15:03 ../
+    drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  7 15:03 CMakeFiles/
+    -rw-rw-r-- 1 pengzhen pengzhen  989 Aug  7 15:03 cmake_install.cmake
+    -rw-rw-r-- 1 pengzhen pengzhen 2638 Aug  7 15:03 libhello.a
+    lrwxrwxrwx 1 pengzhen pengzhen   13 Aug  7 15:03 libhello.so -> libhello.so.1*
+    lrwxrwxrwx 1 pengzhen pengzhen   15 Aug  7 15:03 libhello.so.1 -> libhello.so.1.2*
+    -rwxrwxr-x 1 pengzhen pengzhen 8560 Aug  7 15:03 libhello.so.1.2*
+    -rw-rw-r-- 1 pengzhen pengzhen 6186 Aug  7 15:03 Makefile
+    ```
