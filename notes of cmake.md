@@ -12,6 +12,7 @@
   * [进阶示例](#进阶示例)
   * [动态库](#动态库)
   * [添加静态库](#添加静态库)
+  * [使用外部共享库和头文件](#使用外部共享库和头文件)
 
 <h2 id="前言">前言</h2>
 
@@ -308,7 +309,7 @@ drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  6 20:00 ../
         * 上述指令的执行结果
           * 将icons目录安装到`<prefix>/share/myproj`,将scripts/中的内容安装到`<prefix>/share/myproj`;
           * 不包含目录名为CVS的目录;
-          * 对于scripts/*文件指定权限为OWNER_EXECUTE、OWNER_WRITE、OWNER_READ、GROUP_EXECUTE、GROUP_READ(750);
+          * 对于`scripts/*`文件指定权限为OWNER_EXECUTE、OWNER_WRITE、OWNER_READ、GROUP_EXECUTE、GROUP_READ(750);
       * __安装时CMAKE脚本的执行__
         * `INSTALL([[SCRIPT <file>] [CODE <code>]] [...])`;
         * SCRIPT参数用于在安装时调用cmake脚本文件(也就是`<abc>.cmake`文件);
@@ -316,7 +317,7 @@ drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  6 20:00 ../
         ```
         INSTALL(CODE "MESSAGE(\"Sample install message.\")")
         ```
-        
+
 <h2 id="动态库">动态库</h2>
 
 * 工程结构
@@ -537,4 +538,31 @@ drwxrwxr-x 4 pengzhen pengzhen 4096 Aug  7 13:56 ../
     lrwxrwxrwx 1 pengzhen pengzhen   15 Aug  7 15:03 libhello.so.1 -> libhello.so.1.2*
     -rwxrwxr-x 1 pengzhen pengzhen 8560 Aug  7 15:03 libhello.so.1.2*
     -rw-rw-r-- 1 pengzhen pengzhen 6186 Aug  7 15:03 Makefile
+    ```
+
+<h2 id="使用外部共享库和头文件">使用外部共享库和头文件</h2>
+
+* 引入头文件搜索路径
+  * INCLUDE_DIRECTORIES指令
+    * `INCLUDE_DIRECTORIES([AFTER|BEFORE] [SYSTEM] dir1 dir2 ...)`;
+    * 来向工程添加多个特定的头文件搜索路径,路径之间用空格分割,必要时使用双引号;
+    * 默认追加到当前的头文件搜索路径后面,有两种方式控制搜索路径添加的方式
+      * `SET(CMAKE_INCLUDE_DIRECTORIES_BEFORE on)`: 将添加的头文件搜索路径放在已有路径的前面;
+      * 通过AFTER或者BEFORE参数控制;
+* 添加共享库
+  * LINK_DIRECTORIES指令
+    * 添加非标准的共享库搜索路径;
+  * TARGET_LINK_LIBRARIES指令
+    * 语法
+    ```
+    TARGET_LINK_LIBRARIES(target library1
+       <debug | optimized> library2
+       ...)
+    ```
+    * 为target添加需要链接的共享库(1,2)或静态库(3)
+    ```
+    ADD_EXECUTABLE(main main.cpp)
+    TARGET_LINK_LIBRARIES(main hello) #1
+    #TARGET_LINK_LIBRARIES(main libhello.so) #2
+    #TARGET_LINK_LIBRARIES(main libhello.a) #3
     ```
