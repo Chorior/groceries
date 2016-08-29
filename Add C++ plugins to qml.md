@@ -115,6 +115,8 @@
     ```
 
 * 根据需要定制自己的实现类;
+  * To be able to call a method from QML, you must either mark it with Q_INVOKABLE or as a slot;
+  * 要想在 qml 里面调用一个方法,这个方法必须用 Q_INVOKABLE 标识或作为一个槽;
 * 插件“其他文件”里有 qmldir 文件,这个文件指定了 QML 插件的内容以及插件的 QML 方面的描述;
 * 现在构建完成之后在插件构建目录(就是你创建插件的目录下的对应的 build 目录)下执行 make install 完成插件的安装;
 * 现在如果要使用自定义插件,只要在 qml 里 import 相应的模块即可
