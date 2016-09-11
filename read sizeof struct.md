@@ -1,4 +1,4 @@
-# Add C++ plugins to qml
+# read sizeof struct
 ---
 :art:
 ---
