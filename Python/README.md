@@ -11,9 +11,13 @@
 	* [Python初识](#Python初识)
 	* [Python安装](#Python安装)
 	* [Hello Python](#Hello-Python)
-	* [Python基础](#Python基础)
+	* [Python基本数据类型与运算](#Python基本数据类型与运算)
 	* [分支与循环语句](#分支与循环语句)
 	* [函数](#函数)
+	* [模块](#模块)
+	* [异常处理](#异常处理)
+	* [类](#类)
+	* [各种对象](#各种对象)
 
 ## Python初识
 
@@ -68,7 +72,7 @@ print是一个专门用来打印的函数，如果你学过C语言，那么这�
 
 		$ python hello.py
 
-## Python基础
+## Python基本数据类型与运算
 
 1. 注释  
 	在Python文件中，每行从#开始的文字都是注释，这跟shell脚本一样，连特殊的第一行不为注释也是一样的；如果要使用多行注释，使用三个连续的双引号或但引号将注释内容括起来即可，这又跟github版markdown的代码块有些类似：
@@ -305,13 +309,147 @@ print是一个专门用来打印的函数，如果你学过C语言，那么这�
 		print(f(3))                 # print 6
 
 4. 函数的作用域  
-函数可以看到外部已经存在的变量，但不能改变外部变量；如果本函数有与外面的重名的变量，那么优先使用本函数的变量；当函数返回时，相关参数会被清空；
+函数可以看到外部已经存在的变量，如果想要修改外部全局变量，在函数内部在相应变量前加上global；如果本函数有与外面的重名的变量，那么优先使用本函数的变量；当函数返回时，相关参数会被清空；
 
 		def f():
 			print(info)
 			a = "hahah"
 			print(a)
 
+			global b
+			b = 10
+
 		info = "heheh"
 		a = "hhh"
+		b = 2
 		f()                         # print heheh, hahah
+		print(b)                    # print 10
+
+## 模块
+
+在Python中，一个.py文件就是一个模块，通过模块，你可以调用其他文件中的函数甚至数据；引入模块的方式与java差不多，使用关键字from和import进行引入；关于引入模块时，Python的搜索路径：首先是当前文件夹，然后是标准库(引入标准库模块不需要from)，再然后是环境变量PYTHONPATH所包含的路径；你可以通过引入sys，然后打印出sys.path来查看所有搜索的路径；
+
+	* first,py
+
+			def laugh():
+				print("hahaha")
+
+			info = "hehe"
+			laugh()                      # print hahaha
+
+	* second.py
+
+			from first import laugh      # print hahaha
+			from first import info
+
+			laugh()                      # print hahaha
+			print(info)                  # print hehe
+
+运行second.py，可以发现，输出打印了两行hahaha，这说明在引入first的时候，同时引入了first文件中的其它程序语句，这不是我们想要的，我们只想运行当前程序中的语句；这个时候我们就需要知道一些线程的知识，当某个程序是主线程的时候，那个线程的`__name__`属性为`__main__`，所以我们修改first.py：
+
+		def laugh():
+			print("hahaha")
+
+		info = "hehe"
+
+		if(__name__ == "__main__"):			
+			laugh()                      # print hahaha
+
+## 异常处理
+
+异常处理的目地有两个：一个是让程序中止前进行更多的操作；另一个是让程序犯错后能够继续正常运行；Python中的异常处理与C、java都差不多:
+
+		while True:
+			inputStr = input("input a number:")        # input()，内置函数，用于接收命令行输入
+			try:
+				num = float(inputStr)                  # float()，将其他类型数据转换为浮点数，参数为字符串会触发ValueError异常
+				print("input number: ", num)
+				print(10/num)                          # 当num为0时，会触发ZeroDivisionError
+			except ValueError:
+				print("Illegal input.Try again.")
+			except ZeroDivisionError:
+				print("Illegal devision by zero.Try again")
+
+异常处理的完整语法形式为：
+
+		try:
+			...
+		except exception0:       # 如果except后面没跟任何参数，那么所有的异常都交由该段程序处理
+			...
+		except exception1:
+			...
+			...
+		else:
+			...
+		finally:                 # 无论是否有异常最后都要做的事
+			...
+
+如果存在本段异常处理不能处理的异常，那么该异常会继续向上层抛出，直到被捕捉或造成主程序报错；关键字raise用于主动抛出异常；
+
+		def f():
+			try:
+				1/0
+			except ValueError:
+				print("ValueError")
+			except ZeroDivisionError:
+				print("Illegal devision by zero")
+				raise ZeroDivisionError()
+
+		try:
+			f()
+		except ZeroDivisionError:
+			print("Illegal devision by zero")  
+
+		# 结果是Illegal devision by zero * 2
+
+## 类
+
+使用class关键字定义一个类，类中方法的第一个参数必须是self(即使没有参数)，这个self用于引用自身，然后是该方法需要的参数，在调用类中的方法时，不需要对self传值；类中的属性和方法使用对象.属性或对象.方法进行调用，这又与C和java类似；
+
+		class Bird(object):
+			feather = True
+
+			def chirp(self,sound):
+				print(sound)
+
+		summer = Bird()
+		print(summer.feather)        # print True
+		summer.chirp("jiojiojio")    # print jiojiojio
+
+在类下方直接赋初值的属性称为类属性，在方法内部赋值的属性称为对象属性，为一个类添加对象属性很方便，直接使用`self.new_property`即可添加，这是因为类的对象属性由一个叫`__dict__`的词典进行管理，属性名为键，属性值为值，你可以通过打印`your_object.__dict__`查看这个词典；当你使用`self.new_property`时，Python查找这个词典，若没有找到`new_property`，则添加这个属性；
+
+		class Bird(object):
+			feather = True
+
+			def chirp(self,sound):
+				self.sound = sound   # 为Bird添加sound对象属性
+
+		summer = Bird()
+		summer.chirp("jiojiojio")
+		print(summer.sound)          # print jiojiojio
+		print(summer.__dict__)       # print {'sound': 'jiojiojio'}
+
+Python有一系列特殊方法，如`__init__()`,`__add__()`,`__dict__()`等，这里我们只稍微讲几个；Python会在每次创建对象时自动调用`__init__()`方法；，如果类中定义了`__add__()`方法，那么类对象可以进行加法运算，相加时就是调用这个`__add__()`方法；相对的有`__sub__()`方法，对应减法；
+
+		class Bird(object):
+			def __init__(self,sound):
+				self.sound = sound
+
+		summer = Bird("jiojiojio")
+		print(summer.sound)          # print jiojiojio
+
+继承类：上面类名后都有一个括号，括号里是object，代表上面的类都是继承自object类，所以如果要继承一个类，在类名后的括号里写上要继承的类即可；继承类对象可以使用父类的属性和方法，继承类也可以覆盖父类的属性和方法，继承类当然也可以新增自己的属性和方法；可以在类里使用`super(current_class,self).function()`(python 2)或者`super().function()`(python 3)调用父类中被覆盖的方法;
+
+		class Bird(object):
+			def chirp(self):
+				print("jiojiojio")
+
+		class Chicken(Bird):
+			def chirp(self):
+				super(Chicken,self).chirp()
+				print("jijiji")
+
+		summer = Chicken()
+		summer.chirp()               # print jiojiojio, jijiji
+
+## 各种对象
