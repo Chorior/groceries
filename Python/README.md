@@ -18,6 +18,7 @@
 	* [异常处理](#异常处理)
 	* [类](#类)
 	* [各种对象](#各种对象)
+	* [文件](#文件)
 
 ## Python初识
 
@@ -134,7 +135,7 @@ print是一个专门用来打印的函数，如果你学过C语言，那么这�
 			$ >>> type(a)
 
 	* 序列  
-		序列是一种容器类型，它有两种形式，元组(Tuple)和列表(List)，其区别在于元组元素不可改变，而列表可以。元组圆括号括起，而列表用方括号括起，一个序列的元素可以是另一个列表:
+		序列是一种容器类型，它有两种形式，元组(Tuple)和列表(List)，其区别在于元组元素不可改变，而列表可以。字符串是特殊的元组。元组圆括号括起，而列表用方括号括起，一个序列的元素可以是另一个列表:
 
 				$ >>> a = (1,2,3)   # tuple
 				$ >>> a = [3,2,1]   # list
@@ -234,8 +235,10 @@ print是一个专门用来打印的函数，如果你学过C语言，那么这�
 在关键字def后跟函数名，接着是参数列表，即使没有参数也必须带有括号；函数执行到return时就会结束，不管它后面是否含有其他函数语句；return并不是必需的，若没有return，则函数返回None，None是Python中的空数据；return也可以返回多个值，用逗号进行分隔；如果要给函数添加说明文档，在函数内容一开始的时候添加一个有缩进的多行注释即为函数说明文档，可以使用`help()`函数进行查看；
 
 		def f(a,b):
-			'''return the square sum of two arguments'''
-			return (a**2 + b**2)
+			'''
+			return the square sum of two arguments
+			'''
+			return a**2 + b**2
 
 		def f1():
 			return 1,2,3
@@ -360,11 +363,11 @@ print是一个专门用来打印的函数，如果你学过C语言，那么这�
 异常处理的目地有两个：一个是让程序中止前进行更多的操作；另一个是让程序犯错后能够继续正常运行；Python中的异常处理与C、java都差不多:
 
 		while True:
-			inputStr = input("input a number:")        # input()，内置函数，用于接收命令行输入
+			inputStr = input("input a number:") # input()，内置函数，用于接收命令行输入
 			try:
-				num = float(inputStr)                  # float()，将其他类型数据转换为浮点数，参数为字符串会触发ValueError异常
+				num = float(inputStr)           # 参数为字符串会触发ValueError异常
 				print("input number: ", num)
-				print(10/num)                          # 当num为0时，会触发ZeroDivisionError
+				print(10/num)                   # 当num为0时，会触发ZeroDivisionError异常
 			except ValueError:
 				print("Illegal input.Try again.")
 			except ZeroDivisionError:
@@ -453,3 +456,79 @@ Python有一系列特殊方法，如`__init__()`,`__add__()`,`__dict__()`等，�
 		summer.chirp()               # print jiojiojio, jijiji
 
 ## 各种对象
+
+所谓对象，就是类的一个实例，你可以使用`dir()`函数来查看一个类或者对象的所有属性，你也可以使用`help()`查看函数或类的说明文档。类的说明文档与函数的说明文档类似，在类定义下用多行注释即可：
+
+		class HelpDemo(object):
+			'''
+			This is a demo for using help() on a class
+			'''
+
+			pass                     # 关键字passa，用于说明该语法结构中什么都不做
+
+		help(HelpDemo)
+
+可以通过词典的`key()`方法循环遍历每个元素的键，通过词典的`values()`循环遍历每个元素的值，或者通过`items()`直接遍历每个元素，`clear()`直接清空词典：
+
+		my_dict = {"a":1, "b":2}
+
+		for k in my_dict.keys():
+			print(k)                 # a, b
+
+		for v in my_dict.values():
+			print(v)                 # 1, 2
+
+		for k,v in my_dict.items():
+			print(k,v)               # ('a', 1), ('b', 2)
+
+循环对象：当类中包含有`__next__()`方法(python 2.7中为`next()`方法)时，一个该类的对象可以通过该方法生成下一个对象，当生成过循环所有的结果之后，该方法会抛出`StopIteration`异常。当for使用循环对象时，每次循环的时候会调用`__next__()`方法，直到出现`StopIteration`异常。内置函数`iter()`可以将一个序列或词典转换为循环对象：
+
+		my_iter = iter([1,2])
+		print(my_iter.next())        # print 1
+		print(my_iter.next())        # print 2
+		print(my_iter.next())        # StopIteration 异常
+
+		for item in iter([1,2]):     # python 2.7的for循环直接从序列出对象。不会转成循环对象
+			print(item)
+
+循环对象的好处：所有要使用的元素在循环过程中逐渐生成，节省了空间，并且提高了效率。python 3的`range()`返回的就是一个循环对象，但python 2.7中返回的是一个序列。  
+可以借助生成器来定义循环对象。生成器的编写方法与函数定义类似，只是将return改为yield。生成器中可以有多个yield，当生成器遇到一个yield时，会暂停运行生成器，返回yield后面的值，再次调用生成器时，从上次暂停的地方继续运行，直到下一个yield：
+
+		def gen():
+			yield 0
+			yield 2
+			yield 4
+
+		a = gen()
+		type(a)                      # generator
+		a.next()                     # 0
+		a.next()                     # 2
+		a,next()                     # 4
+		a.next()                     # StopIteration 异常
+
+函数对象：任何一个有`__call__()`特殊方法的对象都是函数对象：
+
+		class Sample(object):
+			def __call__(self,a):
+				return a + 5
+
+		add_five = Sample()
+		add_five(2)                  # 7
+
+模块对象：
+
+		import time
+		import my_time
+		import datetime as dt
+
+		time.sleep(10)
+		my_time.sleep(10)
+		dt.datetime(2016,12,24,21,20)
+
+可以将功能相似的模块放在同一个目录下，构成一个模块包：`import this_dir.module`。`this_dir`文件夹必须包含一个`__init__.py`文件，用于提醒python，该文件夹是一个模块包，`__init__.py`可以为空。每个模块对象都有一个`__name__`属性，用于记录模块名。当一个.py文件作为主程序运行时，合格文件会有一个对应的模块对象，该模块对象的`__name__`属性为`"__main__"`。
+
+		import time
+
+		print(time.__name__)         # time
+
+## 文件
