@@ -1,0 +1,8 @@
+{
+    "files.encoding": "utf8",
+    "editor.insertSpaces": false,
+    "editor.wrappingColumn": 0,
+    "editor.quickSuggestions": true,
+    "pandoc.htmlOptString": "-s -f markdown_github -t html5 --css=css/style.css",
+    "pandoc.pdfOptString": "--latex-engine=xelatex --template=pm-template.latex"
+}

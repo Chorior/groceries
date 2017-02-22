@@ -1,0 +1,209 @@
+\documentclass[]{}
+\usepackage{geometry} 		% 設定邊界
+\geometry{
+  top=1in,
+  inner=1in,
+  outer=1in,
+  bottom=1in,
+  headheight=3ex,
+  headsep=2ex
+}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \usepackage{fontspec} 	% 允許設定字體
+  \usepackage{xeCJK} 		% 分開設置中英文字型
+  \setCJKmainfont{Microsoft YaHei} 	% 設定中文字型
+  \setmainfont{Georgia} 	% 設定英文字型
+  \setromanfont{Georgia} 	% 字型
+  \setmonofont{Courier New}
+  \linespread{1.2}\selectfont 	% 行距
+  \XeTeXlinebreaklocale "zh" 	% 針對中文自動換行
+  \XeTeXlinebreakskip = 0pt plus 1pt % 字與字之間加入0pt至1pt的間距，確保左右對整齊
+  \parindent 0em 		% 段落縮進
+  \setlength{\parskip}{20pt} 	% 段落之間的距離
+  \ifxetex
+    \usepackage{xltxtra,xunicode}
+  \fi
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+\fi
+% use microtype if available
+\IfFileExists{microtype.sty}{\usepackage{microtype}}{}
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex]{hyperref}
+\else
+  \usepackage[unicode=true]{hyperref}
+\fi
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            pdfauthor={},
+            pdftitle={},
+            colorlinks=true,
+            urlcolor=blue,
+            linkcolor=magenta,
+            pdfborder={0 0 0}}
+\urlstyle{same}  % don't use monospace font for urls
+\setlength{\parindent}{0pt}
+%\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+\title{\huge 在OSX平台上的XeLaTeX中文測試} % 設置標題，使用巨大字體
+\author{FoolEgg.com} 		% 設置作者
+\date{February 2013} 		% 設置日期
+\usepackage{titling}
+\setlength{\droptitle}{-8em} 	% 將標題移動至頁面的上面
+
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\pagestyle{fancyplain}
+
+\setcounter{secnumdepth}{0}
+
+\author{}
+\date{}
+
+\begin{document}
+
+<h1 id="add-c-plugins-to-qml">Add C++ plugins to qml</h1>
+<p>:art:</p>
+<hr />
+<blockquote>
+<p>取自<a href="http://doc.qt.io/qt-5/qtqml-modules-cppplugins.html" class="uri">http://doc.qt.io/qt-5/qtqml-modules-cppplugins.html</a></p>
+</blockquote>
+<ul>
+<li>在qt creater上新建一个qt quick application工程(minimal version 5.3),查看自动生成的main.cpp</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode c++"><code class="sourceCode cpp">  <span class="pp">#include </span><span class="im">&lt;QGuiApplication&gt;</span>
+  <span class="pp">#include </span><span class="im">&lt;QQmlApplicationEngine&gt;</span>
+
+  <span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> *argv[])
+  {
+      QGuiApplication app(argc, argv);
+
+      QQmlApplicationEngine engine;
+      engine.load(<span class="ex">QUrl</span>(QStringLiteral(<span class="st">&quot;qrc:/main.qml&quot;</span>)));
+
+      <span class="cf">return</span> app.exec();
+  }</code></pre></div>
+<ul>
+<li>其中</li>
+<li>QGuiApplication 封装了有关应用程序实例的相关信息(比如程序名字、命令行参数等);</li>
+<li>QQmlApplicationEngine 管理带有层次结构的上下文和组件,它需要一个 QML 文件作为应用程序的入口点;</li>
+<li>QML engine 为 qml 加载插件,这些插件经常被 qml 的扩展模块提供,那些导入了这些模块的 qml 文档可以提供各种用途;</li>
+<li>QQmlExtensionPlugin 是一个插件接口,它使得创建 qml 扩展变得可能,并且这些扩展可以被 qml 应用动态加载;这些扩展也使得自定义 qml 类型可以在 qml 引擎中使用;</li>
+<li>如何创建一个 qml 插件</li>
+<li>qt creater 5.3可以使用向导创建qt quick2 extension plugin了
+<ul>
+<li>选择菜单栏,创建新文件或工程;</li>
+<li>选择library,qt quick2 extension plugin</li>
+<li>为自己的 class(这个 class 是自定义 qml 类型的实现类)和URI(这个 URI 用于在 qml 中导入使用)命名,默认为 MyItem;</li>
+<li>点击完成;</li>
+</ul></li>
+<li>查看自动生成的 plugin.h 文件</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode c++"><code class="sourceCode cpp">  <span class="pp">#ifndef QMLPLUGINTEST_PLUGIN_H</span>
+  <span class="pp">#define QMLPLUGINTEST_PLUGIN_H</span>
+
+  <span class="pp">#include </span><span class="im">&lt;QQmlExtensionPlugin&gt;</span>
+
+  <span class="kw">class</span> QmlPluginTestPlugin : <span class="kw">public</span> QQmlExtensionPlugin
+  {
+      <span class="ex">Q_OBJECT</span>
+      Q_PLUGIN_METADATA(IID <span class="st">&quot;org.qt-project.Qt.QQmlExtensionInterface&quot;</span>)
+
+  <span class="kw">public</span>:
+      <span class="dt">void</span> registerTypes(<span class="at">const</span> <span class="dt">char</span> *uri);
+  };
+
+  <span class="pp">#endif </span><span class="co">// QMLPLUGINTEST_PLUGIN_H</span></code></pre></div>
+<ul>
+<li>plugin.cpp 文件</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode c++"><code class="sourceCode cpp">  <span class="pp">#include </span><span class="im">&quot;qmlplugintest_plugin.h&quot;</span>
+  <span class="pp">#include </span><span class="im">&quot;test.h&quot;</span>
+
+  <span class="pp">#include </span><span class="im">&lt;qqml.h&gt;</span>
+
+  <span class="dt">void</span> QmlPluginTestPlugin::registerTypes(<span class="at">const</span> <span class="dt">char</span> *uri)
+  {
+      <span class="co">// @uri org.test</span>
+      <span class="fu">qmlRegisterType</span>&lt;test&gt;(uri, <span class="dv">1</span>, <span class="dv">0</span>, <span class="st">&quot;test&quot;</span>);
+  }</code></pre></div>
+<ul>
+<li>Q_PLUGIN_METADATA 一行强制将该插件识别为一个 QML 扩展插件;</li>
+<li>qmlRegisterType() 函数注册了自定义类(上面为test);</li>
+<li>在实现自定义 qml 类型的实现类前,先来学习 Q_PROPERTY 宏;</li>
+<li>Q_PROPERTY() 是一个宏,用来在一个类中声明一个属性 property,由于该宏是 qt 特有的,需要用 moc 进行编译,故必须继承于 QObject 类;</li>
+<li><p>语法</p>
+<div class="sourceCode"><pre class="sourceCode c++"><code class="sourceCode cpp">  <span class="ex">Q_PROPERTY</span>(type name READ getFunction
+    [WRITE setFunction]
+    [RESET resetFunction]
+    [NOTIFY notifySignal]
+    [DESIGNABLE <span class="dt">bool</span>]
+    [SCRIPTABLE <span class="dt">bool</span>]
+    [STORED <span class="dt">bool</span>]
+    [USER <span class="dt">bool</span>]
+    [CONSTANT]
+    [FINAL])</code></pre></div></li>
+<li>property 跟类中数据成员没有什么区别,但是有几点不一样
+<ul>
+<li>必须有一个 read 函数,它用来读取属性值,因此用 Const 限定,它的返回值类型必须为属性类型或者属性类型的引用或者指针;</li>
+<li>有一个可选的 write 函数,它用来设置属性值,它的返回值必须为 void 型,而且必须要含有一个参数;</li>
+<li>一个可选的 reset 函数把 property 设置成其默认状态,复位功能必须返回void,并且不带参数;</li>
+<li>一个可选的 NOTIFY 信号,如果定义它提供了一个信号,那么这个信号在值发生改变时会自动被触发;</li>
+<li>DESIGNABLE 属性表明该 property 是否能在 GUI builder(一般为 Qt Designer)可见;</li>
+<li>STORED 属性表明是否一直存在的;</li>
+<li>USER 属性表明是否可以被用户所编辑;</li>
+<li>CONSTANT 设定属性是不可修改的,不能跟 WRITE 或者 NOTIFY 同时出现;</li>
+<li>FINAL 表明该属性不会被派生类中重写;</li>
+</ul></li>
+<li><p>示例</p>
+<div class="sourceCode"><pre class="sourceCode c++"><code class="sourceCode cpp">  <span class="kw">class</span> Test : <span class="kw">public</span> <span class="ex">QObject</span>
+  {
+    <span class="ex">Q_OBJECT</span>
+    <span class="ex">Q_PROPERTY</span>(<span class="dt">bool</span> enabled READ isEnabled WRITE setEnabled)
+    <span class="kw">public</span>:
+    Test(<span class="ex">QObject</span> *parent = <span class="dv">0</span>) : <span class="ex">QObject</span>(parent) {}
+    <span class="kw">virtual</span> ~Test(){}
+    <span class="dt">void</span> setEnabled(<span class="dt">bool</span> e) { enabled = e; }
+    <span class="dt">bool</span> isEnabled() <span class="at">const</span> { <span class="cf">return</span> enabled; }
+
+  <span class="kw">private</span>:
+    <span class="dt">bool</span> enabled;
+  };</code></pre></div></li>
+<li>根据需要定制自己的实现类;</li>
+<li>To be able to call a method from QML, you must either mark it with Q_INVOKABLE or as a slot;</li>
+<li>要想在 qml 里面调用一个方法,这个方法必须用 Q_INVOKABLE 标识或作为一个槽;</li>
+<li>插件“其他文件”里有 qmldir 文件,这个文件指定了 QML 插件的内容以及插件的 QML 方面的描述;</li>
+<li>现在构建完成之后在插件构建目录(就是你创建插件的目录下的对应的 build 目录)下执行 make install 完成插件的安装;</li>
+<li>现在如果要使用自定义插件,只要在 qml 里 import 相应的模块即可</li>
+<li><p>比如说你的 qmldir 文档如下</p>
+<pre class="qml"><code>  module TimeExample
+  Clock 1.0 Clock.qml
+  plugin qmlqtimeexampleplugin</code></pre></li>
+<li><p>plugin.cpp 中这么定义</p>
+<div class="sourceCode"><pre class="sourceCode c++"><code class="sourceCode cpp">  <span class="fu">qmlRegisterType</span>&lt;TimeModel&gt;(uri, <span class="dv">1</span>, <span class="dv">0</span>, <span class="st">&quot;Time&quot;</span>);</code></pre></div></li>
+<li><p>那么只要在 qml 只需要这么做,就可以使用上面的插件了</p>
+<div class="sourceCode"><pre class="sourceCode c++"><code class="sourceCode cpp">  import TimeExample <span class="fl">1.0</span> <span class="co">// import types from the plugin</span>
+  Time { <span class="co">// this class is defined in C++ (plugin.cpp)</span>
+      id: time
+  }</code></pre></div></li>
+<li><p>使用</p>
+<div class="sourceCode"><pre class="sourceCode c++"><code class="sourceCode cpp">  hours: time.hour
+  minutes: time.minute</code></pre></div></li>
+</ul>
+
+\end{document}
+
