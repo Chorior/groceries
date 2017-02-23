@@ -264,39 +264,39 @@ else:
 
 <h3 id="loop">循环语句</h3>
 
-*	for循环
+#### for循环
 
-	```python
-	for a in [1,2,True]:
-		print(a)
-	for i in range(5):
-		print(i)            # 0,1,2,3,4，range(n)从0开始计数
-	for i in range(1,5):
-		print(i)            # 1,2,3,4，range(n,m)在数学区间上的定义为前闭后开，即[n,m)
-	```
+```python
+for a in [1,2,True]:
+	print(a)
+for i in range(5):
+	print(i)            # 0,1,2,3,4，range(n)从0开始计数
+for i in range(1,5):
+	print(i)            # 1,2,3,4，range(n,m)在数学区间上的定义为前闭后开，即[n,m)
+```
 
-*	while循环
+#### while循环
 
-	```python
-	i = 0
-	while i < 10:
-		print("i = ", i)    # ('i = ',0),...,('i = ',9)
-		i = i + 1
-	```
+```python
+i = 0
+while i < 10:
+	print("i = ", i)    # ('i = ',0),...,('i = ',9)
+	i = i + 1
+```
 
-*	跳过或终止
+#### 跳过或终止
 
-	continue用于跳过循环的当次执行，转而进行下一次循环；break用于停止剩余的循环。
+continue用于跳过循环的当次执行，转而进行下一次循环；break用于停止剩余的循环。
 
-	```python
-	for i in range(10):
-		if i == 2:
-			continue
-		if i == 8:
-			break
+```python
+for i in range(10):
+	if i == 2:
+		continue
+	if i == 8:
+		break
 
-		print(i)            # 0,1,3,4,5,6,7
-	```
+	print(i)            # 0,1,3,4,5,6,7
+```
 
 <h2 id="function">函数</h2>
 
@@ -418,25 +418,25 @@ print(b)                    # print 10
 
 在Python中，一个.py文件就是一个模块，通过模块，你可以调用其他文件中的函数甚至数据；引入模块的方式与java差不多，使用关键字from和import进行引入；关于引入模块时，Python的搜索路径：首先是当前文件夹，然后是标准库(引入标准库模块不需要from)，再然后是环境变量PYTHONPATH所包含的路径；你可以通过引入sys，然后打印出sys.path来查看所有搜索的路径；
 
-*	first,py
+#### first,py
 
-	```python
-	def laugh():
-		print("hahaha")
+```python
+def laugh():
+	print("hahaha")
 
-	info = "hehe"
-	laugh()                      # print hahaha
-	```
+info = "hehe"
+laugh()                      # print hahaha
+```
 
-*	second.py
+#### second.py
 
-	```python
-	from first import laugh      # print hahaha
-	from first import info
+```python
+from first import laugh      # print hahaha
+from first import info
 
-	laugh()                      # print hahaha
-	print(info)                  # print hehe
-	```
+laugh()                      # print hahaha
+print(info)                  # print hehe
+```
 
 运行second.py，可以发现，输出打印了两行hahaha，这说明在引入first的时候，同时引入了first文件中的其它程序语句，这不是我们想要的，我们只想运行当前程序中的语句；这个时候我们就需要知道一些线程的知识，当某个程序是主线程的时候，那个线程的`__name__`属性为`__main__`，所以我们修改first.py：
 
