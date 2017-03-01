@@ -15,11 +15,12 @@ tags:
 *   [无符号类型不能混用](#unsigned_type)
 *   [标识符定义](#identifier)
 *   [空指针选择](#nullptr)
-*   [C或C++标准库头文件选择](#choose_header)
+*   [C 或 C++ 标准库头文件选择](#choose_header)
 *   [递增递减选择前置还是后置](#front_or_post)
-*   [sizeof运算符](#sizeof)
+*   [sizeof 运算符](#sizeof)
+*   [C 或 C++ 强制类型转换选择](#forced_conversion)
 
-<h2 id="annotation">注释</h2>
+<h2 id="annotation">注释选择</h2>
 
 一律使用C++单行注释`//`，因为界定符`/* */`注释不能嵌套。
 
@@ -77,15 +78,15 @@ for(unsigned i = 10; i >= 0; -- i)
 
 ```C++
 #include <iostream>
-#include <string>              // std::string
-#include <cstring>             // wchar_t, char16_t
+#include <string>          // std::string
+#include <cstring>         // wchar_t, char16_t
 
-bool flag;                     // false
-wchar_t arr0[10];              // 0 '\0'
-char16_t arr1[10];             // 0 u'\0'
-int a[10];                     // 0
-double d[10];                  // 0.00
-std::string str;               // ""
+bool flag;                 // false
+wchar_t arr0[10];          // 0 '\0'
+char16_t arr1[10];         // 0 u'\0'
+int a[10];                 // 0
+double d[10];              // 0.00
+std::string str;           // ""
 int main()
 {
 	bool flag1;            // true
@@ -101,7 +102,7 @@ int main()
 
 只要是内置类型，一律初始化！
 
-<h2 id="identifier">标识符</h2>
+<h2 id="identifier">标识符定义</h2>
 
 C++ 的标识符由字符、数字、下划线组成，其中数字不能作为开头。
 
@@ -117,7 +118,7 @@ C++ 为标准库保留了一些名字
 *	自定义类名一般使用大写字母开头；
 *	多个单词用下划线连接，或者从第二个单词开始首字母大写。
 
-<h2 id="nullptr">空指针</h2>
+<h2 id="nullptr">空指针选择</h2>
 
 空指针不指向任何对象，在试图使用一个指针时，必须检查它是否为空。
 
@@ -131,7 +132,7 @@ int *p3 = NULL;
 
 最好使用nullptr，尽量避免使用NULL。所有指针都必须初始化。
 
-<h2 id="choose_header">选择C或C++标准库头文件</h2>
+<h2 id="choose_header">C 或 C++ 标准库头文件选择</h2>
 
 C++ 兼容 C 语言标准库，去掉了 C 头文件的后缀`.h`，并添加前缀`c`，表明这是一个 C 语言标准库的头文件。
 
@@ -147,13 +148,13 @@ C++ 程序一律使用名为`cname`的头文件。
 
 若无特殊需求，一律使用前缀版本的递增或递减运算符。
 
-<h2 id="sizeof">sizeof运算符</h2>
+<h2 id="sizeof">sizeof 运算符</h2>
 
 sizeof 运算符返回一条表达式或一个类型名所占的字节数。
 
 sizeof 运算符满足右结合律，返回值是一个`size_t`类型的常量表达式。
 
-sizeof运算符的结果部分依赖于其作用的类型：
+sizeof 运算符的结果部分依赖于其作用的类型：
 
 *	对char或者类型为char的表达式，结果为1；
 *	对引用类型变量，结果为被引用对象所占空间的字节数；
@@ -185,4 +186,41 @@ int main()
 }
 ```
 
+<h2 id="forced_conversion">C 或 C++ 强制类型转换选择</h2>
 
+C++ 强制类型转换包含 `static_cast`, `dynamic_cast`, `const_cast`, `reinterpret_cast`。
+
+`static_cast`: 任何具有明确定义的类型转换，只要不包含底层const，都可以使用`static_cast`）；
+
+```C++
+double d = 3.14;
+void *p = &d;
+double *dp = static_cast<double*>(p);
+```
+
+`const_cast`: 只改变运算对象的底层const，不能用于改变类型；
+
+```C++
+const char *pc;
+char *p = const_cast<char*>(pc);  // 正确，但通过p写值是未定义的行为
+static_cast<string>(cp);          // 正确，字符串字面值转换成string类型
+const_cast<string>(cp);           // 错误，const_cast 只改变常量属性，不能用于改变类型
+```
+
+`reinterpret_cast`: 为运算对象的位模式提供较低层次上的重新解释，这往往会伴随很多未定义的事情发生。
+
+```C++
+int *ip;
+char *pc = reinterpret_cast<char*>(ip);
+```
+
+关于底层const与顶层const: 顶层const表示本身是个常量，而底层const表示指向的对象是个常量。
+
+C 风格的强制类型转换根据涉及的类型，分别具有与`const_cast`, `static_cast`或`reinterpret_cast`相似的行为；但表现形式却不如C++强制类型转换来的清晰明了，一旦转换出现问题，很难追踪。
+
+```text
+type(expr);
+(type)expr;
+```
+
+如非必要情况下，避免使用强制类型转换，如果一定要的话，建议使用C++强制类型转换。
