@@ -19,6 +19,10 @@ tags:
 *   [递增递减选择前置还是后置](#front_or_post)
 *   [sizeof 运算符](#sizeof)
 *   [C 或 C++ 强制类型转换选择](#forced_conversion)
+*	[可变形参函数](#flexible_arguments)
+*	[关于返回值](#about_return_value)
+*	[关于重载函数、内联函数](#overloaded_and_inline_function)
+*	[函数指针](#function_ptr)
 
 <h2 id="annotation">注释选择</h2>
 
@@ -224,3 +228,162 @@ type(expr);
 ```
 
 如非必要情况下，避免使用强制类型转换，如果一定要的话，建议使用C++强制类型转换。
+
+<h2 id="flexible_arguments">可变形参函数</h2>
+
+C++11 新标准提出两种处理可变形参的方法：
+
+*	若实参类型相同，则可以传递一个名为`initializer_list`的标准库类型；
+*	若实参类型不同，则需要编写可变函数模板。
+
+这里只介绍`initializer_list`的使用：
+
+`initializer_list`定于于头文件`<initializer_list>`中，包含`size()`,`begin()`,`end()`成员函数。
+
+其所包含元素永远是常量值，不能对其进行更改。
+
+如果要向`initializer_list`形参中传递一个值的序列，则必须把序列放在一对花括号内。
+
+```C++
+# include <iostream>
+# include <initializer_list>
+
+void print(std::initializer_list<int> il);
+int main()
+{
+    print({ 1,3,4,5,6,7 });
+    int a[5]{ 24,234,455,134,441 };
+    print({a[0], a[1], a[2], a[3], a[4]});
+    getchar();
+    return 0;
+}
+
+void print(std::initializer_list<int> il)
+{
+    for (int i : il)
+    {
+        std::cout << i << std::endl;
+    }
+}
+```
+
+省略符形参是为了便于C++程序访问某些特殊的C代码而设置的，它仅仅用于 C 和 C++ 通用的类型。
+
+**大多数类类型的对象在传递给省略符形参时都无法正确拷贝。**
+
+<h2 id="about_return_value">关于返回值</h2>
+
+强行令void函数返回其他类型的表达式将产生编译错误。
+
+不要返回局部变量的引用或者指针。
+
+除返回引用的函数能得到左值外，其它返回类型的函数都只能得到右值。
+
+**C++11 新标准规定，函数可以返回花括号包围的值的列表，这个列表用来对函数返回的临时量进行初始化。若列表为空，则对临时量执行值初始化。**
+
+值初始化：若元素类型为内置类型，则初始化为0；若为其它类类型，则元素由类进行默认初始化。
+
+```C++
+std::vector<std::string> process(int i)
+{
+    if (0 == i)     return{};
+    else if (0 < i) return{ "i", "is", "bigger" ,"than", "0" };
+    else if (0 > i) return{ "i", "is", "smaller","than", "0" };
+}
+```
+
+C++11 支持尾置返回类型：
+
+```C++
+auto func(int i) -> int(*)[10];   // 返回值是一个指向包含10个int元素的数组的指针
+```
+
+### main 函数的返回值
+
+如果 main 函数运行到了结尾却没有return语句，那么编译器将隐式的插入一条`return 0;`。
+
+main 函数的返回值可以看做是状态指示器，返回0表示执行成功，非零值的具体含义视机器而定。
+
+为了使返回值与机器无关，`<cstdlib>`头文件定义了两个预处理变量`EXIT_SUCCESS`和`EXIT_FAILURE`，用于表示成功和失败。
+
+<h2 id="overloaded_and_inline_function">关于重载函数、内联函数</h2>
+
+### 重载函数
+
+函数重载： 如果同一作用域的几个函数**名字相同但形参列表不同**，则称他们为重载函数。
+
+main 函数不能重载。
+
+如果在内层作用域中声明了与外层作用域相同的函数名字，那么外层作用域中同名的全部函数将被隐藏。
+
+C++ 中，名字查找发生在类型检查之前:
+
+```C++
+int read();
+
+int main()
+{
+    bool read = false;
+    int i = read();     // 错误！read是一个布尔值，不是一个函数。
+    return 0;
+}
+```
+
+### 内联函数
+
+一次函数调用包含一系列工作：
+
+*	调用前要先保存寄存器，并在返回时恢复；
+*	可能需要拷贝实参；
+*	程序转向一个新的位置继续执行。
+
+内联函数可以避免函数调用的开销：调用内联函数的地方在编译过程中会被展开。
+
+**内联函数只用于规模较小、流程直接、调用频繁的函数。**
+
+<h2 id="help_debug">调试帮助</h2>
+
+`assert(expr)`：如果`expr`为真，什么也不做；否则输出相关信息并终止程序的执行。
+
+头文件`<cassert>`，如果**在包含头文件之前**定义了`NDEBUG`宏，那么assert什么也不做。
+
+5个预处理器定义的、对于程序调试很有用的`const char`静态数组名：
+
+*	`__func__`: 当前函数名；
+*	`__FILE__`: 当前文件名；
+*	`__LINE__`: 当前行号；
+*	`__TIME__`: 文件编译时间；
+*	`__DATE__`: 文件编译日期。
+
+<h2 id="function_ptr">函数指针</h2>
+
+当把函数名作为一个值使用时，该函数自动地转换成指针：
+
+```C++
+bool func(int, int);
+bool (*pf)(int, int) = func;
+bool (*pf)(int, int) = &func; // 取地址符是可选的
+```
+
+可以直接使用指向函数的指针调用该函数：
+
+```C++
+bool b1 = pf(1,2);
+bool b2 = (*pf)(1,2); // 与上面等价
+```
+
+当函数指针用作形参时，函数类型会被当做指针使用：
+
+```C++
+void example(int i, bool pf(int, int));
+void example(int i, bool (*pf)(int, int)); // 与上面等价
+```
+
+返回指向函数的指针：
+
+```C++
+int (*f1(int))(int*, int);          // 由内向外，返回一个指向函数的指针
+auto f1(int) -> int (*)(int*, int);
+```
+
+decltype 作用于某个函数时，它返回函数类型而非指针。
