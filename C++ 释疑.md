@@ -19,6 +19,8 @@ tags:
 *   [递增递减选择前置还是后置](#front_or_post)
 *   [sizeof 运算符](#sizeof)
 *   [C 或 C++ 强制类型转换选择](#forced_conversion)
+*	[尽量使用常量引用传递参数](#constant_reference)
+*	[数组形参传递](#array_params)
 *	[可变形参函数](#flexible_arguments)
 *	[关于返回值](#about_return_value)
 *	[关于重载函数、内联函数](#overloaded_and_inline_function)
@@ -228,6 +230,112 @@ type(expr);
 ```
 
 如非必要情况下，避免使用强制类型转换，如果一定要的话，建议使用C++强制类型转换。
+
+<h2 id="constant_reference">尽量使用常量引用传递参数</h2>
+
+拷贝大的类类型对象或者容器对象比较低效，甚至有的类类型根本就不支持拷贝操作，这时候应该使用引用传递方式传递参数。
+
+如果函数无须改变引用形参的值，那么最好将其声明为常量引用。因为我们可以将一个非常量对象传递给常量形参，但是常量对象却不能传递给非常量形参。
+
+如果你强行将一个常量对象转成非常量对象，然后再传递给非常量形参的话，万一程序运行过程中出现什么异常改变了常量对象，这就会造成非常严重的问题。
+
+```C++
+void func0(char*);
+void func1(const char*);
+
+std::string str("test");
+func0(&str[0]);                        // OK
+func0(const_cast<char*>(str.c_str())); // OK
+func1(str.c_str());                    // 很安全
+
+const char* cstr = "hahah";
+func0(const_cast<char*>(cstr));        // 很危险
+func1(cstr);                           // 很安全
+```
+
+尽量使用常量引用传递参数。
+
+<h2 id="array_params">数组形参传递</h2>
+
+数组不允许拷贝，所以无法使用值传递方式传递数组参数。
+
+以下三个函数声明都是等价的：
+
+```C++
+void print(const int*);    // 一般拉沙
+void print(const int[]);   // 使函数意图更加明显
+void print(const int[10]); // 这里的维度表示期望传递的数组包含10个元素，实际不一定
+```
+
+### 三种确保数组不越界的函数定义方法
+
+#### 使用标记指定数组长度
+
+数组自身包含一个结束符：
+
+```C++
+void print(const char *cp)
+{
+    if(cp) while(*cp) std::cout << *cp++; // 输出知道遇到空字符
+}
+```
+
+#### 使用标准库规范
+
+传递首元素和尾后元素指针：
+
+```C++
+void print(const int *begin, const int *end)
+{
+    while(begin != end) std::cout << *begin++ << std::endl;
+}
+
+int a[3]{ 0, 2, 3};
+print(std::begin(a), std::end(a));
+```
+
+#### 显式传递一个表示数组大小的形参
+
+```C++
+void print(const int ia[], std::size_t size)
+{
+    for(std::size_t i = 0; i != size; ++ i)
+    {
+        std::cout << ia[i] << std::endl;
+    }
+}
+```
+
+### 数组引用形参
+
+```C++
+void print(int (&arr)[10])       // arr 是具有10个整数的整形数组的引用
+{
+    for(auto elem : arr) std::cout << elem << std::endl;
+}
+
+int i = 0, j[2]{0, 1};
+int k[10]{0,1,2,3,4,5,6,7,8,9};
+print(&i);                       // 错误： 实参必须是含有10个整数的数组
+print(j);                        // 错误
+print(k);                        // 正确
+```
+
+### 多维数组形参
+
+多维数组第一维大小会被忽略，第二维以及后面所有维度的大小都是数组类型的一部分，不能省略：
+
+```C++
+void print(int matrix[][10], int row_size){ /* ... */ }
+```
+
+### 复杂数组的识别方法
+
+由内而外，由右向左。
+
+如`int *matrix[10]`，先看最右边`[10]`，表示含有10个元素的数组，再看`*`，表示元素是指针，所以`int *matrix[10]`表示一个包含10个int型指针的数组；
+
+再看`int (*matrix)[10]`，先看最里面`*`，表示matrix是个指针，再看最右面`[10]`，表示包含10个元素的数组，再看最左边`int`，表示元素是整型，所以`int (*matrix)[10]`表示一个指向包含10个int对象的数组的指针。
 
 <h2 id="flexible_arguments">可变形参函数</h2>
 
