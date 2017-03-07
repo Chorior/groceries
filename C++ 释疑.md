@@ -1,10 +1,11 @@
 ---
 title:      "C++ 释疑"
-subtitle:   " 一些代码规范及常见错误 "
+subtitle:   " 一些常见错误规避方法 "
 date:       2017-03-01 20:00:00 +0800
 header-img: "img/C++_logo.jpg"
 tags:
     - C++
+    - C++ primer
 ---
 
 本文是我重温《C++ Primer 5》时，摘录的一些要点，适合初级程序员食用。
@@ -173,7 +174,7 @@ sizeof 运算符的结果部分依赖于其作用的类型：
 *	对引用类型变量，结果为被引用对象所占空间的字节数；
 *	对指针，结果为指针本身所占空间的大小；
 *	对解引用指针，结果为指针指向的对象所占空间的字节数，**指针不需要有效**；
-*	对数组，结果为整个数组所占空间的字节数（**sizeof不会讲数组作为指针处理，指针也不会被作为数组处理**）；
+*	对数组，结果为整个数组所占空间的字节数（**sizeof不会将数组作为指针处理，指针也不会被作为数组处理**）；
 *	对`std::string`对象或`vector`对象，结果只返回该类型固定部分的大小，不会计算对象中的元素占用了多少字节。
 
 ```C++
@@ -216,8 +217,8 @@ double *dp = static_cast<double*>(p);
 ```C++
 const char *pc;
 char *p = const_cast<char*>(pc);  // 正确，但通过p写值是未定义的行为
-static_cast<string>(cp);          // 正确，字符串字面值转换成string类型
-const_cast<string>(cp);           // 错误，const_cast 只改变常量属性，不能用于改变类型
+static_cast<string>(pc);          // 正确，字符串字面值转换成string类型
+const_cast<string>(pc);           // 错误，const_cast 只改变常量属性，不能用于改变类型
 ```
 
 `reinterpret_cast`: 为运算对象的位模式提供较低层次上的重新解释，这往往会伴随很多未定义的事情发生。
@@ -283,7 +284,7 @@ void print(const int[10]); // 这里的维度表示期望传递的数组包含10
 ```C++
 void print(const char *cp)
 {
-    if(cp) while(*cp) std::cout << *cp++; // 输出知道遇到空字符
+    if(cp) while(*cp) std::cout << *cp++; // 输出直到遇到空字符
 }
 ```
 
@@ -431,7 +432,7 @@ main 函数不能重载。
 
 如果在内层作用域中声明了与外层作用域相同的函数名字，那么外层作用域中同名的全部函数将被隐藏。
 
-C++ 中，名字查找发生在类型检查之前:
+C++ 中，**名字查找发生在类型检查之前**:
 
 ```C++
 int read();
