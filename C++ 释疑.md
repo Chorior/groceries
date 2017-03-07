@@ -21,10 +21,17 @@ tags:
 *   [C 或 C++ 强制类型转换选择](#forced_conversion)
 *	[尽量使用常量引用传递参数](#constant_reference)
 *	[数组形参传递](#array_params)
+    *   [三种确保数组不越界的函数定义方法](#protect_array_params)
 *	[可变形参函数](#flexible_arguments)
 *	[关于返回值](#about_return_value)
 *	[关于重载函数、内联函数](#overloaded_and_inline_function)
 *	[函数指针](#function_ptr)
+*   [类](#class)
+    *   [this 指针](#this_ptr)
+    *   [构造函数](#constructor)
+    *   [拷贝、赋值和析构](#copy_assign_and_destructor)
+    *   [访问控制符](#access_control)
+    *   [类的静态成员](#static_class_members)
 
 <h2 id="annotation">注释选择</h2>
 
@@ -229,7 +236,7 @@ type(expr);
 (type)expr;
 ```
 
-如非必要情况下，避免使用强制类型转换，如果一定要的话，建议使用C++强制类型转换。
+如非必要情况下，避免使用强制类型转换，如果一定要的话，建议使用 C++ 强制类型转换。
 
 <h2 id="constant_reference">尽量使用常量引用传递参数</h2>
 
@@ -267,7 +274,7 @@ void print(const int[]);   // 使函数意图更加明显
 void print(const int[10]); // 这里的维度表示期望传递的数组包含10个元素，实际不一定
 ```
 
-### 三种确保数组不越界的函数定义方法
+<h3 id="protect_array_params">三种确保数组不越界的函数定义方法</h3>
 
 #### 使用标记指定数组长度
 
@@ -368,7 +375,7 @@ int main()
 
 void print(std::initializer_list<int> il)
 {
-    for (int i : il)
+    for (const int &i : il)
     {
         std::cout << i << std::endl;
     }
@@ -428,7 +435,6 @@ C++ 中，名字查找发生在类型检查之前:
 
 ```C++
 int read();
-
 int main()
 {
     bool read = false;
@@ -471,6 +477,9 @@ int main()
 bool func(int, int);
 bool (*pf)(int, int) = func;
 bool (*pf)(int, int) = &func; // 取地址符是可选的
+auto pf = func;               // pf 是一个指针
+decltype(print) pf;           // pf 是一个函数类型
+decltype(print) *pf = func;   // pf 是一个指针
 ```
 
 可以直接使用指向函数的指针调用该函数：
@@ -495,3 +504,244 @@ auto f1(int) -> int (*)(int*, int);
 ```
 
 decltype 作用于某个函数时，它返回函数类型而非指针。
+
+<h2 id="class">类</h2>
+
+定义在类内部的函数都是隐式内联的。
+
+编译器分两步处理类：首先编译成员声明，然后再到成员函数体。所以成员函数相互间使用时，不用在意成员出现的顺序。
+
+一个用关键字`mutable`声明的数据成员永远也不会是const，即使它是const对象的成员。
+
+<h3 id="this_ptr">this 指针</h3>
+
+每个类的成员函数都有一个名为this的隐式参数，它是一个常量指针，且指向当前对象。
+
+默认情况下，this的类型是`class_name *const`，即this指向非常量版本的类对象；若类对象是常量，那么该对象不能调用普通的成员函数。
+
+```C++
+# include <iostream>
+class TestClass
+{
+    int a = 0;            // C++ 11
+    int b = 1;            // C++ 11
+public:
+    void print()
+    {
+        std::cout << this->a << std::endl;
+        std::cout << this->b << std::endl;
+    }
+};
+
+int main()
+{
+    const TestClass test; // 使用合成的默认构造函数
+    test.print();         // 错误！const对象不能调用普通成员函数print！
+    getchar();
+    return 0;
+}
+```
+
+常量类对象只能调用常量成员函数。
+
+常量成员函数即在函数声明和定义的参数列表后加上const的普通成员函数，跟在参数列表后面的const表示this是一个指向常量的指针，所以常量成员函数不能改变调用它的对象的内容。
+
+```C++
+# include <iostream>
+class TestClass
+{
+    int a = 0;            // C++ 11
+    int b = 1;            // C++ 11
+public:
+    void print() const;
+};
+
+int main()
+{
+    const TestClass test; // 使用合成的默认构造函数
+    test.print();         // OK
+    TestClass test2;
+    test2.print();        // OK
+    getchar();
+    return 0;
+}
+
+void TestClass::print() const
+{
+    std::cout << this->a << std::endl;
+    std::cout << this->b << std::endl;
+}
+```
+
+<h3 id="constructor">构造函数</h3>
+
+构造函数初始化类对象的数据成员，只要类的对象被创建，就会执行构造函数。
+
+建议每个类都显式的定义一个默认构造函数。
+
+#### 合成的默认构造函数
+
+如果类没有显式的定义构造函数，那么编译器就会为我们隐式的定义一个默认构造函数，即合成的默认构造函数。
+
+合成的默认构造函数按如下规则初始化类的数据成员：
+
+*   如果存在类内的初始值，那么用它来初始化成员；
+*   否则，[默认初始化](#default_initialization)该成员。
+
+C++11 可以通过在参数列表后面写上`= default`来要求编译器生成构造函数。`= default`既可以和声明一起出现在类的内部，也可以作为定义出现在类的外部。
+
+*   如果`= default`出现在类的内部，那么默认构造函数是内联的；
+*   如果`= default`出现在类的外部，那么默认情况下不是内联的。
+
+#### 构造函数初始值列表
+
+下面构造函数参数列表后的冒号以及冒号和花括号间的代码即为构造函数初始值列表:
+
+```C++
+class TestClass
+{
+    int a = 0;  // C++ 11
+    int b = 2;  // C++ 11
+public:
+    TestClass(int ia, int ib): a(ia),b(ib) {}
+};
+```
+
+没有出现在构造函数初始值列表中的成员将通过相应的类内初始值（如果存在的话）初始化，或者[默认初始化](#default_initialization)。
+
+```C++
+class TestClass
+{
+    int a = 0;  // C++ 11
+    int b = 2;  // C++ 11
+public:
+    TestClass(int ia, int ib) 
+    {
+        std::cout << a << "," << b << std::endl;  // 0, 2
+        a = ia; b = ib;                           // 赋值
+    }
+};
+```
+
+**成员初始化顺序与它们在类定义中出现的顺序一致，所以不用太在意构造函数初始值列表初始值出现的顺序。**
+
+```C++
+class TestClass
+{
+    int a = 0;  // C++ 11
+    int b = 2;  // C++ 11
+public:
+    TestClass(int ia, int ib): b(ib),a(b) {}      // 错误！a先被初始化！
+};
+```
+
+#### 委托构造函数
+
+委托构造函数使用它所属类的其他构造函数执行它自己的初始化。
+
+```C++
+# include <iostream>
+class TestClass
+{
+    int a;
+    int b;
+public:
+    TestClass(int ia, int ib) : a(ia), b(ib) { std::cout << 2 << std::endl; }
+    TestClass(int ia) :TestClass(ia, 0) { std::cout << 1 << std::endl; }
+    TestClass() :TestClass(0) { std::cout << 0 << std::endl; }
+};
+
+int main()
+{
+    TestClass test;                               // print 2,1,0
+    getchar();
+    return 0;
+}
+```
+
+#### 转换构造函数
+
+当构造函数参数只接受一个实参时（有默认值，或真的只有一个参数），它实际上定义了转换为此类类型的隐式转换机制：
+
+```C++
+# include <iostream>
+class TestClass
+{
+    int a;
+    int b;
+public:
+    TestClass(int ia, int ib = 0) : a(ia), b(ib) {}
+};
+
+int main()
+{
+    TestClass test = 2;                           // 隐式转换
+    getchar();
+    return 0;
+}
+```
+
+使用关键字`explicit`可以阻止隐式类型转换。`explicit`只对一个实参的构造函数有效，且`explicit`只能出现在类内的声明处。
+
+<h3 id="copy_assign_and_destructor">拷贝、赋值和析构</h3>
+
+如果不主动定义拷贝、赋值和析构操作的话，编译器将生成相应的版本对对象的每个成员执行拷贝、赋值和销毁操作。
+
+<h3 id="access_control">访问控制符</h3>
+
+`public`, `protected`和`private`被称为访问说明符，用于说明接下来的成员访问级别，其有效范围直到出现下一个访问说明符或者到达类的结尾为止。
+
+一个类可以包含0个或多个访问说明符。
+
+`class`和`struct`都可以定义一个类，唯一的区别是`struct`的默认访问权限是`public`，而`class`的是`private`。
+
+<h3 id="static_class_members">类的静态成员</h3>
+
+类的静态成员存在于任何对象之外，对象中不包含任何与静态数据成员有关的数据。
+
+静态成员函数也不与任何对象绑定在一起，它们不包含this指针，所以静态成员函数也不能设成const的。
+
+#### 定义静态成员
+
+`static`与`explicit`一样，只能出现在类内部的声明语句处。
+
+必须在类的外部定义和初始化每个静态成员。
+
+一个静态数据成员只能定义一次。
+
+可以使用静态成员作为默认实参。
+
+#### 使用静态成员
+
+```C++
+# include <iostream>
+# include <string>
+class TestClass
+{
+    std::string str;
+    int c;
+public:
+    explicit TestClass(std::string s) : str(s),c(a) {}
+    static void print();
+    static int a;
+    static int b;
+};
+
+int main()
+{
+    TestClass test("hahah");
+    test.print();
+    TestClass::print();
+    TestClass::a = 41;
+    getchar();
+    return 0;
+}
+
+int TestClass::a = 3;
+int TestClass::b = 4;
+
+void TestClass::print()
+{
+    std::cout << a << "," << b << std::endl;
+}
+```
