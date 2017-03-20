@@ -18,6 +18,10 @@ tags:
     *   [IO 输出缓冲](#output_buffer)
     *   [文件输入输出](#file_io)
     *   [string 流](#string_io)
+*   [顺序容器](#sequential_containers)
+    *   [顺序容器选择](#choose_sequential_container)
+    *   [容器基本操作](#basic_container_operation)
+    *   [顺序容器操作](#sequential_container_operation)
 
 <h2 id="io_library">IO 库</h2>
 
@@ -175,14 +179,14 @@ if (std::cin.tie()) std::cout << "std::cin.tie() != nullptr\n";
 
 fstream独有的操作 | 说明
 ----------------------- | -----------------------------------------
-fstream fstrm; | 创建一个未绑定的文件流<br>**fstream可以是`ifstream`,`ofstream`或`fstream`**
-fstream fstrm(s); | explicit构造函数<br>创建一个fstream，并打开一个名为 `s` 的文件<br>`s` 是`std::string`类型或一个指向C风格字符串的指针<br>[查看默认打开模式](#file_mode)
-fstream fstrm(s, mode); | 与前一个构造函数一样，但按指定mode打开文件
-fstream fstrm(s); | explicit构造函数<br>创建一个fstream，并打开一个名为 `s` 的文件<br>`s` 是`std::string`类型或一个指向C风格字符串的指针<br>[查看默认打开模式](#file_mode)
-fstrm.open(s) | void函数<br>打开名为 `s` 的文件，并将文件与fstrm绑定<br>`s` 是`std::string`类型或一个指向C风格字符串的指针<br>对一个打开的文件流使用open会导致failbit被置位<br>[](#file_mode)
-fstrm.open(s, mode) | 与`fstrm.open(s)`一样，但按指定mode打开文件
-fstrm.close() | void函数<br>关闭与fstrm绑定的文件<br>当一个fstream对象离开其作用域时，会自动调用`close()`
-fstrm.is_open() | 若与fstrm关联的文件成功打开，且尚未关闭，则返回true
+`fstream fstrm` | 创建一个未绑定的文件流<br>**fstream可以是`ifstream`,`ofstream`或`fstream`**
+`fstream fstrm(s)` | explicit构造函数<br>创建一个fstream，并打开一个名为 `s` 的文件<br>`s` 是`std::string`类型或一个指向C风格字符串的指针<br>[查看默认打开模式](#file_mode)
+`fstream fstrm(s, mode)` | 与前一个构造函数一样，但按指定mode打开文件
+`fstream fstrm(s)` | explicit构造函数<br>创建一个fstream，并打开一个名为 `s` 的文件<br>`s` 是`std::string`类型或一个指向C风格字符串的指针<br>[查看默认打开模式](#file_mode)
+`fstrm.open(s)` | void函数<br>打开名为 `s` 的文件，并将文件与fstrm绑定<br>`s` 是`std::string`类型或一个指向C风格字符串的指针<br>对一个打开的文件流使用open会导致failbit被置位<br>[](#file_mode)
+`fstrm.open(s, mode)` | 与`fstrm.open(s)`一样，但按指定mode打开文件
+`fstrm.close()` | void函数<br>关闭与fstrm绑定的文件<br>当一个fstream对象离开其作用域时，会自动调用`close()`
+`fstrm.is_open()` | 若与fstrm关联的文件成功打开，且尚未关闭，则返回true
 
 可以类比`iostream`来运用`fstream`。
 
@@ -219,11 +223,210 @@ std::ofstream out2("file", std::ofstream::out | std::ofstream::app);
 
 sstream独有的操作 | 说明
 ---------------- | -----------------------------------------
-sstream strm; | 创建一个未绑定的string流<br>**sstream可以是`istringstream`,`ostringstream`或`stringstream`**
-sstream strm(s); | explicit构造函数<br>创建一个sstream对象，并保存`std::string s`的一个拷贝。
-strm.str() | 返回strm所保存的`std::string`的拷贝
-strm.str(s) | void函数<br>将`std::string s`拷贝到strm中
+`sstream strm` | 创建一个未绑定的string流<br>**sstream可以是`istringstream`,`ostringstream`或`stringstream`**
+`sstream strm(s)` | explicit构造函数<br>创建一个sstream对象，并保存`std::string s`的一个拷贝。
+`strm.str()` | 返回strm所保存的`std::string`的拷贝
+`strm.str(s)` | void函数<br>将`std::string s`拷贝到strm中
 
 **当函数得到整行文本，但却需要处理单个单词时，使用`std::istringstream`会很方便**；
 
 **当需要逐步构造输出，最后一起打印时，使用`std::ostringstream`会比较方便**。
+
+<h2 id="sequential_containers">顺序容器</h2>
+
+标准库容器分为顺序容器与关联容器。
+
+顺序容器中元素的顺序由其加入容器时的位置决定；关联容器中元素的顺序由其相关联的关键字值决定。
+
+<h3 id="sequential_containers_overview">顺序容器概述</h3>
+
+顺序容器类型 | 说明
+----------- | -----------------------------------------
+vector | 可变大小数组<br>元素保存在连续的内存空间中<br>支持快速随机访问<br>在尾部之外的位置插入或删除元素很慢
+deque | 双端队列<br>支持快速随机访问<br>在头尾插入、删除元素很快
+list | 双向链表<br>只支持双向顺序访问<br>在任何位置插入、删除都很快<br>额外内存较其他顺序容器开销很大
+forward_list | 单向链表<br>只支持单向顺序访问，没有size操作<br>在任何位置插入、删除都很快<br>额外内存较其他顺序容器开销很大
+array | 固定大小数组<br>支持快速随机访问<br>不能添加或删除元素
+string | 与vector相似<br>专门用于保存字符<br>元素保存在连续的内存空间中<br>支持快速随机访问<br>在尾部插入、删除元素很快
+
+**现代 C++ 程序推荐使用标准库容器，而不是更原始的数据结构，如内置数组**。
+
+<h3 id="choose_sequential_container">顺序容器选择</h3>
+
+**通常，使用vector是最好的选择**，除非你有很好的理由选择其他容器。
+
+**选择容器的基本原则**：
+
+*   除非你有很好的理由选择其他容器，否则应该使用vector；
+*   如果你的程序有很多小元素，且空间的额外开销很重要，不要使用`list`或`forward_list`；
+*   如果程序要求随机访问元素，应使用vector或deque；
+*   如果程序要求在容器的中间插入或删除元素，应使用`list`或`forward_list`；
+*   如果程序要求在头尾位置插入或删除元素，但不会在中间位置插入或删除，那么使用deque；
+*   如果程序只有在读取输入时才需要在容器中间位置插入元素，随后需要随机访问，
+    *   确定是否真的需要在容器中间插入元素，排序之类的可以使用sort重排；
+    *   如果必须在中间插入元素，考虑在输入阶段使用list，输入完成之后将其拷贝到vector中；
+*   如果程序既要求随机访问又要求在容器中间插入，那么根据占主导地位的操作选择容器。
+
+<h3 id="basic_container_operation">容器基本操作</h3>
+
+#### 类型别名
+
+**类型别名在泛型编程中非常有用**。
+
+类型别名 | 说明
+--------------- | -----------------------------------------
+`iterator` | 此容器类型的迭代器类型
+`const_iterator` | 不可修改元素的迭代器
+`size_type` | 无符号整数类型，足以保存此种容器类型最大可能容器的大小
+`difference_type` | 带符号整数类型，足以保存两个迭代器之间的距离
+`value_type` | 元素类型
+`reference` | 元素的左值类型；相当于`value_type&`
+`const_reference` | 相当于`const value_type&`
+
+#### 构造函数
+
+构造函数 | 说明
+--------------- | -------------------------------------------------
+`C c` | 默认构造函数<br>若C是一个array，那么c中元素按默认方式初始化<br>否则构造一个空容器
+`C c1(c2)`<br>`C c1 = c2` | 非explicit构造函数<br>c1初始化为c2的拷贝<br>**c1和c2容器类型和元素类型必须相同**<br>对于array，还必须拥有相同大小
+`C c{a,b,c...}`<br>`C c = {a,b,c...}` | 非explicit构造函数<br>c初始化为初始化列表中元素的拷贝<br>列表中元素的类型必须与C的元素类型相容<br>对于array类型，列表元素数目须不大于array的大小，遗漏的元素将进行值初始化
+`C c(b, e)` | c初始化为迭代器b和e指定范围中的元素的拷贝<br>范围中元素的类型必须与c的元素类型相容<br>不适用于array
+`C seq(n)` | explicit构造函数<br>适用于`vector`,`deque`,`list`,`forward_list`<br>seq包含n个元素，这些元素进行值初始化<br>自定义类型必须具有默认构造函数
+`C seq(n, t)` | 适用于`vector`,`deque`,`list`,`forward_list`,`string`<br>seq包含n个初始化为值t的元素
+
+#### 常用容器操作
+
+常用容器操作 | 说明
+------------------ | -------------------------------------------------
+`a.swap(b)` | 交换a与b的元素<br>**a与b必须具有相同的类型**<br>**swap比赋值操作快得多**<br>除array外，swap不对任何元素进行拷贝、删除或插入操作
+`swap(a, b)` | 等价于`a.swap(b)`<br>非成员版本的swap在泛型编程中非常重要<br>**统一使用非成员版本的swap**
+`c.size()` | c中元素的数目<br>不支持`forward_list`
+`c.max_size()` | c中可保存的最大元素数目
+`c.empty()` | 若c中未存储元素，返回true
+`==, !=` | 所有容器都支持相等和不等运算符
+`<, <=, >, >=` | 关系运算符，只支持顺序容器<br>左右两边的运算对象的容器类型和容器元素必须相同<br>元素类型必须定义相应的元素比较运算符<br>比较过程类似于string
+`c.begin()`<br>`c.end()` | 返回指向c的首元素与尾元素之后位置的迭代器<br>若c为const对象，那么调用返回`const_iterator`的版本
+`c.cbegin()`<br>`c.cend()` | 返回`const_iterator`
+`c1 = c2` | 将c1中的元素替换为c2中元素的拷贝<br>**c1, c2必须具有相同的类型**
+`c = {a,b,c,...}` | 将c1中元素替换为初始化列表中元素的拷贝<br>会改变容器的大小(array除外)
+`seq.assign(b, e)` | 将seq中的元素替换为迭代器b和e所表示的范围中的元素<br>b和e不能指向seq中的元素<br>不适用于array和关联容器
+`seq.assign(il)` | 将seq中的元素替换为初始化列表il中的元素<br>不适用于array和关联容器
+`seq.assign(n, t)` | 将seq中的元素替换为n个值为t的元素<br>不适用于array和关联容器
+
+#### 反向容器
+
+**对一个反向迭代器执行++操作，会得到上一个元素**。
+
+反向容器(不支持`forward_list`) | 说明
+---------------------- | -------------------------------------------------
+`reverse_iterator` | 按逆序寻址元素的迭代器
+`const_reverse_iterator` | 不可修改元素的逆序迭代器
+`c.rbegin(), c.rend()` | 返回指向c的尾元素和首元素之前的迭代器<br>若c为const对象，那么调用返回`const_reverse_iterator`的版本
+`c.crbegin(), c.crend()` | 返回`const_reverse_iterator`
+
+#### 迭代器
+
+**`forward_list`迭代器不支持递减运算符**。
+
+**当不需要写访问时，使用`c(r)begin`和`c(r)end`**。
+
+#### array
+
+定义一个array时，除了指定元素类型，还要指定容器大小:
+
+```c++
+std::array<int, 42> arr;
+```
+
+array不初始化时使用默认初始化；列表初始化时，未被初始化得元素将使用值初始化，自定义类必须包含一个默认构造函数：
+
+```c++
+std::array<int, 42> arr0;                 // 默认初始化
+std::array<int, 42> arr1{1,2,3,4,5};      
+std::array<int, 42> arr2 = {2,3,4,5,6};
+```
+
+array可以进行拷贝和赋值操作：
+
+```c++
+std::array<int, 42> arr0{2,3,4,5,6};
+// 拷贝赋值时容器类型、元素类型、容器大小都必须相同
+std::array<int, 42> arr1(arr0);
+std::array<int, 42> arr2 = arr0;
+arr2 = arr1;
+```
+
+<h3 id="sequential_container_operation">顺序容器操作</h3>
+
+#### 向顺序容器添加元素
+
+array不支持添加元素。
+
+`forward_list`不支持`push_back`和`emplace_back`；`forward_list`有自己专有版本的insert和emplace。
+
+vector和string不支持`push_front`和`emplace_front`。
+
+使用一个对象来初始化容器或将一个对象插入到容器中时，**放入容器中的元素是对象值得一个拷贝，而不是对象本身**。
+
+`emplace`,`emplace_back`和`emplace_front`是C++11新引入的成员，它们在容器中直接构造元素，传递给emplace函数的参数必须与元素类型的构造函数相匹配。无参数时，使用默认构造函数。
+
+向顺序容器添加元素 | 说明
+------------------ | -------------------------------------------------
+`c.push_back(t)`<br>`c.emplace_back(args)` | 在c的尾部创建一个值为t或由args创建的元素，返回void
+`c.push_front(t)`<br>`c.emplace_front(args)` | 在c的头部创建一个值为t或由args创建的元素，返回void
+`c.insert(p, t)`<br>`c.emplace(p, args)` | 在迭代器p指向的元素之前创建一个值为t或由args创建的元素<br>返回新添加的元素的迭代器
+`c.insert(p, n, t)` | 在迭代器p指向的元素之前插入n个值为t的元素<br>返回指向新添加的第一个元素的迭代器<br>若n为0，则返回p
+`c.insert(p, b, e)` | 将迭代器b和e指定范围内的元素插入到迭代器p指向的元素之前<br>b和e不能指向c中的元素<br>返回指向新添加的第一个元素的迭代器<br>若范围为空，则返回p
+`c.insert(p, il)` | 在迭代器p指向的元素之前插入列表il中的元素<br>返回指向新添加的第一个元素的迭代器<br>若列表为空，则返回p
+
+#### 访问元素
+
+访问元素操作 | 说明
+------------------ | -------------------------------------------------
+`c.back()` | 返回c中尾元素的引用<br>**若c为空，函数行为未定义**
+`c.front()` | 返回c中首元素的引用<br>**若c为空，函数行为未定义**<br>不适用于`forward_list`
+`c[n]` | 返回c中下标为n的元素的引用<br>n是一个无符号整数<br>若n>=c.size()，函数行为未定义<br>只适用于string,vector,deque和array
+`c.at(n)` | 返回下标为n的元素的引用<br>若下标越界，则抛出`out_of_range`异常<br>只适用于string,vector,deque和array
+
+```c++
+auto b1 = c.back();  // b1是c中最后一个元素的拷贝
+auto &b2 = c.back(); // b2是c中最后一个元素的引用
+```
+
+#### 删除元素
+
+array不支持删除元素。
+
+`forward_list`有特殊版本的erase；`forward_list`不支持`pop_back`。
+
+vector和string不支持`pop_front`。
+
+**删除元素前，必须确保它们是存在的**。
+
+删除元素操作 | 说明
+------------------ | -------------------------------------------------
+`c.pop_back()` | 删除c中尾元素<br>若c为空，则函数行为未定义<br>返回void
+`c.pop_front()` | 删除c中首元素<br>若c为空，则函数行为未定义<br>返回void
+`c.erase(p)` | 删除迭代器p所指向的元素<br>返回一个指向被删元素之后元素的迭代器<br>若p是尾后迭代器，则函数行为未定义
+`c.erase(b,e)` | 删除迭代器b和e所指定范围内(前闭后开)的元素<br>返回e
+`c.clear()` | 删除c中的所有元素<br>返回void
+
+#### 特殊的`forward_list`操作
+
+在一个`forward_list`中添加或删除元素的操作是通过改变给定元素之后的元素来完成的。
+
+`forward_list`插入删除操作 | 说明
+------------------------- | -------------------------------------------------
+`lst.before_begin()`<br>`lst.cbefore_begin()` | 返回指向链表首元素之前不存在的元素的迭代器<br>不可解引用
+`lst.insert_after(p, t)`<br>`lst.insert_after(p, n, t)`<br>`lst.insert_after(p, b, e)`<br>`lst.insert_after(p, il)` | 在迭代器p之后的位置插入元素<br>t是对象，n是数量，b和e是表示范围的一对迭代器(b和e不能指向lst内)，il是花括号列表<br>返回指向最后一个插入元素的迭代器<br>若范围为空，则返回p<br>若p为尾后迭代器，则函数行为未定义
+`emplace_after(p, args)` | 使用args在p指定的位置之后创建一个元素<br>返回一个指向这个新元素的迭代器<br>若p为尾后迭代器，则函数行为未定义
+`lst.erase_after(p)`<br>`lst.erase_after(b, e)` | 删除p指向的位置之后的元素，或删除`(b,e]`之间的元素<br>返回一个指向被删元素之后元素的迭代器<br>若p指向lst的尾元素，或p是一个尾后迭代器，则函数行为未定义
+
+#### 改变容器的大小
+
+顺序容器大小操作(不适用于array) | 说明
+----------------------------- | -------------------------------------------------
+c.resize(n) | 调整c的大小为n个元素<br>若`n<c.size()`，则多出的元素被丢弃，反之多出的元素进行值初始化
+c.resize(n, t) | 调整c的大小为n个元素<br>若`n<c.size()`，则多出的元素被丢弃，反之多出的元素被初始化为t
+
+**原先得到的迭代器在容器操作后可能造成迭代器失效，使用失效的迭代器会造成严重的运行错误，建议在每次容器操作之后都更新一下指向相应容器的迭代器**。
