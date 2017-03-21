@@ -22,6 +22,8 @@ tags:
     *   [顺序容器选择](#choose_sequential_container)
     *   [容器基本操作](#basic_container_operation)
     *   [顺序容器操作](#sequential_container_operation)
+*   [容器泛型算法](#generic_algorithms)
+    *   [lambda 表达式](#lambda_expression)
 
 <h2 id="io_library">IO 库</h2>
 
@@ -429,4 +431,159 @@ vector和string不支持`pop_front`。
 c.resize(n) | 调整c的大小为n个元素<br>若`n<c.size()`，则多出的元素被丢弃，反之多出的元素进行值初始化
 c.resize(n, t) | 调整c的大小为n个元素<br>若`n<c.size()`，则多出的元素被丢弃，反之多出的元素被初始化为t
 
+**resize并不改变容器`capacity()`的大小**。
+
 **原先得到的迭代器在容器操作后可能造成迭代器失效，使用失效的迭代器会造成严重的运行错误，建议在每次容器操作之后都更新一下指向相应容器的迭代器**。
+
+#### 管理容量
+
+由于vector和string的元素是连续存储的，向它们添加元素时：
+
+*   容器必须分配新的内存空间来保存已有元素和新元素；
+*   将已有元素从旧的位置移动到新空间；
+*   然后添加新元素，释放旧存储空间。
+
+如果每次添加都执行一次分配和释放操作，会严重降低性能。
+
+标准库采用可以减少容器重新分配次数的策略：
+
+*   不得不获取新的内存空间时，vector和string会分配比新的空间需求更大的内存空间；
+*   容器预留这些空间作为备用，用以保存更多的新元素;
+*   采用这种策略后，vector的扩张操作比list和deque更快。
+
+容器容量管理 | 说明
+-------------- | -------------------------------------------------
+`c.capacity()` | 不重新分配内存空间的话，c保存元素的数量<br>仅适用于vector和string
+`c.shrink_to_fit()` | 将`capacity()`减小为与size()相同大小<br>仅适用于vector,string和deque
+`c.reserve(n)` | 分配至少能容纳n个元素的内存空间<br>若需求小于等于当前容量，什么也不做<br>仅适用于vector和string
+
+#### string常用操作
+
+string常用操作([args形式](#string_args_style0)) | 说明
+------------------------ | -------------------------------------------------
+`string s(cp)` | cp是`const char*`参数，拷贝从cp开始直到空字符间的字符到s
+`s.substr(pos, n)` | 返回一个string，包含s中从pos开始的n个字符的拷贝<br>pos的默认值为0，n的默认值为`s.size() - pos`
+`s.insert(pos, args)` | 在pos之前插入args指定的字符<br>pos是下标时，返回一个指向s的引用<br>pos是迭代器时，返回指向第一个插入字符的迭代器
+`s.erase(pos, len)` | 删除从位置pos开始的len个字符<br>len的默认值为`s.size() - pos`<br>返回一个指向s的引用
+`s.assign(args)` | 将s中的字符替换为args指定的字符<br>返回一个指向s的引用
+`s.append(args)` | 将args追加到s<br>返回一个指向s的引用
+`s.replace(range, args)` | 删除s中范围为range中的字符，替换为args指定的字符<br>range可以是一个下标和一个长度，也可以是一对指向s的迭代器<br>返回一个指向s的引用
+
+<h5 id="string_args_style0">args形式</h5>
+
+args形式(assign和append都支持) | 说明
+----------------------------- | -------------------------------------------------
+str | 字符串<br>`replace(pos,len,args)`<br>`replace(b,e,args)`<br>`insert(pos,args)`(pos为下标)
+str, pos, len | str中从pos开始最多len个字符<br>`replace(pos,len,args)`<br>`insert(pos,args)`(pos为下标)
+cp, len | 从cp指向的字符数组的最多前len个字符<br>`replace(pos,len,args)`<br>`replace(b,e,args)`<br>`insert(pos,args)`(pos为下标)
+cp | cp指向的以空字符结尾的字符数组<br>`replace(pos,len,args)`<br>`replace(b,e,args)`
+n, c | n个字符c<br>`replace(pos,len,args)`<br>`replace(b,e,args)`<br>`insert(pos,args)`<br>`insert(iter,args)`
+b, e | 迭代器b和e指定范围内的字符<br>`replace(b,e,args)`<br>`insert(iter,args)`
+初始化列表 | 花括号包围的，以逗号分隔的字符列表<br>`replace(b,e,args)`<br>`insert(iter,args)`
+
+#### string搜索操作
+
+string搜索操作([args形式](#string_args_style1)) | 说明
+------------------------ | -------------------------------------------------
+`s.find(args)` | 查找s中args第一次出现的位置<br>失败返回`string::npos`，成功返回一个`string::size_type`值，从零开始
+`s.rfind(args)` | 查找s中args最后一次出现的位置<br>失败返回`string::npos`，成功返回一个`string::size_type`值，从零开始指向从左到右第一个args字符
+`s.find_first_of(args)` | 查找s中args中任何一个字符第一次出现的位置<br>失败返回`string::npos`，成功返回一个`string::size_type`值，从零开始
+`s.find_last_of(args)` | 查找s中args中任何一个字符最后一次出现的位置<br>失败返回`string::npos`，成功返回一个`string::size_type`值，从零开始
+`s.find_first_not_of(args)` | 查找s中第一个不在args中的字符出现的位置<br>失败返回`string::npos`，成功返回一个`string::size_type`值，从零开始
+`s.find_last_not_of(args)` | 查找s中最后一个不在args中的字符出现的位置<br>失败返回`string::npos`，成功返回一个`string::size_type`值，从零开始
+
+<h5 id="string_args_style1">args形式</h5>
+
+args形式 | 说明
+---------- | -------------------------------------------------
+c, pos | 从s中位置pos开始查找字符c <br>pos默认为0
+s2, pos | 从s中位置pos开始查找字符串s2 <br>pos默认为0
+cp, pos | 从s中位置pos开始查找指针cp指向的以空字符结尾的C风格字符串<br>pos默认为0
+cp, pos, n | 从s中位置pos开始查找指针cp指向的数组的前n个字符<br>pos和n无默认值
+
+#### string数值转换
+
+如果string不能转换为一个数值，这些函数抛出一个`invalid_argument`异常。
+
+如果转换后的数值无法用任何类型表示，则返回一个`out_of_range`异常。
+
+**能够进行数值转换的string格式**：
+
+*   **string参数中第一个非空白字符必须是符号+或-或数字**；
+*   它可以以`0x`或`0X`开头表示十六进制数；
+*   对于要转换成浮点数的函数，string参数也可以以小数点(\.)开头，并可以包含e或E来表示指数部分；
+*   对于要转换成整型值的函数，根据基数不同，string参数可以包含字母字符，对应大于9的数。
+
+string数值转换 | 说明
+-------------- | -------------------------------------------------
+`to_string(val)` | 返回数值val的string表示<br>val可以是任何算数类型
+`stoi(s, p, b)`<br>`stol(s, p, b)`<br>`stoul(s, p, b)`<br>`stoll(s, p, b)`<br>`stoull(s, p, b)` | 返回字符串s从开始到p的子串表示的数值<br>分别是int,long,unsigned long,long long,unsigned long long <br>p是`size_t`指针，用来保存s中第一个非数值字符的下标，默认为0(代表全部字符串) <br>b表示转换所用的基数，默认为10
+`stof(s, p)`<br>`stod(s, p)`<br>`stold(s, p)` | 返回字符串s从开始到p的子串表示的数值<br>分别是float,double和long double <br>p是`size_t`指针，用来保存s中第一个非数值字符的下标，默认为0(代表全部字符串)
+
+<h2 id="generic_algorithms">容器泛型算法</h2>
+
+大多数算法定义于头文件`<algorithm>`中。
+
+容器泛型算法 | 说明
+------------------------------- | -------------------------------------------------
+`for_each(b, e, func)` | 对迭代器范围`[b1,e1)`范围内的所有值都调用一次func <br> func可以使用[lambda表达式](#lambda_expression)，接受一个参数
+`find(b, e, val)` | 在迭代器范围`[b,e)`范围内搜索val <br>成功返回指向第一个匹配值的元素的迭代器<br>失败返回e
+`find_if(b, e, func)` | 返回迭代器范围`[b,e)`范围内指向第一个使func返回true的元素的迭代器<br> func可以使用[lambda表达式](#lambda_expression)，接受一个参数<br>失败返回e
+`accumulate(b, e, sum)` | 对迭代器范围`[b,e)`范围内的所有值求和，总和加上sum值为返回值<br> sum的类型决定使用哪种加法，以及返回值的类型(例如string)<br>sum是值传递，代表和的初始值<br>`const char*`没有定义+运算符<br>头文件`<numeric>`
+`equal(b1, e1, b2)` | 若迭代器范围`[b1,e1)`范围内的所有值都与从迭代器b2开始的的值对应相等，则返回true <br>从b2开始必须要有`e1 - b1`个元素存在，否则未定义<br>b1和b2指向的元素类型必须要能够使用`==`进行比较
+`fill(b, e, val)` | 将迭代器范围`[b,e)`范围内的所有值赋值为val
+`fill_n(dest, n, val)` | 将val赋值给从迭代器dest开始的n个元素<br>从dest开始的序列至少包含n个元素
+`copy(b1, e1, b2)` | 将迭代器范围`[b1,e1)`范围内的所有值对应拷贝到从迭代器b2开始的值<br>从b2开始必须要有`e1 - b1`个元素存在，否则未定义<br>b1和b2指向的元素类型必须相容
+`replace(b, e, old, new)` | 将迭代器范围`[b,e)`范围内的所有等于old的值赋值为new
+`replace(b1, e1, e2, old, new)` | 将迭代器范围`[b1,e1)`范围内的所有等于old的值赋值为new，然后保存至从迭代器e2开始的位置，`[b1,e1)`范围内的值不变<br>从b2开始必须要有`e1 - b1`个元素存在，否则未定义
+`sort(b, e)` | 将迭代器范围`[b,e)`范围内的所有值从小到大排序<br>默认使用元素类型的\<运算符
+`sort(b, e, func)` | 将迭代器范围`[b,e)`范围内的所有值按相邻两两使用func返回true的形式排序，相等元素不一定维持原有顺序<br>func可以使用[lambda表达式](#lambda_expression)，接受两个参数
+`stable_sort(b, e, func)` | 与`sort(b, e, func)`类似，但相等元素维持原有顺序<br>func可以使用[lambda表达式](#lambda_expression)，接受两个参数
+`unique(b, e)` | 将迭代器范围`[b,e)`范围内的所有相邻的重复项“消除”，使得不重复部分出现在序列开始部分<br>多余的重复项将被排到后面，顺序不定<br>返回一个指向最后一个不重复元素之后的迭代器
+`transform(b1, e1, b2, func)` | 对迭代器范围`[b1,e1)`范围内的所有值调用func，并将结果写入从b2开始的位置<br>从b2开始必须要有`e1 - b1`个元素存在，否则未定义<br>func可以使用[lambda表达式](#lambda_expression)，接受一个参数
+
+<h3 id="lambda_expression">lambda 表达式</h3>
+
+lambda 表达式表示一个可调用的代码单元，可以简单的理解为一个未命名的内联函数。
+
+一个 lambda 表达式具有一个返回类型、一个参数列表和一个函数体:
+
+```text
+[capture list](parameter list) -> return type { function body }
+```
+
+*   capture list 表示该lambda表达式能够使用的非静态局部变量的列表，为空时代表该lambda表达式不使用任何非静态局部变量；
+*   变量的捕获可以是值或引用。为值时，对相应值的改变不会影响到原值；为引用时，必须确保该lambda在执行时，引用变量是存在的；
+*   当捕获列表为`[=]`时，代表lambda函数体中使用的所有非静态局部变量都采用值捕获；
+*   当捕获列表为`[&]`时，代表lambda函数体中使用的所有非静态局部变量都采用引用捕获；
+*   当捕获列表为`[=, identifier_list]`时，代表lambda函数体中除`identifier_list`列表中的**引用捕获变量**外，其它使用的所有非静态局部变量都采用值捕获；
+*   当捕获列表为`[&, identifier_list]`时，代表lambda函数体中除`identifier_list`列表中的**值捕获变量**外，其它使用的所有非静态局部变量都采用引用捕获；
+*   **一个lambda只有在其捕获列表中捕获一个它所在函数中的非静态局部变量，才能在函数体中使用该变量**；
+*   **一个lambda可以直接使用定义在它所在函数中的静态局部变量和定义在它所在函数之外的可用的变量**；
+*   parameter list 不能包含默认参数；
+*   lambda 必须使用尾置返回类型；
+*   lambda 表达式可以忽略参数列表及括号和返回类型，但必须包含capture list 和 function body。
+*   忽略参数列表及括号代表不接受参数；
+*   忽略返回类型，**如果lambda表达式包含任何单一return语句之外的内容，则返回void**；否则从返回表达式的类型推断出返回类型；
+
+```c++
+void example(std::ostream &os)
+{
+	std::vector<int> vec{ 1,2,3,3,2,1 };
+	int num = 2;
+	transform(cbegin(vec), cend(vec), begin(vec), 
+		[&os, num](const int &i) -> int 
+	{
+		os << i << std::ends;
+		return i < num ? i : num; 
+	}
+	);
+	os << std::endl;
+	for_each(cbegin(vec), cend(vec),
+		[](const int &i)
+	{
+		std::cout << i << std::ends;
+	}
+	);
+}
+```
