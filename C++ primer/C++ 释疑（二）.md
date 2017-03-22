@@ -24,6 +24,8 @@ tags:
     *   [顺序容器操作](#sequential_container_operation)
 *   [容器泛型算法](#generic_algorithms)
     *   [lambda 表达式](#lambda_expression)
+	*   [函数适配器 bind](#bind_function)
+	*   [各种迭代器](#other_iterators)
 
 <h2 id="io_library">IO 库</h2>
 
@@ -332,6 +334,8 @@ string | 与vector相似<br>专门用于保存字符<br>元素保存在连续的
 
 **当不需要写访问时，使用`c(r)begin`和`c(r)end`**。
 
+除了为每个容器定义的迭代器之外，标准库在头文件iterator中还定义了[额外几种迭代器](#other_iterators)。
+
 #### array
 
 定义一个array时，除了指定元素类型，还要指定容器大小:
@@ -522,29 +526,45 @@ string数值转换 | 说明
 
 <h2 id="generic_algorithms">容器泛型算法</h2>
 
-大多数算法定义于头文件`<algorithm>`中。
+大多数算法定义于头文件`<algorithm>`中。**`list`和`forward_list`有专门的sort, merge, remove, reverse和unique算法**，并且定义了独有的splice成员，用于拼接。
 
-容器泛型算法 | 说明
+很多算法都有重载，以及`_if`, `_copy`, `_n`, `_not`等后缀组合的版本，下面列出一些常用算法：
+
+容器泛型常用算法 | 说明(func为可调用对象或[lambda表达式](#lambda_expression))
 ------------------------------- | -------------------------------------------------
-`for_each(b, e, func)` | 对迭代器范围`[b1,e1)`范围内的所有值都调用一次func <br> func可以使用[lambda表达式](#lambda_expression)，接受一个参数
-`find(b, e, val)` | 在迭代器范围`[b,e)`范围内搜索val <br>成功返回指向第一个匹配值的元素的迭代器<br>失败返回e
-`find_if(b, e, func)` | 返回迭代器范围`[b,e)`范围内指向第一个使func返回true的元素的迭代器<br> func可以使用[lambda表达式](#lambda_expression)，接受一个参数<br>失败返回e
-`accumulate(b, e, sum)` | 对迭代器范围`[b,e)`范围内的所有值求和，总和加上sum值为返回值<br> sum的类型决定使用哪种加法，以及返回值的类型(例如string)<br>sum是值传递，代表和的初始值<br>`const char*`没有定义+运算符<br>头文件`<numeric>`
-`equal(b1, e1, b2)` | 若迭代器范围`[b1,e1)`范围内的所有值都与从迭代器b2开始的的值对应相等，则返回true <br>从b2开始必须要有`e1 - b1`个元素存在，否则未定义<br>b1和b2指向的元素类型必须要能够使用`==`进行比较
-`fill(b, e, val)` | 将迭代器范围`[b,e)`范围内的所有值赋值为val
+`accumulate(b, e, sum)` <br> `accumulate(b, e, sum, func)` | 对迭代器范围`[b,e)`范围内的所有元素求和，总和加上sum值为返回值<br> sum的类型决定使用哪种加法(若没有func指定)，以及返回值的类型(如string)<br>sum是值传递，代表和的初始值<br>`const char*`没有定义+运算符<br>头文件`<numeric>`
+`all_of(b, e, func)` | 若序列为空，或迭代器范围`[b1,e1)`范围内的所有元素都能使func返回true，则返回true
+`any_of(b, e, func)` | 若迭代器范围`[b1,e1)`范围内的能找出一个元素使得func返回true，则返回true<br>序列为空时，返回false
+`none_of(b, e, func)` | 若序列为空，或迭代器范围`[b1,e1)`范围内的所有元素都不能使func返回true，则返回true
+`copy(b, e, dest)` <br> `copy_if(b, e, dest, func)`| 将迭代器范围`[b,e)`范围内的所有元素或满足func的元素拷贝到从迭代器dest开始的值<br>b和dest指向的元素类型必须相容
+`copy_n(beg, n, dest)` | 将从beg开始的n的元素赋值给从dest开始的位置<br>beg和dest指向的元素类型必须相容
+`count(b, e, val)` <br> `count_if(b, e, func)` | 返回迭代器范围`[b,e)`范围内与val相等或令func返回true的元素的数量
+`equal(b1, e1, b2)` <br> `equal(b1, e1, b2, func)` | 若迭代器范围`[b1,e1)`范围内的所有元素都与从迭代器b2开始的的元素对应相等，则返回true <br>默认使用`==`进行比较，func指定比较函数
+`for_each(b, e, func)` | 对迭代器范围`[b1,e1)`范围内的所有元素都调用一次func
+`find(b, e, val)` <br> `find_if(b, e, func)`| 在迭代器范围`[b,e)`范围内搜索val或调用func <br>成功返回指向第一个匹配值的元素的迭代器<br>失败返回e
+`fill(b, e, val)` | 将迭代器范围`[b,e)`范围内的所有元素赋值为val
 `fill_n(dest, n, val)` | 将val赋值给从迭代器dest开始的n个元素<br>从dest开始的序列至少包含n个元素
-`copy(b1, e1, b2)` | 将迭代器范围`[b1,e1)`范围内的所有值对应拷贝到从迭代器b2开始的值<br>从b2开始必须要有`e1 - b1`个元素存在，否则未定义<br>b1和b2指向的元素类型必须相容
-`replace(b, e, old, new)` | 将迭代器范围`[b,e)`范围内的所有等于old的值赋值为new
-`replace(b1, e1, e2, old, new)` | 将迭代器范围`[b1,e1)`范围内的所有等于old的值赋值为new，然后保存至从迭代器e2开始的位置，`[b1,e1)`范围内的值不变<br>从b2开始必须要有`e1 - b1`个元素存在，否则未定义
-`sort(b, e)` | 将迭代器范围`[b,e)`范围内的所有值从小到大排序<br>默认使用元素类型的\<运算符
-`sort(b, e, func)` | 将迭代器范围`[b,e)`范围内的所有值按相邻两两使用func返回true的形式排序，相等元素不一定维持原有顺序<br>func可以使用[lambda表达式](#lambda_expression)，接受两个参数
-`stable_sort(b, e, func)` | 与`sort(b, e, func)`类似，但相等元素维持原有顺序<br>func可以使用[lambda表达式](#lambda_expression)，接受两个参数
-`unique(b, e)` | 将迭代器范围`[b,e)`范围内的所有相邻的重复项“消除”，使得不重复部分出现在序列开始部分<br>多余的重复项将被排到后面，顺序不定<br>返回一个指向最后一个不重复元素之后的迭代器
-`transform(b1, e1, b2, func)` | 对迭代器范围`[b1,e1)`范围内的所有值调用func，并将结果写入从b2开始的位置<br>从b2开始必须要有`e1 - b1`个元素存在，否则未定义<br>func可以使用[lambda表达式](#lambda_expression)，接受一个参数
+`max(val1, val2)` <br> `max(val1, val2, func)` | 返回val1和val2中较大者的const引用<br>val1和val2的类型必须完全一致
+`min(val1, val2)` <br> `min(val1, val2, func)` | 返回val1和val2中较小者的const引用<br>val1和val2的类型必须完全一致
+`max_element(b, e)` <br> `max_element(b, e, func)` | 返回指向迭代器范围`[b,e)`范围内最大元素的迭代器
+`min_element(b, e)` <br> `min_element(b, e, func)` | 返回指向迭代器范围`[b,e)`范围内最小元素的迭代器
+`replace(b, e, old, new)` <br> `replace_if(b, e, func, new)` | 将迭代器范围`[b,e)`范围内的所有等于old或满足func的元素赋值为new
+`replace(b, e, dest, old, new)` | 将迭代器范围`[b,e)`范围内的所有等于old的元素赋值为new，然后保存至从迭代器dest开始的位置，`[b,e)`范围内的值不变
+`remove(b, e, val)` <br> `remove_if(b, e, func)` | 删除迭代器范围`[b,e)`范围内所有等于val或使func返回true的元素
+`reverse(b, e)` | 将迭代器范围`[b,e)`范围内的所有元素顺序反转
+`reverse_copy(b, e, dest)` | 将迭代器范围`[b,e)`范围内的所有元素按逆序拷贝到从dest开始的位置<br>b1和b2指向的元素类型必须相容
+`search(b1, e1, b2, e2)` <br> `search(b1, e1, b2, e2, func)` | 返回迭代器范围`[b2,e2]`子序列在迭代器范围`[b1,e1]`序列中第一次出现的位置<br>失败返回e1<br>默认使用`==`运算符，func指定比较函数
+`set_union(b1, e1, b2, e2, dest)` <br> `set_union(b1, e1, b2, e2, dest, func)` | 创建两个序列的有序序列到dest<br>同一序列多次出现的元素不会被删除，两个序列都包含的元素只出现一次<br> func指定比较函数
+`sort(b, e)` <br> `sort(b, e, func)` | 将迭代器范围`[b,e)`范围内的所有元素排序<br>默认使用元素类型的\<运算符，func指定比较函数
+`is_sorted(b, e)` <br> `is_sorted(b, e, func)` | 判断迭代器范围`[b,e)`范围内的元素是否有序<br>默认使用元素类型的\<运算符，func指定比较函数
+`stable_sort(b, e, func)` | 与`sort(b, e, func)`类似，但相等元素维持原有顺序<br>func接受两个参数
+`transform(b, e, dest, func)` | 对迭代器范围`[b,e)`范围内的所有值调用func，并将结果写入从dest开始的位置
+`transform(b1, e1, b2, dest, func)` | func接受两个参数<br>对迭代器范围`[b1,e1)`和从b2开始范围内对应的所有元素调用func，并将结果写入从dest开始的位置
+`unique(b, e)` <br> `unique(b, e, func)`| 将迭代器范围`[b,e)`范围内的所有相邻的重复项“消除”，使得不重复部分出现在序列开始部分<br>多余的重复项将被排到后面，顺序不定<br>返回一个指向最后一个不重复元素之后的迭代器<br>默认使用`==`进行比较，func指定比较函数
 
 <h3 id="lambda_expression">lambda 表达式</h3>
 
-lambda 表达式表示一个可调用的代码单元，可以简单的理解为一个未命名的内联函数。
+lambda 表达式表示一个可调用的代码单元，可以简单的理解为一个未命名的内联函数。对于那种只在一两个地方使用的简单操作，lambda 表达式是最有用的。
 
 一个 lambda 表达式具有一个返回类型、一个参数列表和一个函数体:
 
@@ -586,4 +606,103 @@ void example(std::ostream &os)
 	}
 	);
 }
+```
+
+<h3 id="bind_function">函数适配器 bind</h3>
+
+C++11 在`<functional>`头文件中定义了一个名为bind的标准库函数，它接受一个可调用对象，生成一个新的可调用对象来“适应”原对象的参数列表。
+
+```c++
+auto newCallable = bind(callable, arg_list);
+```
+
+*   newCallable 本身是一个可调用对象；
+*   `arg_list` 是一个逗号分隔的参数列表，对应于 callable 的参数；
+*   当我们调用 newCallable 时，newCallable 会调用 callable，并按顺序传递给它`arg_list` 中的参数；
+*   `arg_list` 中如果需要引用传递，须使用`std::ref`或`std::cref`函数，c代表const；
+*   `arg_list` 中的参数可能包含形如 `_n` 的名字，其中n是一个整数，代表在生成的可调用对象中参数的位置，例如`_2`代表第二个参数；
+*   `arg_list` 中 `_n` 的最大值为生成的可调用对象参数的总个数；
+
+```c++
+# include <iostream>
+# include <string>
+# include <vector>
+# include <algorithm>
+# include <functional>
+
+bool isShorter(const std::string &s1, const std::string &s2);
+void print(std::ostream &os, const std::string &s);
+void print(const int *begin, const int *end);
+
+int main()
+{
+	using namespace std;
+
+	vector<string> svec{ "jskda","asda","dkasdka","iqheqen","qyeiqk" };
+	sort(begin(svec), end(svec), isShorter);
+    // 与上面效果一样
+	sort(begin(svec), end(svec),
+		[](const std::string &s1, const std::string &s2)
+	{
+		return s1.size() < s2.size();
+	}
+	);
+
+    // 使用 _1, _2
+	using namespace std::placeholders;
+
+    // 利用bind重排参数顺序，反向排序
+	sort(begin(svec), end(svec), bind(isShorter,_2,_1));
+
+	for_each(cbegin(svec), cend(svec), 
+		[](const std::string &s)
+	{
+		cout << s << std::endl;
+	}
+	);
+    // 使用bind将cout引用绑定到print第一个参数，生成一个只接受一个参数的可调用对象
+    // 如果bind的函数有重载，须使用 static_cast 指定类型，print可以添加取值符号&
+	for_each(cbegin(svec), cend(svec), 
+		bind(static_cast<void(*)(std::ostream &, const std::string &)>(print), ref(cout), _1));
+
+	getchar();
+	return 0;
+}
+
+bool isShorter(const std::string &s1, const std::string &s2)
+{
+	return s1.size() < s2.size();
+}
+
+void print(std::ostream &os, const std::string &s)
+{
+	os << s << std::endl;
+}
+
+void print(const int *begin, const int *end)
+{
+	while (begin != end) std::cout << *begin++ << std::endl;
+}
+```
+
+<h3 id="other_iterators">各种迭代器</h3>
+
+迭代器类型 | 说明
+------------------------------- | -------------------------------------------------
+插入迭代器 | 被绑定到一个容器，用以向容器插入元素<br>当通过一个插入迭代器进行赋值时，该迭代器调用容器操作在指定位置插入一个元素<br> `it = back_inserter(c); *it = val;`对应`c.push_back(val);` <br> `it = front_inserter(c); *it = val;`对应`c.push_front(val);` <br> `it = inserter(c, iter); *it = val;`对应`it = c.insert(iter, val); ++ it;` <br>插入迭代器对于那些第二个序列只有一个迭代器的算法特别有用，如`copy(std::cbegin(c1),std::cend(c1),back_inserter(c2));`
+流迭代器 | 被绑定到输入或输出流，用以遍历关联的 IO 流<br> `istream_iterator`读取输入流，`ostream_iterator`向输出流写数据<br>流迭代器对于那些第二个序列只有一个迭代器的算法特别有用，如`copy(std::cbegin(vec), std::cend(vec), out);`
+反向迭代器 | 从右向左移动的迭代器，只有`forward_list`不支持<br>使用`riter.base()`得到指向riter指向的元素右边的元素的正向迭代器
+移动迭代器 | 不拷贝其中的元素，而是移动它们
+
+```c++
+std::istream_iterator<int> in_iter(std::cin), eof;
+// 读取输入，并保存到一个vector
+std::vector<int> vec(in_iter, eof);
+// 读取输入，并求和
+// auto sum = std::accumulate(in_iter, eof, 0);
+// std::ostream_iterator<T> out(os, d)
+// 将类型为T的值写到os，每个值后面输出一个d，d指向一个空字符结尾的字符数组
+std::ostream_iterator<int> out(std::cout, " ");
+copy(std::cbegin(vec), std::cend(vec), out);
+std::cout << std::endl;
 ```
