@@ -30,6 +30,8 @@ tags:
 	*   [关联容器构造](#associative_container_constructor)
 	*   [pair 类型](#pair_type)
 	*   [关联容器操作](#associative_container_operations)
+*   [动态内存](#dynamic_memory)
+	*   [智能指针](#smart_pointer)
 
 <h2 id="io_library">IO 库</h2>
 
@@ -190,7 +192,6 @@ fstream独有的操作 | 说明
 `fstream fstrm` | 创建一个未绑定的文件流<br>**fstream可以是`ifstream`,`ofstream`或`fstream`**
 `fstream fstrm(s)` | explicit构造函数<br>创建一个fstream，并打开一个名为 `s` 的文件<br>`s` 是`std::string`类型或一个指向C风格字符串的指针<br>[查看默认打开模式](#file_mode)
 `fstream fstrm(s, mode)` | 与前一个构造函数一样，但按指定mode打开文件
-`fstream fstrm(s)` | explicit构造函数<br>创建一个fstream，并打开一个名为 `s` 的文件<br>`s` 是`std::string`类型或一个指向C风格字符串的指针<br>[查看默认打开模式](#file_mode)
 `fstrm.open(s)` | void函数<br>打开名为 `s` 的文件，并将文件与fstrm绑定<br>`s` 是`std::string`类型或一个指向C风格字符串的指针<br>对一个打开的文件流使用open会导致failbit被置位<br>[](#file_mode)
 `fstrm.open(s, mode)` | 与`fstrm.open(s)`一样，但按指定mode打开文件
 `fstrm.close()` | void函数<br>关闭与fstrm绑定的文件<br>当一个fstream对象离开其作用域时，会自动调用`close()`
@@ -696,7 +697,7 @@ void print(const int *begin, const int *end)
 迭代器类型 | 说明
 --------- | -------------------------------------------------
 插入迭代器 | 被绑定到一个容器，用以向容器插入元素<br>当通过一个插入迭代器进行赋值时，该迭代器调用容器操作在指定位置插入一个元素<br> `it = back_inserter(c); *it = val;`对应`c.push_back(val);` <br> `it = front_inserter(c); *it = val;`对应`c.push_front(val);` <br> `it = inserter(c, iter); *it = val;`对应`it = c.insert(iter, val); ++ it;` <br>插入迭代器对于那些第二个序列只有一个迭代器的算法特别有用，如`copy(std::cbegin(c1),std::cend(c1),back_inserter(c2));`
-流迭代器 | 被绑定到输入或输出流，用以遍历关联的 IO 流<br> `istream_iterator`读取输入流，`ostream_iterator`向输出流写数据<br>流迭代器对于那些第二个序列只有一个迭代器的算法特别有用，如`copy(std::cbegin(vec), std::cend(vec), out);`
+流迭代器 | 被绑定到输入或输出流，用以遍历关联的 IO 流<br> `istream_iterator`读取输入流，`ostream_iterator`向输出流写数据<br>流迭代器对于那些第二个序列只有一个迭代器的算法特别有用，如`copy(std::cbegin(vec),std::cend(vec),out);`
 反向迭代器 | 从右向左移动的迭代器，只有`forward_list`不支持<br>使用`riter.base()`得到指向riter指向的元素右边的元素的正向迭代器
 移动迭代器 | 不拷贝其中的元素，而是移动它们
 
