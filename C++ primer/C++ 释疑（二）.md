@@ -26,6 +26,10 @@ tags:
     *   [lambda 表达式](#lambda_expression)
 	*   [函数适配器 bind](#bind_function)
 	*   [各种迭代器](#other_iterators)
+*   [关联容器](#associative_containers)
+	*   [关联容器构造](#associative_container_constructor)
+	*   [pair 类型](#pair_type)
+	*   [关联容器操作](#associative_container_operations)
 
 <h2 id="io_library">IO 库</h2>
 
@@ -238,7 +242,7 @@ sstream独有的操作 | 说明
 
 <h2 id="sequential_containers">顺序容器</h2>
 
-标准库容器分为顺序容器与关联容器。
+标准库容器分为顺序容器与[关联容器](#associative_containers)。
 
 顺序容器中元素的顺序由其加入容器时的位置决定；关联容器中元素的顺序由其相关联的关键字值决定。
 
@@ -344,7 +348,7 @@ string | 与vector相似<br>专门用于保存字符<br>元素保存在连续的
 std::array<int, 42> arr;
 ```
 
-array不初始化时使用默认初始化；列表初始化时，未被初始化得元素将使用值初始化，自定义类必须包含一个默认构造函数：
+array不初始化时使用默认初始化；列表初始化时，未被初始化得元素将使用值初始化，**自定义类必须包含一个默认构造函数**：
 
 ```c++
 std::array<int, 42> arr0;                 // 默认初始化
@@ -526,7 +530,9 @@ string数值转换 | 说明
 
 <h2 id="generic_algorithms">容器泛型算法</h2>
 
-大多数算法定义于头文件`<algorithm>`中。**`list`和`forward_list`有专门的sort, merge, remove, reverse和unique算法**，并且定义了独有的splice成员，用于拼接。
+大多数算法定义于头文件`<algorithm>`中。
+
+**`list`和`forward_list`有专门的sort, merge, remove, reverse和unique算法**，并且定义了独有的splice成员，用于拼接。
 
 很多算法都有重载，以及`_if`, `_copy`, `_n`, `_not`等后缀组合的版本，下面列出一些常用算法：
 
@@ -578,7 +584,7 @@ lambda 表达式表示一个可调用的代码单元，可以简单的理解为�
 *   当捕获列表为`[&]`时，代表lambda函数体中使用的所有非静态局部变量都采用引用捕获；
 *   当捕获列表为`[=, identifier_list]`时，代表lambda函数体中除`identifier_list`列表中的**引用捕获变量**外，其它使用的所有非静态局部变量都采用值捕获；
 *   当捕获列表为`[&, identifier_list]`时，代表lambda函数体中除`identifier_list`列表中的**值捕获变量**外，其它使用的所有非静态局部变量都采用引用捕获；
-*   **一个lambda只有在其捕获列表中捕获一个它所在函数中的非静态局部变量，才能在函数体中使用该变量**；
+*   **一个lambda只有在其捕获列表中捕获一个它所在函数中的非静态局部变量后，才能在函数体中使用该变量**；
 *   **一个lambda可以直接使用定义在它所在函数中的静态局部变量和定义在它所在函数之外的可用的变量**；
 *   parameter list 不能包含默认参数；
 *   lambda 必须使用尾置返回类型；
@@ -618,8 +624,8 @@ auto newCallable = bind(callable, arg_list);
 
 *   newCallable 本身是一个可调用对象；
 *   `arg_list` 是一个逗号分隔的参数列表，对应于 callable 的参数；
-*   当我们调用 newCallable 时，newCallable 会调用 callable，并按顺序传递给它`arg_list` 中的参数；
-*   `arg_list` 中如果需要引用传递，须使用`std::ref`或`std::cref`函数，c代表const；
+*   当我们调用 newCallable 时，newCallable 会调用 callable，并**按顺序**传递给它`arg_list` 中的参数；
+*   **`arg_list` 中如果需要引用传递，须使用`std::ref`或`std::cref`函数**，c代表const；
 *   `arg_list` 中的参数可能包含形如 `_n` 的名字，其中n是一个整数，代表在生成的可调用对象中参数的位置，例如`_2`代表第二个参数；
 *   `arg_list` 中 `_n` 的最大值为生成的可调用对象参数的总个数；
 
@@ -661,7 +667,7 @@ int main()
 	}
 	);
     // 使用bind将cout引用绑定到print第一个参数，生成一个只接受一个参数的可调用对象
-    // 如果bind的函数有重载，须使用 static_cast 指定类型，print可以添加取值符号&
+    // 如果bind的函数有重载，须使用 static_cast 指定类型，print可以添加取地址符号&
 	for_each(cbegin(svec), cend(svec), 
 		bind(static_cast<void(*)(std::ostream &, const std::string &)>(print), ref(cout), _1));
 
@@ -688,7 +694,7 @@ void print(const int *begin, const int *end)
 <h3 id="other_iterators">各种迭代器</h3>
 
 迭代器类型 | 说明
-------------------------------- | -------------------------------------------------
+--------- | -------------------------------------------------
 插入迭代器 | 被绑定到一个容器，用以向容器插入元素<br>当通过一个插入迭代器进行赋值时，该迭代器调用容器操作在指定位置插入一个元素<br> `it = back_inserter(c); *it = val;`对应`c.push_back(val);` <br> `it = front_inserter(c); *it = val;`对应`c.push_front(val);` <br> `it = inserter(c, iter); *it = val;`对应`it = c.insert(iter, val); ++ it;` <br>插入迭代器对于那些第二个序列只有一个迭代器的算法特别有用，如`copy(std::cbegin(c1),std::cend(c1),back_inserter(c2));`
 流迭代器 | 被绑定到输入或输出流，用以遍历关联的 IO 流<br> `istream_iterator`读取输入流，`ostream_iterator`向输出流写数据<br>流迭代器对于那些第二个序列只有一个迭代器的算法特别有用，如`copy(std::cbegin(vec), std::cend(vec), out);`
 反向迭代器 | 从右向左移动的迭代器，只有`forward_list`不支持<br>使用`riter.base()`得到指向riter指向的元素右边的元素的正向迭代器
@@ -706,3 +712,129 @@ std::ostream_iterator<int> out(std::cout, " ");
 copy(std::cbegin(vec), std::cend(vec), out);
 std::cout << std::endl;
 ```
+
+<h2 id="associative_containers">关联容器</h2>
+
+关联容器中的元素是按关键字来保存和访问的。map类的元素类型为[pair](#pair_type);
+
+对于有序容器`map`,`set`,`multimap`和`multiset`，关键字类型必须定义元素比较的方法。
+
+关联容器类型 | 说明
+-------------------- | -------------------------------------------------
+`map` | 关联数组<br>保存键值对，元素默认按关键字从小到大排列<br>头文件`<map>`
+`set` | 关键字即值<br>只保存关键字，元素默认按关键字从小到大排列<br>头文件`<set>`
+`multimap` | 关键字可重复出现的map<br>头文件`<map>`
+`multiset` | 关键字可重复出现的set<br>头文件`<set>`
+`unordered_map` | 用哈希函数组织的无序map<br>头文件`<unordered_map>`
+`unordered_set` | 用哈希函数组织的无序set<br>头文件`<unordered_set>`
+`unordered_multimap` | 用哈希函数组织的无序的，关键字可重复出现的map <br>头文件`<unordered_map>`
+`unordered_multiset` | 用哈希函数组织的无序的，关键字可重复出现的set <br>头文件`<unordered_set>`
+
+<h3 id="associative_container_constructor">关联容器构造</h3>
+
+```c++
+// 空容器
+map<type1, type2> map_name1;
+// 列表初始化
+map<type1, type2> map_name2 = { {key1, value1}, {key2, value2}, ... };
+// 指定func_comp为map_name3关键字的排序算法
+map<type1, type2, decltype(func_comp) *> map_name3(func_comp);
+// 空容器
+set<type> set_name1;
+// 列表初始化
+set<type> set_name2 = { key1, key2, ... };
+// set_name2包含来自c的不重复元素，且从小到大进行排列
+set<type> set_name3(c.cbegin(), c.cend()); 
+// 指定func_comp为set_name4关键字的排序算法
+set<type, decltype(func_comp)*> set_name4(func_comp);
+```
+
+<h3 id="pair_type">pair 类型</h3>
+
+pair 定义在头文件`<utility>`中，保存两个数据成员。
+
+pair 操作 | 说明
+--------------------------- | -------------------------------------------------
+`p.first` | 返回 p 的名为 first 的公有数据成员<br> 类型别名`first_type`
+`p.second` | 返回 p 的名为 second 的公有数据成员<br> 类型别名`second_type`
+`pair<T1, T2> p` | 构建一个pair对象<br>对first和second进行值初始化
+`pair<T1, T2> p(v1, v2)` | 构建一个pair对象<br>first和second分别使用v1, v2进行初始化
+`pair<T1, T2> p = {v1, v2}` | 与`pair<T1, T2> p(v1, v2)`等价
+`make_pair(v1,v2)` | 返回一个first和second分别使用v1, v2初始化的pair <br> pair 的类型从v1, v2推断出来
+`<,<=,>,>=` | 使用元素运算符进行比较<br>若first不等，则结果为first的比较结果<br>若first相等，则结果为second的比较结果
+`==,!=` | 使用元素运算符进行比较<br>当first和second都相等时，两个pair相等
+
+<h3 id="associative_container_operations">关联容器操作</h3>
+
+#### 类型别名
+
+关联容器类型别名 | 说明
+------------------ | -------------------------------------------------
+`key_type` | 关键字类型
+`mapped_type` | map 关键字关联的类型
+`value_type` | 对于set，与`key_type`相同<br> 对于map，为`pair<const key_type, mapped_type>`
+
+**关键字不能被更改**。
+
+#### map类操作
+
+向map添加元素：
+
+```c++
+word_count.insert({word, 1});
+word_count.insert(make_pair(word, 1));
+word_count.insert(pair<string, size_t>(word, 1));
+word_count.insert(map<string, size_t>::value_type(word, 1));
+```
+
+map类的下标操作：
+
+*	**不能对multimap进行下标操作**，因为一个关键字可能对应多个值；
+*	对map进行下标操作时，如果关键字没有在map中，那么会创建一个元素插入到map中，并对关联值进行值初始化；
+*	**不能对const的map进行下标操作**，因为下标操作可能插入一个新元素。
+
+map下标操作 | 说明
+------------------ | -------------------------------------------------
+`c[k]` | 返回关键字为k的元素的值<br>若k不在c中，则添加一个关键字为k的元素，并对关联值进行值初始化
+`c.at(k)` | 访问关键字为k的元素的值<br>若k不在c中，抛出`out_of_range`异常
+
+#### 关联容器常用操作
+
+关联容器常用操作 | 说明
+------------------ | -------------------------------------------------
+`c.insert(v)` <br> `c.emplace(args)` | v是一个`value_type`类型的对象，args用来构造一个元素<br>返回一个pair，first是一个指向具有给定关键字的元素的迭代器，second指示插入是否成功<br>对于map和set，只有当关键字不在c中时才插入或构造元素<br>**对于multimap和multiset，总会插入或构造元素，并返回一个指向新元素的迭代器**
+`c.insert(b, e)` <br> `c.insert(il)` | void函数，插入迭代器范围`[b,e)`内或花括号列表il中的值<br>map和set只插入关键字不存在的值
+`c.insert(p, v)` <br> `c.emplace(p, args)` | 迭代器p指出从哪里开始搜索新元素应该存储的位置(因为是有序的)，然而是循环搜索的<br>返回一个迭代器，指向具有给定关键字的元素
+`c.erase(k)` | 从c中删除每个关键字为k的元素<br>返回删除元素的数量，类型为`size_type`
+`c.erase(p)` | 从c中删除迭代器p指定的元素<br>p必须指向c中一个真实的元素<br>返回一个指向p之后元素的迭代器
+`c.erase(b, e)` | 删除迭代器范围`[b,e)`内的元素<br>返回e
+`c.find(k)` | 返回一个迭代器，指向第一个关键字为k的元素<br>失败返回`c.end()`<br>**比通用泛型算法find快得多**
+`c.count(k)` | 返回关键字为k的元素的数量
+`c.lower_bound(k)` | 返回一个迭代器，指向第一个关键字等于k的元素<br>若关键字k不在c中，则与`c.upper_bound(k)`返回相同的迭代器
+`c.upper_bound(k)` | 返回一个迭代器，指向最后一个关键字等于k的元素之后的位置<br>若关键字k不在c中，则与`c.lower_bound(k)`返回相同的迭代器
+`c.equal_range(k)` | 返回一个迭代器组成的pair，表示关键字等于k的元素的范围，前闭后开<br>失败两个成员都是`c.end()`
+
+#### 无序关联容器
+
+C++11 定义了4个无序关联容器: `unordered_map`,`unordered_set`,`unordered_multimap`和`unordered_multiset`。这些容器不使用比较运算符组织元素，而是使用哈希函数(将给定类型的值映射到整形`size_t`值的函数)和关键字的`==`运算符。
+
+可以直接定义关键字为内置类型、string或智能指针类型的无序容器；对于自定义类型，需要提供自定义的hash模板和`==`运算符。
+
+无序关联容器可以使用find,insert等操作，理论上哈希技术会获得更好的平均性能。
+
+**无论是有序关联容器，还是无序关联容器，具有相同关键字的元素都是相邻存储的**。
+
+<h2 id="dynamic_memory">动态内存</h2>
+
+**动态分配的对象的生存期与它们在哪里创建无关，只有当其被显式释放时，这些对象才会被销毁**。
+
+静态内存用来保存static对象和外部变量，栈内存用来保存函数内的非static对象。**动态分配使用栈内存**。
+
+<h2 id="smart_pointer">智能指针</h2>
+
+智能指针会自动释放所指向的对象：
+
+*	`shared_ptr`允许多个指针指向同一个对象；
+*	`unique_ptr`独占所指向的对象；
+*	`weak_ptr`是一种弱引用，指向`shared_ptr`所管理的对象；
+*	它们都在头文件`<memory>`中。
