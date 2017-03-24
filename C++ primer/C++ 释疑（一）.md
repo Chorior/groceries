@@ -1,5 +1,5 @@
 ---
-title:      "C++ 释疑"
+title:      "C++ 释疑（一）"
 subtitle:   " 一些常见错误规避方法 "
 date:       2017-03-01 20:00:00 +0800
 header-img: "img/C++_logo.jpg"
@@ -8,7 +8,7 @@ tags:
     - C++ primer
 ---
 
-本文是我重温《C++ Primer 5》时，摘录的一些要点，适合初级程序员食用。
+本文是我重温《C++ Primer 5》第一部分 C++ 基础时，摘录的一些要点，适合初级程序员食用。
 
 #   本文结构
 
@@ -36,11 +36,11 @@ tags:
 
 <h2 id="annotation">注释选择</h2>
 
-一律使用C++单行注释`//`，因为界定符`/* */`注释不能嵌套。
+**一律使用C++单行注释`//`，因为界定符`/* */`注释不能嵌套**。
 
 如果你一定要使用界定符`/* */`的话，建议每行都以一个星号\*开头，用以指出整个范围都是多行注释的一部分。
 
-```C++
+```c++
 #include <iostream>
 /*
  * main function
@@ -57,9 +57,9 @@ int main()
 
 当一个算数表达式中既有无符号数又有有符号数，且其中的无符号类型不小于带符号类型时，有符号数会被转为无符号数。
 
-特别是当有符号数是一个负数时，转换后的无符号数结果等于这个负数加上对应无符号数的模。
+特别是当有符号数是一个负数时，**转换后的无符号数结果等于这个负数加上对应无符号数的模**。
 
-```C++
+```c++
 unsigned u = 10;
 int i = -42;
 std::cout << i + i << std::endl;   // 84
@@ -68,7 +68,7 @@ std::cout << i + u << std::endl;   // maybe 10 + (2^32 - 42) = 4294967264
 
 这里还有一个隐式无限循环的例子:
 
-```C++
+```c++
 for(unsigned i = 10; i >= 0; -- i)
 {
 	std::cout << i << std::endl;
@@ -84,13 +84,13 @@ for(unsigned i = 10; i >= 0; -- i)
 
 如果内置类型的变量未被显式初始化，那么它的值由定义的位置决定。
 
-定义于任何函数体之外的变量被初始化为0，定义于函数体内部的内置类型将不被初始化。
+**定义于任何函数体之外的内置类型被初始化为0，定义于函数体内部的内置类型将不被初始化**。
 
 非内置类型的类对象如果没有显式初始化得话，其值决定于该类是否允许隐式初始化（如`std::string`类就允许隐式初始化）。
 
 内置类型包含`bool`,`char`,`wchar_t`,`char16_t`,`char32_t`,`short`,`int`,`long`,`long long`,`float`,`double`,`long double`.
 
-```C++
+```c++
 #include <iostream>
 #include <string>          // std::string
 #include <cstring>         // wchar_t, char16_t
@@ -114,11 +114,11 @@ int main()
 }
 ```
 
-只要是内置类型，一律初始化！
+**只要是内置类型，一律初始化！**
 
 <h2 id="identifier">标识符定义</h2>
 
-C++ 的标识符由字符、数字、下划线组成，其中数字不能作为开头。
+**C++ 的标识符由字符、数字、下划线组成，其中数字不能作为开头**。
 
 C++ 为标准库保留了一些名字
 
@@ -138,13 +138,13 @@ C++ 为标准库保留了一些名字
 
 建立空指针有下列三种方法：
 
-```C++
+```c++
 int *pi = 0;
 int *p2 = nullptr;
 int *p3 = NULL;
 ```
 
-最好使用nullptr，尽量避免使用NULL。所有指针都必须初始化。
+**最好使用nullptr，尽量避免使用NULL。所有指针都必须初始化**。
 
 <h2 id="choose_header">C 或 C++ 标准库头文件选择</h2>
 
@@ -152,7 +152,7 @@ C++ 兼容 C 语言标准库，去掉了 C 头文件的后缀`.h`，并添加前
 
 对应的头文件在内容上是一样的，但是在名为`cname`的头文件中定义的名字从属于命名空间`std`，而`name.h`头文件中的却不然。
 
-C++ 程序一律使用名为`cname`的头文件。
+**C++ 程序一律使用名为`cname`的头文件**。
 
 <h2 id="front_or_post">递增递减选择前置还是后置</h2>
 
@@ -160,7 +160,7 @@ C++ 程序一律使用名为`cname`的头文件。
 
 后置版本的递增（递减）运算符需要将原始值存储下来以便返回这个未修改的内容，然后再加一（减一）。
 
-若无特殊需求，一律使用前缀版本的递增或递减运算符。
+**若无特殊需求，一律使用前缀版本的递增或递减运算符**。
 
 <h2 id="sizeof">sizeof 运算符</h2>
 
@@ -177,7 +177,7 @@ sizeof 运算符的结果部分依赖于其作用的类型：
 *	对数组，结果为整个数组所占空间的字节数（**sizeof不会将数组作为指针处理，指针也不会被作为数组处理**）；
 *	对`std::string`对象或`vector`对象，结果只返回该类型固定部分的大小，不会计算对象中的元素占用了多少字节。
 
-```C++
+```c++
 #include <iostream>
 #include <string>
 #include <vector>
@@ -206,7 +206,7 @@ C++ 强制类型转换包含 `static_cast`, `dynamic_cast`, `const_cast`, `reint
 
 `static_cast`: 任何具有明确定义的类型转换，只要不包含底层const，都可以使用`static_cast`）；
 
-```C++
+```c++
 double d = 3.14;
 void *p = &d;
 double *dp = static_cast<double*>(p);
@@ -214,7 +214,7 @@ double *dp = static_cast<double*>(p);
 
 `const_cast`: 只改变运算对象的底层const，不能用于改变类型；
 
-```C++
+```c++
 const char *pc;
 char *p = const_cast<char*>(pc);  // 正确，但通过p写值是未定义的行为
 static_cast<string>(pc);          // 正确，字符串字面值转换成string类型
@@ -223,7 +223,7 @@ const_cast<string>(pc);           // 错误，const_cast 只改变常量属性�
 
 `reinterpret_cast`: 为运算对象的位模式提供较低层次上的重新解释，这往往会伴随很多未定义的事情发生。
 
-```C++
+```c++
 int *ip;
 char *pc = reinterpret_cast<char*>(ip);
 ```
@@ -237,7 +237,7 @@ type(expr);
 (type)expr;
 ```
 
-如非必要情况下，避免使用强制类型转换，如果一定要的话，建议使用 C++ 强制类型转换。
+**如非必要情况下，避免使用强制类型转换，如果一定要的话，建议使用 C++ 强制类型转换**。
 
 <h2 id="constant_reference">尽量使用常量引用传递参数</h2>
 
@@ -247,7 +247,7 @@ type(expr);
 
 如果你强行将一个常量对象转成非常量对象，然后再传递给非常量形参的话，万一程序运行过程中出现什么异常改变了常量对象，这就会造成非常严重的问题。
 
-```C++
+```c++
 void func0(char*);
 void func1(const char*);
 
@@ -261,7 +261,7 @@ func0(const_cast<char*>(cstr));        // 很危险
 func1(cstr);                           // 很安全
 ```
 
-尽量使用常量引用传递参数。
+**尽量使用常量引用传递参数**。
 
 <h2 id="array_params">数组形参传递</h2>
 
@@ -269,7 +269,7 @@ func1(cstr);                           // 很安全
 
 以下三个函数声明都是等价的：
 
-```C++
+```c++
 void print(const int*);    // 一般拉沙
 void print(const int[]);   // 使函数意图更加明显
 void print(const int[10]); // 这里的维度表示期望传递的数组包含10个元素，实际不一定
@@ -281,7 +281,7 @@ void print(const int[10]); // 这里的维度表示期望传递的数组包含10
 
 数组自身包含一个结束符：
 
-```C++
+```c++
 void print(const char *cp)
 {
     if(cp) while(*cp) std::cout << *cp++; // 输出直到遇到空字符
@@ -292,7 +292,7 @@ void print(const char *cp)
 
 传递首元素和尾后元素指针：
 
-```C++
+```c++
 void print(const int *begin, const int *end)
 {
     while(begin != end) std::cout << *begin++ << std::endl;
@@ -304,7 +304,7 @@ print(std::begin(a), std::end(a));
 
 #### 显式传递一个表示数组大小的形参
 
-```C++
+```c++
 void print(const int ia[], std::size_t size)
 {
     for(std::size_t i = 0; i != size; ++ i)
@@ -316,7 +316,7 @@ void print(const int ia[], std::size_t size)
 
 ### 数组引用形参
 
-```C++
+```c++
 void print(int (&arr)[10])       // arr 是具有10个整数的整形数组的引用
 {
     for(auto elem : arr) std::cout << elem << std::endl;
@@ -331,9 +331,9 @@ print(k);                        // 正确
 
 ### 多维数组形参
 
-多维数组第一维大小会被忽略，第二维以及后面所有维度的大小都是数组类型的一部分，不能省略：
+**多维数组第一维大小会被忽略，第二维以及后面所有维度的大小都是数组类型的一部分，不能省略**：
 
-```C++
+```c++
 void print(int matrix[][10], int row_size){ /* ... */ }
 ```
 
@@ -360,7 +360,7 @@ C++11 新标准提出两种处理可变形参的方法：
 
 如果要向`initializer_list`形参中传递一个值的序列，则必须把序列放在一对花括号内。
 
-```C++
+```c++
 # include <iostream>
 # include <initializer_list>
 
@@ -391,7 +391,7 @@ void print(std::initializer_list<int> il)
 
 强行令void函数返回其他类型的表达式将产生编译错误。
 
-不要返回局部变量的引用或者指针。
+**不要返回局部变量的引用或者指针**。
 
 除返回引用的函数能得到左值外，其它返回类型的函数都只能得到右值。
 
@@ -399,7 +399,7 @@ void print(std::initializer_list<int> il)
 
 值初始化：若元素类型为内置类型，则初始化为0；若为其它类类型，则元素由类进行默认初始化。
 
-```C++
+```c++
 std::vector<std::string> process(int i)
 {
     if (0 == i)     return{};
@@ -410,7 +410,7 @@ std::vector<std::string> process(int i)
 
 C++11 支持尾置返回类型：
 
-```C++
+```c++
 auto func(int i) -> int(*)[10];   // 返回值是一个指向包含10个int元素的数组的指针
 ```
 
@@ -434,7 +434,7 @@ main 函数不能重载。
 
 C++ 中，**名字查找发生在类型检查之前**:
 
-```C++
+```c++
 int read();
 int main()
 {
@@ -472,9 +472,9 @@ int main()
 
 <h2 id="function_ptr">函数指针</h2>
 
-当把函数名作为一个值使用时，该函数自动地转换成指针：
+**当把函数名作为一个值使用时，该函数自动地转换成指针**：
 
-```C++
+```c++
 bool func(int, int);
 bool (*pf)(int, int) = func;
 bool (*pf)(int, int) = &func; // 取地址符是可选的
@@ -485,32 +485,32 @@ decltype(print) *pf = func;   // pf 是一个指针
 
 可以直接使用指向函数的指针调用该函数：
 
-```C++
+```c++
 bool b1 = pf(1,2);
 bool b2 = (*pf)(1,2); // 与上面等价
 ```
 
 当函数指针用作形参时，函数类型会被当做指针使用：
 
-```C++
+```c++
 void example(int i, bool pf(int, int));
 void example(int i, bool (*pf)(int, int)); // 与上面等价
 ```
 
 返回指向函数的指针：
 
-```C++
+```c++
 int (*f1(int))(int*, int);          // 由内向外，返回一个指向函数的指针
 auto f1(int) -> int (*)(int*, int);
 ```
 
-decltype 作用于某个函数时，它返回函数类型而非指针。
+**decltype 作用于某个函数时，它返回函数类型而非指针**。
 
 <h2 id="class">类</h2>
 
 定义在类内部的函数都是隐式内联的。
 
-编译器分两步处理类：首先编译成员声明，然后再到成员函数体。所以成员函数相互间使用时，不用在意成员出现的顺序。
+编译器分两步处理类：**首先编译成员声明，然后再到成员函数体**。所以成员函数相互间使用时，不用在意成员出现的顺序。
 
 一个用关键字`mutable`声明的数据成员永远也不会是const，即使它是const对象的成员。
 
@@ -520,7 +520,7 @@ decltype 作用于某个函数时，它返回函数类型而非指针。
 
 默认情况下，this的类型是`class_name *const`，即this指向非常量版本的类对象；若类对象是常量，那么该对象不能调用普通的成员函数。
 
-```C++
+```c++
 # include <iostream>
 class TestClass
 {
@@ -543,11 +543,11 @@ int main()
 }
 ```
 
-常量类对象只能调用常量成员函数。
+**常量类对象只能调用常量成员函数**。
 
 常量成员函数即在函数声明和定义的参数列表后加上const的普通成员函数，跟在参数列表后面的const表示this是一个指向常量的指针，所以常量成员函数不能改变调用它的对象的内容。
 
-```C++
+```c++
 # include <iostream>
 class TestClass
 {
@@ -578,11 +578,11 @@ void TestClass::print() const
 
 构造函数初始化类对象的数据成员，只要类的对象被创建，就会执行构造函数。
 
-建议每个类都显式的定义一个默认构造函数。
+**建议每个类都显式的定义一个默认构造函数**。
 
 #### 合成的默认构造函数
 
-如果类没有显式的定义构造函数，那么编译器就会为我们隐式的定义一个默认构造函数，即合成的默认构造函数。
+**如果类没有显式的定义构造函数，那么编译器就会为我们隐式的定义一个默认构造函数**，即合成的默认构造函数。
 
 合成的默认构造函数按如下规则初始化类的数据成员：
 
@@ -598,7 +598,7 @@ C++11 可以通过在参数列表后面写上`= default`来要求编译器生成
 
 下面构造函数参数列表后的冒号以及冒号和花括号间的代码即为构造函数初始值列表:
 
-```C++
+```c++
 class TestClass
 {
     int a = 0;  // C++ 11
@@ -610,7 +610,7 @@ public:
 
 没有出现在构造函数初始值列表中的成员将通过相应的类内初始值（如果存在的话）初始化，或者[默认初始化](#default_initialization)。
 
-```C++
+```c++
 class TestClass
 {
     int a = 0;  // C++ 11
@@ -626,7 +626,7 @@ public:
 
 **成员初始化顺序与它们在类定义中出现的顺序一致，所以不用太在意构造函数初始值列表初始值出现的顺序。**
 
-```C++
+```c++
 class TestClass
 {
     int a = 0;  // C++ 11
@@ -640,7 +640,7 @@ public:
 
 委托构造函数使用它所属类的其他构造函数执行它自己的初始化。
 
-```C++
+```c++
 # include <iostream>
 class TestClass
 {
@@ -664,7 +664,7 @@ int main()
 
 当构造函数参数只接受一个实参时（有默认值，或真的只有一个参数），它实际上定义了转换为此类类型的隐式转换机制：
 
-```C++
+```c++
 # include <iostream>
 class TestClass
 {
@@ -682,11 +682,69 @@ int main()
 }
 ```
 
-使用关键字`explicit`可以阻止隐式类型转换。`explicit`只对一个实参的构造函数有效，且`explicit`只能出现在类内的声明处。
+**使用关键字`explicit`可以阻止隐式类型转换。`explicit`只对一个实参的构造函数有效，且`explicit`只能出现在类内的声明处**。
 
 <h3 id="copy_assign_and_destructor">拷贝、赋值和析构</h3>
 
-如果不主动定义拷贝、赋值和析构操作的话，编译器将生成相应的版本对对象的每个成员执行拷贝、赋值和销毁操作。
+**如果不主动定义拷贝、赋值和析构操作的话，编译器将生成相应的版本对对象的每个成员执行拷贝、赋值和销毁操作**。
+
+国内著名 C++ 博主陈硕曾经说过：
+> 知道禁用 copy-ctor/assign operator 是 C++ 程序员的试金石
+
+因为一般来说，对类对象做副本没有什么意义，所以如果**确实不需要拷贝和赋值的话**，需要限制编译器自动生成的拷贝构造函数和赋值构造函数。
+
+可以参照<http://www.boost.org/doc/libs/1_63_0/boost/core/noncopyable.hpp>，对其进行派生，从而禁用拷贝和赋值操作。
+
+```c++
+//  Boost noncopyable.hpp header file  --------------------------------------//
+
+//  (C) Copyright Beman Dawes 1999-2003. Distributed under the Boost
+//  Software License, Version 1.0. (See accompanying file
+//  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+
+//  See http://www.boost.org/libs/utility for documentation.
+
+#ifndef BOOST_CORE_NONCOPYABLE_HPP
+#define BOOST_CORE_NONCOPYABLE_HPP
+
+#include <boost/config.hpp>
+
+namespace boost {
+
+//  Private copy constructor and copy assignment ensure classes derived from
+//  class noncopyable cannot be copied.
+
+//  Contributed by Dave Abrahams
+
+namespace noncopyable_  // protection from unintended ADL
+{
+  class noncopyable
+  {
+  protected:
+#if !defined(BOOST_NO_CXX11_DEFAULTED_FUNCTIONS) && !defined(BOOST_NO_CXX11_NON_PUBLIC_DEFAULTED_FUNCTIONS)
+      BOOST_CONSTEXPR noncopyable() = default;
+      ~noncopyable() = default;
+#else
+      noncopyable() {}
+      ~noncopyable() {}
+#endif
+#if !defined(BOOST_NO_CXX11_DELETED_FUNCTIONS)
+      noncopyable( const noncopyable& ) = delete;
+      noncopyable& operator=( const noncopyable& ) = delete;
+#else
+  private:  // emphasize the following members are private
+      noncopyable( const noncopyable& );
+      noncopyable& operator=( const noncopyable& );
+#endif
+  };
+}
+
+typedef noncopyable_::noncopyable noncopyable;
+
+} // namespace boost
+
+#endif  // BOOST_CORE_NONCOPYABLE_HPP
+```
 
 <h3 id="access_control">访问控制符</h3>
 
@@ -698,9 +756,9 @@ int main()
 
 <h3 id="static_class_members">类的静态成员</h3>
 
-类的静态成员存在于任何对象之外，对象中不包含任何与静态数据成员有关的数据。
+**类的静态成员存在于任何对象之外**，对象中不包含任何与静态数据成员有关的数据。
 
-静态成员函数也不与任何对象绑定在一起，它们不包含this指针，所以静态成员函数也不能设成const的。
+**静态成员函数也不与任何对象绑定在一起，它们不包含this指针，所以静态成员函数也不能设成const的**。
 
 #### 定义静态成员
 
@@ -710,11 +768,11 @@ int main()
 
 一个静态数据成员只能定义一次。
 
-可以使用静态成员作为默认实参。
+**可以使用静态成员作为默认实参**。
 
 #### 使用静态成员
 
-```C++
+```c++
 # include <iostream>
 # include <string>
 class TestClass
