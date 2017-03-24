@@ -19,9 +19,25 @@ tags:
     *   [文件输入输出](#file_io)
     *   [string 流](#string_io)
 *   [顺序容器](#sequential_containers)
+	*   [顺序容器概述](#sequential_containers_overview)
     *   [顺序容器选择](#choose_sequential_container)
     *   [容器基本操作](#basic_container_operation)
+		*   [类型别名](#basic_type_alias)
+		*   [构造函数](#basic_constructor)
+		*   [常用操作](#basic_common_operations)
+		*   [反向容器](#reverse_containers)
+		*   [迭代器](#container_iterators)
+		*   [array 容器](#array_container)
     *   [顺序容器操作](#sequential_container_operation)
+		*   [添加元素](#add_elements)
+		*   [访问元素](#access_elements)
+		*   [删除元素](#delete_elements)
+		*   [改变大小](#resize_container)
+		*   [容量管理](#capacity_management)
+		*   [string 常用操作](#string_common_operations)
+		*   [string 搜索操作](#string_search_operations)
+		*   [string 数值转换](#string_numeric_conversion)
+		*   [特殊的 forward_list](#special_forward_list)
 *   [容器泛型算法](#generic_algorithms)
     *   [lambda 表达式](#lambda_expression)
 	*   [函数适配器 bind](#bind_function)
@@ -30,7 +46,12 @@ tags:
 	*   [关联容器构造](#associative_container_constructor)
 	*   [pair 类型](#pair_type)
 	*   [关联容器操作](#associative_container_operations)
+		*   [类型别名](#associative_container_type_alias)
+		*   [map 类操作](#map_class_operations)
+		*   [关联容器常用操作](#common_associative_container_operations)
+		*   [无序关联容器](#unordered_associative_containers)
 *   [动态内存](#dynamic_memory)
+	*   [new, delete](#new_and_delete)
 	*   [智能指针](#smart_pointer)
 
 <h2 id="io_library">IO 库</h2>
@@ -278,7 +299,7 @@ string | 与vector相似<br>专门用于保存字符<br>元素保存在连续的
 
 <h3 id="basic_container_operation">容器基本操作</h3>
 
-#### 类型别名
+<h4 id="basic_type_alias">类型别名</h4>
 
 **类型别名在泛型编程中非常有用**。
 
@@ -292,7 +313,7 @@ string | 与vector相似<br>专门用于保存字符<br>元素保存在连续的
 `reference` | 元素的左值类型；相当于`value_type&`
 `const_reference` | 相当于`const value_type&`
 
-#### 构造函数
+<h4 id="basic_constructor">构造函数</h4>
 
 构造函数 | 说明
 --------------- | -------------------------------------------------
@@ -303,7 +324,7 @@ string | 与vector相似<br>专门用于保存字符<br>元素保存在连续的
 `C seq(n)` | explicit构造函数<br>适用于`vector`,`deque`,`list`,`forward_list`<br>seq包含n个元素，这些元素进行值初始化<br>自定义类型必须具有默认构造函数
 `C seq(n, t)` | 适用于`vector`,`deque`,`list`,`forward_list`,`string`<br>seq包含n个初始化为值t的元素
 
-#### 常用容器操作
+<h4 id="basic_common_operations">常用操作</h4>
 
 常用容器操作 | 说明
 ------------------ | -------------------------------------------------
@@ -322,7 +343,7 @@ string | 与vector相似<br>专门用于保存字符<br>元素保存在连续的
 `seq.assign(il)` | 将seq中的元素替换为初始化列表il中的元素<br>不适用于array和关联容器
 `seq.assign(n, t)` | 将seq中的元素替换为n个值为t的元素<br>不适用于array和关联容器
 
-#### 反向容器
+<h4 id="reverse_containers">反向容器</h4>
 
 **对一个反向迭代器执行++操作，会得到上一个元素**。
 
@@ -333,7 +354,7 @@ string | 与vector相似<br>专门用于保存字符<br>元素保存在连续的
 `c.rbegin(), c.rend()` | 返回指向c的尾元素和首元素之前的迭代器<br>若c为const对象，那么调用返回`const_reverse_iterator`的版本
 `c.crbegin(), c.crend()` | 返回`const_reverse_iterator`
 
-#### 迭代器
+<h4 id="container_iterators">迭代器</h4>
 
 **`forward_list`迭代器不支持递减运算符**。
 
@@ -341,7 +362,7 @@ string | 与vector相似<br>专门用于保存字符<br>元素保存在连续的
 
 除了为每个容器定义的迭代器之外，标准库在头文件iterator中还定义了[额外几种迭代器](#other_iterators)。
 
-#### array
+<h4 id="array_container">array 容器</h4>
 
 定义一个array时，除了指定元素类型，还要指定容器大小:
 
@@ -369,7 +390,7 @@ arr2 = arr1;
 
 <h3 id="sequential_container_operation">顺序容器操作</h3>
 
-#### 向顺序容器添加元素
+<h4 id="add_elements">添加元素</h4>
 
 array不支持添加元素。
 
@@ -390,7 +411,7 @@ vector和string不支持`push_front`和`emplace_front`。
 `c.insert(p, b, e)` | 将迭代器b和e指定范围内的元素插入到迭代器p指向的元素之前<br>b和e不能指向c中的元素<br>返回指向新添加的第一个元素的迭代器<br>若范围为空，则返回p
 `c.insert(p, il)` | 在迭代器p指向的元素之前插入列表il中的元素<br>返回指向新添加的第一个元素的迭代器<br>若列表为空，则返回p
 
-#### 访问元素
+<h4 id="access_elements">访问元素</h4>
 
 访问元素操作 | 说明
 ------------------ | -------------------------------------------------
@@ -404,7 +425,7 @@ auto b1 = c.back();  // b1是c中最后一个元素的拷贝
 auto &b2 = c.back(); // b2是c中最后一个元素的引用
 ```
 
-#### 删除元素
+<h4 id="delete_elements">删除元素</h4>
 
 array不支持删除元素。
 
@@ -422,18 +443,7 @@ vector和string不支持`pop_front`。
 `c.erase(b,e)` | 删除迭代器b和e所指定范围内(前闭后开)的元素<br>返回e
 `c.clear()` | 删除c中的所有元素<br>返回void
 
-#### 特殊的`forward_list`操作
-
-在一个`forward_list`中添加或删除元素的操作是通过改变给定元素之后的元素来完成的。
-
-`forward_list`插入删除操作 | 说明
-------------------------- | -------------------------------------------------
-`lst.before_begin()`<br>`lst.cbefore_begin()` | 返回指向链表首元素之前不存在的元素的迭代器<br>不可解引用
-`lst.insert_after(p, t)`<br>`lst.insert_after(p, n, t)`<br>`lst.insert_after(p, b, e)`<br>`lst.insert_after(p, il)` | 在迭代器p之后的位置插入元素<br>t是对象，n是数量，b和e是表示范围的一对迭代器(b和e不能指向lst内)，il是花括号列表<br>返回指向最后一个插入元素的迭代器<br>若范围为空，则返回p<br>若p为尾后迭代器，则函数行为未定义
-`emplace_after(p, args)` | 使用args在p指定的位置之后创建一个元素<br>返回一个指向这个新元素的迭代器<br>若p为尾后迭代器，则函数行为未定义
-`lst.erase_after(p)`<br>`lst.erase_after(b, e)` | 删除p指向的位置之后的元素，或删除`(b,e]`之间的元素<br>返回一个指向被删元素之后元素的迭代器<br>若p指向lst的尾元素，或p是一个尾后迭代器，则函数行为未定义
-
-#### 改变容器的大小
+<h4 id="resize_container">改变大小</h4>
 
 顺序容器大小操作(不适用于array) | 说明
 ----------------------------- | -------------------------------------------------
@@ -444,7 +454,7 @@ c.resize(n, t) | 调整c的大小为n个元素<br>若`n<c.size()`，则多出的
 
 **原先得到的迭代器在容器操作后可能造成迭代器失效，使用失效的迭代器会造成严重的运行错误，建议在每次容器操作之后都更新一下指向相应容器的迭代器**。
 
-#### 管理容量
+<h4 id="capacity_management">容量管理</h4>
 
 由于vector和string的元素是连续存储的，向它们添加元素时：
 
@@ -466,7 +476,7 @@ c.resize(n, t) | 调整c的大小为n个元素<br>若`n<c.size()`，则多出的
 `c.shrink_to_fit()` | 将`capacity()`减小为与size()相同大小<br>仅适用于vector,string和deque
 `c.reserve(n)` | 分配至少能容纳n个元素的内存空间<br>若需求小于等于当前容量，什么也不做<br>仅适用于vector和string
 
-#### string常用操作
+<h4 id="string_common_operations">string 常用操作</h4>
 
 string常用操作([args形式](#string_args_style0)) | 说明
 ------------------------ | -------------------------------------------------
@@ -490,7 +500,7 @@ n, c | n个字符c<br>`replace(pos,len,args)`<br>`replace(b,e,args)`<br>`insert(
 b, e | 迭代器b和e指定范围内的字符<br>`replace(b,e,args)`<br>`insert(iter,args)`
 初始化列表 | 花括号包围的，以逗号分隔的字符列表<br>`replace(b,e,args)`<br>`insert(iter,args)`
 
-#### string搜索操作
+<h4 id="string_search_operations">string 搜索操作</h4>
 
 string搜索操作([args形式](#string_args_style1)) | 说明
 ------------------------ | -------------------------------------------------
@@ -510,7 +520,7 @@ s2, pos | 从s中位置pos开始查找字符串s2 <br>pos默认为0
 cp, pos | 从s中位置pos开始查找指针cp指向的以空字符结尾的C风格字符串<br>pos默认为0
 cp, pos, n | 从s中位置pos开始查找指针cp指向的数组的前n个字符<br>pos和n无默认值
 
-#### string数值转换
+<h4 id="string_numeric_conversion">string 数值转换</h4>
 
 如果string不能转换为一个数值，这些函数抛出一个`invalid_argument`异常。
 
@@ -528,6 +538,17 @@ string数值转换 | 说明
 `to_string(val)` | 返回数值val的string表示<br>val可以是任何算数类型
 `stoi(s, p, b)`<br>`stol(s, p, b)`<br>`stoul(s, p, b)`<br>`stoll(s, p, b)`<br>`stoull(s, p, b)` | 返回字符串s从开始到p的子串表示的数值<br>分别是int,long,unsigned long,long long,unsigned long long <br>p是`size_t`指针，用来保存s中第一个非数值字符的下标，默认为0(代表全部字符串) <br>b表示转换所用的基数，默认为10
 `stof(s, p)`<br>`stod(s, p)`<br>`stold(s, p)` | 返回字符串s从开始到p的子串表示的数值<br>分别是float,double和long double <br>p是`size_t`指针，用来保存s中第一个非数值字符的下标，默认为0(代表全部字符串)
+
+<h4 id="special_forward_list">特殊的`forward_list`</h4>
+
+在一个`forward_list`中添加或删除元素的操作是通过改变给定元素之后的元素来完成的。
+
+`forward_list`插入删除操作 | 说明
+------------------------- | -------------------------------------------------
+`lst.before_begin()`<br>`lst.cbefore_begin()` | 返回指向链表首元素之前不存在的元素的迭代器<br>不可解引用
+`lst.insert_after(p, t)`<br>`lst.insert_after(p, n, t)`<br>`lst.insert_after(p, b, e)`<br>`lst.insert_after(p, il)` | 在迭代器p之后的位置插入元素<br>t是对象，n是数量，b和e是表示范围的一对迭代器(b和e不能指向lst内)，il是花括号列表<br>返回指向最后一个插入元素的迭代器<br>若范围为空，则返回p<br>若p为尾后迭代器，则函数行为未定义
+`emplace_after(p, args)` | 使用args在p指定的位置之后创建一个元素<br>返回一个指向这个新元素的迭代器<br>若p为尾后迭代器，则函数行为未定义
+`lst.erase_after(p)`<br>`lst.erase_after(b, e)` | 删除p指向的位置之后的元素，或删除`(b,e]`之间的元素<br>返回一个指向被删元素之后元素的迭代器<br>若p指向lst的尾元素，或p是一个尾后迭代器，则函数行为未定义
 
 <h2 id="generic_algorithms">容器泛型算法</h2>
 
@@ -767,7 +788,7 @@ pair 操作 | 说明
 
 <h3 id="associative_container_operations">关联容器操作</h3>
 
-#### 类型别名
+<h4 id="associative_container_type_alias">类型别名</h4>
 
 关联容器类型别名 | 说明
 ------------------ | -------------------------------------------------
@@ -777,7 +798,7 @@ pair 操作 | 说明
 
 **关键字不能被更改**。
 
-#### map类操作
+<h4 id="map_class_operations">map 类操作</h4>
 
 向map添加元素：
 
@@ -799,7 +820,7 @@ map下标操作 | 说明
 `c[k]` | 返回关键字为k的元素的值<br>若k不在c中，则添加一个关键字为k的元素，并对关联值进行值初始化
 `c.at(k)` | 访问关键字为k的元素的值<br>若k不在c中，抛出`out_of_range`异常
 
-#### 关联容器常用操作
+<h4 id="common_associative_container_operations">关联容器常用操作</h4>
 
 关联容器常用操作 | 说明
 ------------------ | -------------------------------------------------
@@ -815,7 +836,7 @@ map下标操作 | 说明
 `c.upper_bound(k)` | 返回一个迭代器，指向最后一个关键字等于k的元素之后的位置<br>若关键字k不在c中，则与`c.lower_bound(k)`返回相同的迭代器
 `c.equal_range(k)` | 返回一个迭代器组成的pair，表示关键字等于k的元素的范围，前闭后开<br>失败两个成员都是`c.end()`
 
-#### 无序关联容器
+<h4 id="unordered_associative_containers">无序关联容器</h4>
 
 C++11 定义了4个无序关联容器: `unordered_map`,`unordered_set`,`unordered_multimap`和`unordered_multiset`。这些容器不使用比较运算符组织元素，而是使用哈希函数(将给定类型的值映射到整形`size_t`值的函数)和关键字的`==`运算符。
 
@@ -831,11 +852,127 @@ C++11 定义了4个无序关联容器: `unordered_map`,`unordered_set`,`unordere
 
 静态内存用来保存static对象和外部变量，栈内存用来保存函数内的非static对象。**动态分配使用栈内存**。
 
-<h2 id="smart_pointer">智能指针</h2>
+<h3 id="new_and_delete">new, delete</h3>
 
-智能指针会自动释放所指向的对象：
+new: `bad_alloc`和`nothrow`定义于头文件`<new>`中。
+
+```c++
+type *name = new type;                  // 默认初始化，失败抛出std::bad_alloc
+type *name = new type();                // 值初始化
+const type *name = new const type(val); // const对象必须初始化，除非有默认构造函数
+type *name = new (nothrow) type;        // 失败返回nullptr
+// 动态数组，非数组类型
+// 不能对动态数组使用begin或end
+// size为0时，返回一个合法的非空指针，但不能解引用
+type *name = new type[size];
+type *name = new type[size]();
+type *name = new type[size]{ val0, val1, ... }; // 剩余值进行值初始化
+const type *name = new const type[size](val); 
+type *name = new (nothrow) type[size];        
+```
+
+delete: 
+
+*	**传递给delete的指针必须指向动态分配的内存，或是一个空指针**；
+*	**对同一块内存多次释放，可能会破坏内存空间**；
+*	**delete之后，指针仍然指向已经释放的动态内存的地址**；
+*	**建议delete之后，赋值为nullptr**；
+
+```c++
+int i, *pi1 = &i, *pi2 = nullptr;
+double *pd1 = new double(33), *pd2 = pd1;
+const int *pci = new const int(123);
+delete i;      // 错误
+delete pi1;    // 未定义
+delete pi2;    // 可以
+delete pd1;    // 正确
+delete pd2;    // 未定义，已被释放
+delete pci;    // 正确
+// 释放动态数组
+auto *ip = new int[10]();
+delete []ip;
+```
+
+<h3 id="smart_pointer">智能指针</h3>
+
+智能指针会自动释放(**默认使用delete**)所指向的对象：
 
 *	`shared_ptr`允许多个指针指向同一个对象；
 *	`unique_ptr`独占所指向的对象；
 *	`weak_ptr`是一种弱引用，指向`shared_ptr`所管理的对象；
 *	它们都在头文件`<memory>`中。
+
+`shared_ptr`自动释放的原理：**一旦使用`shared_ptr`管理指针，就不应该用内置指针来访问`shared_ptr`所指向的内存**。
+
+*	当一个`shared_ptr`被用于初始化另一个`shared_ptr`，或将它作为参数传递给一个函数以及作为函数的返回值时，其关联的计数器递增；
+*	当一个`shared_ptr`被赋新值或是其被销毁，其关联的计数器会递减；
+*	当一个`shared_ptr`所关联的计数器变为0时，就会自动释放其保存的指针。
+
+关于`unique_ptr`:
+
+*	**某个时刻只能有一个`unique_ptr`指向给定的对象**；
+*	当`unique_ptr`被销毁时，其所指向的对象也被销毁；
+*	**定义一个`unique_ptr`需要将其绑定到一个new返回的指针上，且必须直接初始化**；
+*	**`unique_ptr`不支持拷贝和赋值**；
+*	**可以拷贝或赋值一个即将被销毁的`unique_ptr`**。
+
+关于`weak_ptr`:
+
+*	不控制所指向对象生存期的智能指针；
+*	指向由一个`shared_ptr`管理的对象；
+*	**将一个`weak_ptr`绑定到一个`shared_ptr`不会改变`shared_ptr`的引用计数**；
+*	**不能使用`weak_ptr`直接访问对象，必须调用lock**。
+
+`shared_ptr` 和 `unique_ptr` 都支持的操作 | 说明
+---------------------------------------- | -------------------------------------------------
+`shared_ptr<T> sp` <br> `unique_ptr<T> up` | 空智能指针，可以指向类型为T的对象
+`p` | 将p用作一个条件判断，保存的指针不为空时为true
+`*p` | 解引用，获得p指向的对象
+`p->mem` | `(*p).mem`
+`p.get()` | 返回p中保存的指针<br>危险，**只有在确定代码不会delete指针的情况下才能使用**
+`swap(p, q)` <br> `p.swap(q)` | 交换p和q中的指针
+
+`shared_ptr` 独有的操作 | 说明
+------------------------ | -------------------------------------------------
+`make_shared<T>(args)` | 返回一个`shared_ptr` <br>指向一个动态分配的类型为T的对象<br>使用args初始化此对象<br>**最安全的分配和使用动态内存的方法**
+`shared_ptr<T> p(q)` | p是`shared_ptr` q 的拷贝，递增q中的计数器<br> q中的指针必须能转换为 `T*`
+`shared_ptr<T> p(q)` | explicit构造函数<br>p管理内置指针q指向的对象<br> q必须指向new分配的内存，且必须直接初始化<br>q必须能够转换成`T*`类型
+`shared_ptr<T> p(u)` | p从`unique_ptr` u 那里接管了对象的所有权，并将u置为空
+`shared_ptr<T> p(q, d)` | q可以是内置指针，也可以是`shared_ptr`，但使用可调用对象d代替delete <br>适用于指针指向的资源不是new分配的内存
+`p = q` | p, q皆为`shared_ptr`，所保存的指针必须能够相互转换<br>递增q的引用计数，递减p的引用计数
+`p.use_count()` | 返回与p共享对象的智能指针数量<br>**很慢，主要用于调试**
+`p.unique()` | 若`p.use_count()`为1，返回true
+
+`unique_ptr` 独有的操作 | 说明
+----------------------- | -------------------------------------------------
+`unique_ptr<T> u1` <br> `unique_ptr<T, D> u2` <br> `unique_ptr<T, D> u3(d)`| 空`unique_ptr`<br> u1使用delete <br> u2使用一个类型为D的可调用对象来释放指针<br> u3使用d释放指针
+`unique_ptr<T> u1(new T(val))` <br> `unique_ptr<T, D> u2(new T(val), d)` | 初始化
+`unique_ptr<T[]> u` | u指向一个动态分配的数组
+`unique_ptr<T[]> u(p)` | u指向内置指针p所指向的一个动态分配的数组<br> p必须能转换为类型`T*`
+`u[i]` | 若u指向一个动态数组，返回数组下标为i的对象
+`u = nullptr` | 释放u指向的对象，并将u置为空
+`u.release()` | u放弃对指针的控制权，并将u置为空<br>返回管理的指针，**需要负责释放**<br>可以将指针所有权转换给另一个`unique_ptr`
+`u.reset()` | 释放u指向的对象，并将u置为空
+`u.reset(q)` | 释放u指向的对象，并将u指向内置指针q
+
+```c++
+unique_ptr<int> p1(new int(10));     // 初始化
+unique_ptr<int> p2(p1.release());    // p1的所有权转移给p2，p1置为空
+unique_ptr<int> p3(new int(20)); 
+p2.reset(p3.release());              // 释放p2，将p3的所有权转移给p2
+unique_ptr<int[]> p4(new int[10]()); // 动态数组
+p4[1] = 123;
+shared_ptr<int> sp(new int[10](), [](int *p){ delete []p; });
+*(sp.get() + 1) = 123;               // shared_ptr未定义下标运算符
+```
+
+`weak_ptr` 独有的操作 | 说明
+------------------------------- | -------------------------------------------------
+`weak_ptr<T> w` | 空`weak_ptr`
+`weak_ptr<T> w(sp)` | 与`shared_ptr` sp 指向相同的对象<br>T必须能转换为sp指向的类型
+`w = p` | p可以是一个`shared_ptr`或`weak_ptr` <br> w和p共享对象
+`w.reset()` | 将w置为空
+`w.use_count()` | 与w共享对象的`shared_ptr`的数量
+`w.expired()` | 若`w.use_count()`为0，返回true
+`w.lock()` | 返回一个指向w的对象的`shared_ptr` <br> 若`w.expired()`为true，返回一个空`shared_ptr`
+
