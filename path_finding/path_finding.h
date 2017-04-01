@@ -123,6 +123,7 @@ namespace path_finding_
 		point3d start;
 		point3d goal;
 		point3d valid_goal;
+		double deviation_ratio;
 		float goal_deviation;
 		std::chrono::time_point<std::chrono::steady_clock> time_start;
 		std::chrono::time_point<std::chrono::steady_clock> time_stop;
@@ -203,16 +204,23 @@ namespace path_finding_
 			const point3d &point_start,
 			const point3d &point_goal,
 			const double &resolution_ratio)
-			: start(point_start), goal(point_goal), valid_goal(point_goal)
+			: start(point_start), goal(point_goal), 
+			valid_goal(point_goal), deviation_ratio(resolution_ratio)
 		{
 			ptree = nullptr;
+			set_filename(filename);
+		}
+
+		// some value set
+		inline void set_filename(const std::string &filename)
+		{
 			if (check_filename(filename))
 			{
 				ptree = std::make_shared<OcTree>(filename);
 				if (ptree)
 				{
 					goal_deviation = static_cast<float>(
-						ptree->getResolution() * resolution_ratio
+						ptree->getResolution() * deviation_ratio
 						);
 				}
 				else
@@ -223,19 +231,9 @@ namespace path_finding_
 			}
 		}
 
-		// some value set
-		inline void set_filename(std::string &filename)
-		{
-			if (check_filename(filename))
-			{
-				ptree = std::make_shared<OcTree>(filename);
-
-			}
-		}
-
 		inline void set_resolution_ratio(const double &resolution_ratio)
 		{
-			if (!ptree)
+			if (ptree)
 			{
 				goal_deviation = static_cast<float>(
 					ptree->getResolution() * resolution_ratio
