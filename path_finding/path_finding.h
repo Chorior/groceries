@@ -231,12 +231,13 @@ namespace path_finding_
 			}
 		}
 
-		inline void set_resolution_ratio(const double &resolution_ratio)
+		inline void set_deviation_ratio(const double &ratio)
 		{
-			if (ptree)
+			if ((ratio != deviation_ratio) && ptree)
 			{
+				deviation_ratio = ratio;
 				goal_deviation = static_cast<float>(
-					ptree->getResolution() * resolution_ratio
+					ptree->getResolution() * deviation_ratio
 					);
 			}
 		}
