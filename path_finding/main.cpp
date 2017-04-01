@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "path_finding.h"
 
 inline void print_vector(const std::vector<octomap::point3d> &vec);
@@ -13,9 +14,9 @@ int main(int argc, char *argv[])
 
 	using namespace path_finding_;
 
-	point3d start(-0.812685013f, -0.190016061f, 2.187417746f), goal(-1.812685013f, -0.190016061f, 2.187417746f);
+	point3d start(0.0f, 0.0f, 0.0f), goal(-1.812685013f, 0.0f, 2.187417746f);
 	//point3d start(2.0f, 2.0f, 2.0f), goal(2.98f, 2.24f, 2.0f);
-	path_finding pf(argv[1], start, goal, 0.1);
+	path_finding pf(argv[1], start, goal, 0.3);
 
 	std::vector<point3d> paths[4];
 
@@ -42,10 +43,11 @@ int main(int argc, char *argv[])
 
 void print_vector(const std::vector<octomap::point3d> &vec)
 {
+	std::ofstream out("result.txt", std::ofstream::binary);
 	for (auto &e : vec)
 	{
-		std::cout << e << std::ends;
+		out << e << std::ends;
 	}
-	std::cout << std::endl;
+	out << std::endl;
 }
 

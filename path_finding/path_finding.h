@@ -60,7 +60,7 @@ namespace path_finding_
 
 			if (state & 4) { get_neighbors(0, id, result); }
 			if (state & 2) { get_neighbors(1, id, result); }
-			if (state & 0) { get_neighbors(2, id, result); }
+			if (state & 1) { get_neighbors(2, id, result); }
 
 			return result;
 		}
