@@ -152,6 +152,16 @@ namespace path_finding_
 			return true;
 		}
 
+		inline void set_goal_deviation()
+		{
+			if (ptree)
+			{
+				goal_deviation = static_cast<float>(
+					ptree->getResolution() * deviation_ratio
+					);
+			}
+		}
+
 		// check equality with deviation
 		inline bool
 			point3d_equal(const point3d &a, const point3d &b)
@@ -200,46 +210,56 @@ namespace path_finding_
 			return path;
 		}
 	public:
+		path_finding(const std::shared_ptr<OcTree> &tree,
+			const point3d &point_start,
+			const point3d &point_goal,
+			const double &resolution_ratio)
+			: ptree(nullptr), start(point_start), goal(point_goal),
+			valid_goal(point_goal), deviation_ratio(resolution_ratio)
+		{
+			set_ptree(tree);
+		}
+
 		path_finding(const std::string &filename,
 			const point3d &point_start,
 			const point3d &point_goal,
 			const double &resolution_ratio)
-			: start(point_start), goal(point_goal), 
+			: ptree(nullptr), start(point_start), goal(point_goal),
 			valid_goal(point_goal), deviation_ratio(resolution_ratio)
 		{
-			ptree = nullptr;
-			set_filename(filename);
+			set_ptree(filename);
 		}
 
 		// some value set
-		inline void set_filename(const std::string &filename)
+		inline void set_ptree(const std::string &filename)
 		{
 			if (check_filename(filename))
 			{
 				ptree = std::make_shared<OcTree>(filename);
-				if (ptree)
-				{
-					goal_deviation = static_cast<float>(
-						ptree->getResolution() * deviation_ratio
-						);
-				}
-				else
+				if (!ptree)
 				{
 					std::cout << "create OcTree from " << filename << " failed.";
 					exit(EXIT_FAILURE);
 				}
+				set_goal_deviation();
 			}
+		}
+
+		inline void set_ptree(const std::shared_ptr<OcTree> &tree)
+		{
+			ptree = tree;
+			if (!ptree)
+			{
+				std::cout << "octree pointer is NULL.";
+				exit(EXIT_FAILURE);
+			}
+			set_goal_deviation();
 		}
 
 		inline void set_deviation_ratio(const double &ratio)
 		{
-			if ((ratio != deviation_ratio) && ptree)
-			{
-				deviation_ratio = ratio;
-				goal_deviation = static_cast<float>(
-					ptree->getResolution() * deviation_ratio
-					);
-			}
+			deviation_ratio = ratio;
+			set_goal_deviation();
 		}
 
 		inline void set_start(const point3d &s)

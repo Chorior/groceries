@@ -17,6 +17,7 @@ int main(int argc, char *argv[])
 	point3d start(0.0f, 0.0f, 0.0f), goal(-1.812685013f, 0.0f, 2.187417746f);
 	//point3d start(2.0f, 2.0f, 2.0f), goal(2.98f, 2.24f, 2.0f);
 	path_finding pf(argv[1], start, goal, 0.3);
+	//path_finding pf(std::make_shared<octomap::OcTree>(argv[1]), start, goal, 0.3);
 
 	std::vector<point3d> paths[4];
 
