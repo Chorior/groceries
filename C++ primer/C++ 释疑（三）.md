@@ -20,7 +20,14 @@ tags:
 	*	[移动操作](#move_operation)
 	*	[swap 操作](#swap_operation)
 	*	[移动和拷贝重载、引用限定符](#move_copy_override_and_ref_qualifier)
-*	[重载运算与类型转换](#operator_override)
+*	[重载运算与类型转换](#operator_overload)
+	*	[运算符重载抉择](#operator_overload_choice)
+	*	[箭头运算符的执行过程](#arrow_operator_execution)
+	*	[标准库函数对象](#standard_function_object)
+	*	[可调用对象](#callable_object)
+	*	[类型转换运算符](#type_conversion)
+*	[面向对象程序设计](#object_oriented_programming)
+	*	[基类与派生类](#base_and_derived_class)
 
 <h2 id="copy_control">拷贝控制</h2>
 
@@ -51,8 +58,8 @@ tags:
 class noncopyable
 {
 protected:
-	noncopyable() = default;   // 默认构造函数不可访问
-	~noncopyable() = default;  // 析构函数不可访问，移动构造函数被定义为删除的
+	noncopyable() = default;           // 默认构造函数不可访问
+	virtual ~noncopyable() = default;  // 析构函数不可访问，移动构造函数被定义为删除的
 
 	noncopyable(const noncopyable&) = delete;
 	noncopyable& operator=(const noncopyable&) = delete;
@@ -230,7 +237,7 @@ retVal() = j;  // 错误，retval()返回一个右值
 i = retVal();  // 正确
 ```
 
-<h2 id="operator_override">重载运算与类型转换</h2>
+<h2 id="operator_overload">重载运算与类型转换</h2>
 
 当运算符作用于类类型的运算对象时，可以通过运算符重载定义该运算符的含义。
 
@@ -239,8 +246,8 @@ i = retVal();  // 正确
 *	重载运算符函数也包含返回类型、参数列表以及函数体；
 *	**对于一个重载的运算符函数，它要么是类的成员，要么至少含有一个类类型的参数**；
 *	**重载运算符函数的参数数量与该运算符作用的运算对象数量一样多，但对于成员重载运算符函数，左侧运算对象绑定到隐式的this指针，所以成员运算符函数的显式参数数量比运算符的运算对象总数少一个**；
-*	**对于成员重载运算符，左侧运算对象必须是所属类的一个对象**；
 *	**对于二元运算符，左侧运算对象传递给第一个参数，右侧运算对象传递给第二个参数**；
+*	**对于成员重载运算符，左侧运算对象必须是所属类的一个对象**；
 *	**除重载的函数调用运算符`operator()`外，其它重载运算符均不能含有默认实参**。
 
 可以被重载的运算符
@@ -261,35 +268,196 @@ i = retVal();  // 正确
 ::		.*		.		?:
 ```
 
-运算符重载抉择：
-
-*	**如果需要定义`operator==`，那么通常也应该定义`operator!=`**；
-*	**如果需要定义`operator<`，那么通常也应该包含`>`、`>=`、`<=`操作**；
-*	**如果需要定义算数运算符或位运算符，那么最好也定义复合赋值运算符**；
-*	**逻辑运算符和关系运算符应该返回bool**；
-*	**算数运算符（如+）应该返回一个类类型的值**；
-*	**赋值运算符和复合赋值运算符（如+=）应该返回左侧运算对象的一个引用**；
-*	**赋值(=)、下标([])、调用(())、成员访问箭头(->)必须定义为成员函数**；
-*	**输入输出运算符必须是非成员函数，因为左侧运算符对象是一个iostream对象而非类对象**。
-
-```c++
-bool operator==(const CLASS_NAME &a, const CLASS_NAME &b);
-// == 和 != 实际只有一个在工作
-bool operator!=(const CLASS_NAME &a, const CLASS_NAME &b) { return !(a == b); }
-CLASS_NAME operator+(const CLASS_NAME &a, const CLASS_NAME &b);
-CLASS_NAME& operator+=(CLASS_NAME &a, const CLASS_NAME &b);
-// 输出运算符应尽可能减少格式化操作（如换行）
-std::ostream& operator<<(std::ostream& out, const CLASS_NAME &item);
-// 输入运算符必须处理输入可能失败的情况
-std::istream& operator>>(std::istream& in, CLASS_NAME &item);
-```
-
 可以像调用普通函数一样调用运算符函数
 
 ```c++
 data1 + data2;           // 普通表达式
 operator+(data1, data2); // 等价的函数调用
+data1.operator++();      // 前置版本
+data1.operator++(2);     // 后置版本
 ```
 
 **重载的逻辑与运算符`&&`、逻辑或运算符`||`和逗号运算符`,`无法保留运算对象的求值顺序，重载的`&&`和`||`还无法保留内置运算符的短路求值属性，因此不建议重载它们，另外取地址运算符`&`也不建议重载**。
 
+<h3 id="operator_overload_choice">运算符重载抉择</h3>
+
+*	**如果需要定义`operator==`，那么通常也应该定义`operator!=`**；
+*	**如果需要定义`operator<`，那么通常也应该包含`>`、`>=`、`<=`操作**；
+*	**如果需要定义算数运算符或位运算符，那么最好也定义复合赋值运算符**；
+*	**下标运算符最好同时定义常量版本和非常量版本，一个返回常量引用，一个返回普通引用**；
+*	**递增递减运算符最好同时定义前置和后置版本；后置版本接受一个额外的不被使用的int类型的参数，且返回值是一个值**；
+*	**重载的箭头运算符必须返回类的指针或自定义了箭头运算符的某个类的对象，关于[箭头运算符的执行过程](#arrow_operator_execution)**；
+*	**逻辑运算符和关系运算符应该返回bool**；
+*	**算数运算符（如+）应该返回一个类类型的值**；
+*	**赋值运算符和复合赋值运算符（如+=）应该返回左侧运算对象的一个引用**；
+*	**赋值(=)、下标([])、调用(())、成员访问箭头(->)必须定义为成员函数**；
+*	**一个类可以定义多个函数调用运算符**；
+*	**输入输出运算符必须是非成员函数，因为左侧运算符对象是一个iostream对象而非类对象**。
+
+```c++
+bool operator==(const CLASS_NAME &a, const CLASS_NAME &b);
+bool operator!=(const CLASS_NAME &a, const CLASS_NAME &b) { return !(a == b); }
+CLASS_NAME operator+(const CLASS_NAME &a, const CLASS_NAME &b);
+CLASS_NAME& operator+=(CLASS_NAME &a, const CLASS_NAME &b);
+std::ostream& operator<<(std::ostream& out, const CLASS_NAME &item); // 尽可能减少格式化操作
+std::istream& operator>>(std::istream& in, CLASS_NAME &item); // 必须处理输入可能失败的情况
+class FOO
+{
+public:
+	TYPE& operator[](const std::size_t n);
+	const TYPE& operator[](const std::size_t n) const;
+	FOO& operator++();     // 前置版本
+	FOO operator++(int);   // 后置版本
+	TYPE& operator*() const;
+	TYPE* operator->() const { return & this->operator*(); }
+	TYPE operator()(args) const; // 函数调用运算符
+}
+```
+
+<h3 id="arrow_operator_execution">箭头运算符的执行过程</h3>
+
+```c++
+point->mem;
+```
+
+1. 如果point是指针，则表达式等价于`(*point).mem`;
+2. 如果point是定义了`operator->`的类的一个对象，那么获取`point.operator->()`的结果，若结果是一个指针，则执行第一步，否则重复调用当前步骤。
+
+<h3 id="standard_function_object">标准库函数对象</h3>
+
+标准库函数对象定义于`<functional>`头文件中。
+
+标准库函数对象 | 说明
+-------------------- | -------------------------------------------------
+`plus<Type>` <br> `minus<Type>` <br> `multiplies<Type>` <br> `divides<Type>` <br> `negate<Type>`| 加<br>减<br>乘<br>除<br>取反
+`equal_to<Type>` <br> `not_equal_to<Type>` <br> `greater<Type>` <br> `greater_equal<Type>` <br> `less<Type>` <br> `less_equal<Type>` | `=` <br> `!=` <br> `>` <br> `>=` <br> `<` <br> `<=`
+`logical_and<Type>` <br> `logical_or<Type>` <br> `logical_not<Type>` | 与<br>或<br>非
+
+```c++
+#include <iostream>
+#include <cstdlib>
+#include <algorithm>
+#include <iterator>
+#include <string>
+#include <vector>
+#include <functional>
+
+int main()
+{
+	std::istream_iterator<std::string> in_iter(std::cin), eof;
+	std::vector<std::string> svec(in_iter, eof);
+	std::sort(svec.begin(), svec.end(), std::greater<std::string>());
+	for (auto &s : svec)
+	{
+		std::cout << s << std::endl;
+	}
+	getchar();
+	return EXIT_SUCCESS;
+}
+```
+
+<h3 id="callable_object">可调用对象</h3>
+
+可调用对象包括
+
+*	函数
+*	函数指针
+*	lambda表达式
+*	bind创建的对象
+*	重载了函数调用符的类
+
+函数指针不能指向lambda表达式、bind创建的对象和重载了函数调用符的类，要想保存所有类型的可调用对象，需要使用C++11的新标准库类型function。
+
+function是一个模板，定义于`<functional>`头文件中，需要的额外信息是function类能够表示的对象的调用形式，如`function<int(int, int)>`。
+
+function操作 | 说明
+-------------------- | -------------------------------------------------
+`function<T> f` | f是一个用来存储可调用对象的空function,T是`retType(args)`
+`function<T> f(nullptr)` | 显式的构造一个空function
+`function<T> f(obj)` | 在f中存储可调用对象obj的副本
+`f` | 将f作为条件：当f含有可调用对象时为真
+`f(args)` | 调用f中的对象，参数是args
+`result_type` | 类型别名，该function类型的可调用对象返回的类型
+`argument_type` <br> `first_argument_type` <br> `second_argument_type` |  类型别名，当T有一个或两个实参时定义的类型
+
+```c++
+#include <iostream>
+#include <cstdlib>
+#include <string>
+#include <functional>
+#include <unordered_map>
+
+float add(float a, float b) { return a + b; }
+int add(int a, int b) { return a + b; }
+int divide(int a, int b) { return a / b; }
+
+struct mod
+{
+	int operator()(int a, int b) { return a % b; }
+};
+
+int main()
+{
+	// use _1, _2
+	using namespace std::placeholders;
+	std::unordered_map<std::string, std::function<int(int, int)> > binops = {
+		{"+", static_cast<int(*)(int,int)>(add)}, // 有重载时需要指定版本
+		{"-", std::minus<int>()},
+		{"*", [](int a, int b) {return a * b; }},
+		{"/", std::bind(divide,_1,_2)},
+		{"%", mod()}
+	};
+	std::cout << binops["+"](5, 3) << std::endl;
+	std::cout << binops["-"](5, 3) << std::endl;
+	std::cout << binops["*"](5, 3) << std::endl;
+	std::cout << binops["/"](5, 3) << std::endl;
+	std::cout << binops["%"](5, 3) << std::endl;
+	getchar();
+	return EXIT_SUCCESS;
+}
+```
+
+<h3 id="type_conversion">类型转换运算符</h3>
+
+转换构造函数和类型转换运算符共同定义了类类型转换；类型转换函数的一般形式如下
+
+```c++
+operator type() const;
+```
+
+**类型转换函数必须是类的成员函数**，没有返回类型，形参列表为空。
+
+**避免过度的使用类型转换函数，如果一定要使用，建议定义为explicit，否则会自动转换**，通常会定义一个bool类型转换。
+
+**在下列位置时，即使是explicit类型转换，也会自动进行类型转换**：
+
+*	if, while, do的条件位置；
+*	for语句头的条件表达式；
+*	逻辑与或非的运算对象；
+*	条件运算符(?:)的条件表达式。
+
+<h2 id="object_oriented_programming">面向对象程序设计</h2>
+
+面向对象程序设计的核心思想
+
+*	数据抽象：接口与实现分离；
+*	继承：定义相似的类型并对其关系建模；
+*	动态绑定：使用基类的引用或指针调用一个虚函数时发生，一定程度上忽略类型的区别。
+
+<h2 id="base_and_derived_class">基类与派生类</h2>
+
+*	**如果基类希望其派生类各自定义适合其自身的版本，那么这些函数应该被声明为虚函数**；
+*	**任何构造函数之外的非静态函数都可以是虚函数，virtual只能出现在类内部的声明语句之前**；
+*	**基类的虚函数在派生类中隐式的也是虚函数**；
+*	**派生类需要对所有重新定义的虚函数进行声明，并在函数形参列表后增加一个override关键字(C++11)，如果有const限定符或引用限定符，那么override在最后面**；
+*	**基类通常应该定义一个虚析构函数，这样动态绑定时可以调用正确的析构函数**；
+*	**如果派生类没有覆盖其基类中的某个虚函数，那么派生类会直接继承其在基类中的版本**；
+*	**protected成员在派生类中是可见的**；
+*	**派生类必须使用基类的构造函数来初始化其基类部分，即委托构造函数，默认使用基类的默认构造函数**；
+*	**基类静态成员只存在唯一的实例，若其是可访问的，那么基类和派生类均可访问**；
+*	**派生类的声明不能包含类派生列表，即`: public Base`**；
+*	**要继承一个类，那么该类必须被定义而不能仅声明，这条规定排除了派生自身这个错误**；
+*	**在类名后跟一个关键字final可防止该类被继承**；
+*	**可以将基类指针或引用绑定到派生类对象上，智能指针也支持该操作**；
+*	**不存在从基类到派生类的隐式类型转换**；
+*	**当使用一个派生类对象为一个基类对象初始化或赋值时，只有该派生类对象中的基类部分会被拷贝、移动或赋值**。
