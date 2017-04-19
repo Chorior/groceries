@@ -29,6 +29,8 @@ tags:
 *	[面向对象程序设计](#object_oriented_programming)
 	*	[基类与派生类](#base_and_derived_class)
 	*	[虚函数](#virtual_function)
+*	[模板与泛型编程](#template_and_generic_program)
+	*	[模板概述](#template_overview)
 
 <h2 id="copy_control">拷贝控制</h2>
 
@@ -507,3 +509,59 @@ protected:
 *	**虚函数的默认实参由调用的静态类型决定**，建议将基类和派生类中定义的默认实参设为相同；
 *	**要想避免动态绑定，可以使用作用域运算符`Base::mem()`，这通常用于虚函数想要调用被覆盖的虚函数时，如果没加作用域运算符，将会无限递归**；
 *	**重构就是给已定义的类加个基类(爸爸)**。
+
+<h2 id="template_and_generic_program">模板与泛型编程</h2>
+
+<h3 id="template_overview">模板概述</h2>
+
+一个函数模板就是一个公式，可用来生成针对特定类型的函数模板。
+
+*	模板定义以关键字template开始，后跟一个用方括号`<>`包起来的模板参数列表；
+*	**模板参数列表不能为空**；
+*	**模板内不能重用模板参数名**；
+*	**类型模板参数前必须加上关键字class或typename，非类型模板参数必须指定其特定类型**
+*	**非类型模板参数的实参必须是常量表达式，绑定到指针或引用非类型参数的实参必须具有静态的生存期**；
+*	使用模板时，需要显式或隐式的指定模板实参，并将其绑定到模板参数上；
+*	**编译器可以为函数模板自动推断其模板参数类型(但最好显式指定)，但类模板不行，必须显示指定模板实参**；
+*	**模板程序应该尽量减少对实参类型的要求**，如在已使用小于运算符的情况下，需要大于运算符时，可以转换为使用小于运算符；
+*	**保证传递给模板的实参支持模板所要求的所有操作，以及这些操作在模板中能正确工作，是调用者的责任**；
+*	**要实例化一个模板，该模板必须是已定义的**；
+*	**每个模板实例都是独立的，即使是static成员也不例外**；
+*	**定义于类模板之外的成员函数必须以关键字template开始，后接类模板参数列表**；
+*	**一个类模板的成员函数(即使是static成员函数)只有当程序用到它时才进行实例化，没用到的成员函数不会被实例化**；
+*	**在类模板作用域内，可以直接使用模板名，而不必指定模板实参**；
+*	**当需要通知编译器一个名字代表类型时，必须使用关键字typename而不能使用class**；
+*	**模板参数也可以定义默认实参，规则与函数默认实参一样，右侧所有参数都必须有默认实参**；
+*	**一个类里面可以定义模板成员函数，成员模板不能是虚函数**；
+*	**显式实例化会实例化所有成员**；
+
+```c++
+template <typename T, int N>
+inline T foo(T* p)
+{
+	T tmp = *p;
+	//..
+	return tmp;
+}
+
+template <typename T1, typename T2>
+class Example
+{
+public:
+	Example() = default;
+	void do_something();
+}
+
+template <typename T1, typename T2>
+void Example<T1,T2>::do_something()
+{
+	// do something
+}
+
+// 显式实例化
+extern template foo<int>;  // 实例化声明
+extern template class Example<string, int>;
+template int foo(int * p); // 实例化定义
+template class Example<string, int>;
+
+```
