@@ -31,6 +31,7 @@ tags:
 	*	[虚函数](#virtual_function)
 *	[模板与泛型编程](#template_and_generic_program)
 	*	[模板概述](#template_overview)
+	*	[模板特例化](#template_specialization)
 
 <h2 id="copy_control">拷贝控制</h2>
 
@@ -512,7 +513,7 @@ protected:
 
 <h2 id="template_and_generic_program">模板与泛型编程</h2>
 
-<h3 id="template_overview">模板概述</h2>
+<h3 id="template_overview">模板概述</h3>
 
 一个函数模板就是一个公式，可用来生成针对特定类型的函数模板。
 
@@ -523,6 +524,7 @@ protected:
 *	**非类型模板参数的实参必须是常量表达式，绑定到指针或引用非类型参数的实参必须具有静态的生存期**；
 *	使用模板时，需要显式或隐式的指定模板实参，并将其绑定到模板参数上；
 *	**编译器可以为函数模板自动推断其模板参数类型(但最好显式指定)，但类模板不行，必须显示指定模板实参**；
+*	**如果一个非函数模板与一个函数模板提供同样好的匹配，则选择非模板版本**；
 *	**模板程序应该尽量减少对实参类型的要求**，如在已使用小于运算符的情况下，需要大于运算符时，可以转换为使用小于运算符；
 *	**保证传递给模板的实参支持模板所要求的所有操作，以及这些操作在模板中能正确工作，是调用者的责任**；
 *	**要实例化一个模板，该模板必须是已定义的**；
@@ -563,5 +565,54 @@ extern template foo<int>;  // 实例化声明
 extern template class Example<string, int>;
 template int foo(int * p); // 实例化定义
 template class Example<string, int>;
-
 ```
+
+<h3 id="template_specialization">模板特例化</h3>
+
+当不能使用或不希望使用模板版本时，可以定义类或函数模板的一个特例化版本。
+
+**特例化一个函数模板时，原模板的声明必须在作用域中，且必须为原模板的每个模板参数提供实参**，特例化不影响函数匹配。
+
+**在任何使用模板实例的代码之前，特例化版本的声明也必须在作用域中**。
+
+```c++
+template <>
+void func(int a, int b){
+	return a < b;
+}
+```
+
+默认情况下，无序容器使用`hash<key_type>`来组织元素，为使自己的数据类型也能使用无序容器，必须定义一个hash模板的特例化版本。
+
+一个特例化的hash类必须定义：
+
+*	一个重载的调用运算符，接受一个容器关键字类型的对象，返回`size_t`；
+*	两个类型成员，`result_type`和`argument_type`，分别表示调用运算符的返回类型和参数类型；
+*	默认构造函数和拷贝赋值运算符（可以隐式定义）。
+
+```c++
+struct point3d{
+	float a;
+	float b;
+	float c;
+}
+// 必须在原模板定义所在的命名空间中特例化
+namespace std{	
+
+	template <>
+	struct hash<point3d>
+	{
+		typedef size_t result_type;
+		typedef point3d argument_type;
+		size_t operator()(const point3d& n) const;
+	};
+
+// 重载的调用运算符必须为给定类型的对象定义一个哈希函数
+// 对于一个给定值，任何时候调用此函数都应该返回相同的结果，对于不等的对象几乎总是产生不同的结果
+	size_t hash<point3d>::operator()(const point3d& n) const
+	{
+		return hash<float>()(n.a) ^ hash<float>()(n.b) ^ hash<float>()(n.c);
+	}
+}
+```
+
