@@ -108,7 +108,9 @@ const wchar_t* | wregex,wcmatch,wcsub_match,wcregex_iterator
 
 bitset类定义于`<bitset>`中，能够处理超过最长整形类型大小的位集合。
 
-**C++程序不应该使用库函数rand，而应使用`default_random_engine`类和恰当的分布类对象(`<random>`)**。随机数发生器是指分布对象与引擎对象的组合。
+**C++程序不应该使用库函数rand，而应使用`default_random_engine`类和恰当的分布类对象(`<random>`)**。
+
+随机数发生器是指分布对象与引擎对象的组合。
 
 ```c++
 uniform_int_distribution<unsigned> u(0, 9);
