@@ -22,7 +22,7 @@ Qt 是一个跨平台的应用开发框架，它被广泛用于开发GUI应用�
 
 Qt 一般使用C++进行开发，通过语言绑定，也可以使用其它语言。
 
-Qt开放源代码，你可以在[Qt Wiki](http://wiki.qt.io/Get_the_Source)上获取；其提供三种授权方式：
+Qt开放源代码，你可以在[Qt github](https://github.com/qt)上获取；其提供三种授权方式：
 
 *	商业版：可以任意的修改源代码而不必公开，适用于开发专属或商业软件；
 *	GNU LGPL：可以被专属软件作为类库引用、发布和销售；
@@ -85,3 +85,264 @@ $ mingw32-make
 
 <h2 id="qstring">QString</h2>
 
+QString类是Qt自行封装的专门用于处理字符串的类，**其实例保存一个Unicode字符串，该字符串由16bit QChar组成，每个QChar对应一个Unicode4.0字符**。Unicode是US-ASCII(ANSI X3.4-1986)和Latin-1(ISO 8859-1)的超集。
+
+除QString外，Qt还提供了QByteArray来存储原始字节（包括"\0"）和传统的8位"\0"端接字符串，**使用QByteArray比使用`const char *`更方便**，它确保数据后跟"\0"终止符。当你需要存储原始二进制数据，或者当内存保护至关重要时（例如，使用嵌入式Linux的Qt），使用QByteArray会比较适合。
+
+我们首先下载[qt base](https://github.com/qt/qtbase)源代码，在`qtbase-5.9\src\corelib\tools`目录下找到`qstring.h`和`qstring.cpp`。
+
+我们先查看其构造函数：
+
+```c++
+typedef QStringData Data;
+Data *d;
+
+inline QString() Q_DECL_NOTHROW : d(Data::sharedNull()) {};
+
+inline QString(const QString &) Q_DECL_NOTHROW : d(other.d)
+{ Q_ASSERT(&other != this); d->ref.ref(); }
+
+#ifdef Q_COMPILER_RVALUE_REFS
+inline QString(QString && other) Q_DECL_NOTHROW : d(other.d) { other.d = Data::sharedNull(); }
+#endif
+
+explicit QString(const QChar *unicode, int size = -1)
+{
+   if (!unicode) {
+        d = Data::sharedNull();
+    } else {
+        if (size < 0) {
+            size = 0;
+            while (!unicode[size].isNull())
+                ++size;
+        }
+        if (!size) {
+            d = Data::allocate(0);
+        } else {
+            d = Data::allocate(size + 1);
+            Q_CHECK_PTR(d);
+            d->size = size;
+            memcpy(d->data(), unicode, size * sizeof(QChar));
+            d->data()[size] = '\0';
+        }
+    }
+}
+
+QString(QChar ch)
+{
+    d = Data::allocate(2);
+    Q_CHECK_PTR(d);
+    d->size = 1;
+    d->data()[0] = ch.unicode();
+    d->data()[1] = '\0';
+}
+
+QString(int size, QChar ch)
+{
+   if (size <= 0) {
+        d = Data::allocate(0);
+    } else {
+        d = Data::allocate(size + 1);
+        Q_CHECK_PTR(d);
+        d->size = size;
+        d->data()[size] = '\0';
+        ushort *i = d->data() + size;
+        ushort *b = d->data();
+        const ushort value = ch.unicode();
+        while (i != b)
+           *--i = value;
+    }
+}
+
+inline QT_ASCII_CAST_WARN QString(const char *ch)
+    : d(fromAscii_helper(ch, ch ? int(strlen(ch)) : -1))
+{}
+
+inline QT_ASCII_CAST_WARN QString(const QByteArray &a)
+    : d(fromAscii_helper(a.constData(), qstrnlen(a.constData(), a.size())))
+{}
+
+inline QString(const Null &): d(Data::sharedNull()) {}
+
+inline std::string QString::toStdString() const
+{ return toUtf8().toStdString(); }
+
+inline QString QString::fromStdString(const std::string &s)
+{ return fromUtf8(s.data(), int(s.size())); }
+```
+
+通过其源代码可以看到，QString支持多种构造，包含默认构造、复制构造、移动构造、QChar构造、QByteArray构造、`const char*`构造，你甚至可以使用`fromStdString`从`std::string`构造，另外你还可以使用`toStdString`来得到一个标准字符串。**这些构造函数都有对应的赋值运算符重载**。
+
+做一些简单的试验：
+
+```c++
+// main.cpp
+#include <QTextStream>
+#include <string>
+
+int main(void)
+{
+	QTextStream out(stdout);
+
+	const char* ch = "hahaha";
+	std::string std_str("adfa");
+
+	QString s1;
+	QString s2(ch);
+	QString s3(QString::fromStdString(std_str));
+
+	out << (NULL == s1) << "\n"
+		<< s2 << "\n"
+		<< s3 << endl;
+
+	return 0;
+}
+```
+
+由于我们不需要gui，也不需要widgets，所以在生成`.pro`文件之后，在最后加上`QT -= gui`，因为需要在控制台上进行输出，所以再加上`CONFIG += console`，编译之后运行：
+
+```text
+1
+hahaha
+adfa
+```
+
+再来看一些常用的添加、访问、删除操作：
+
+```c++
+inline const QChar at(int pos) const;
+const QChar operator[](int pos) const;
+QCharRef operator[](int pos);
+const QChar operator[](uint pos) const;
+QCharRef operator[](uint pos);
+inline void swap(QString &other) Q_DECL_NOTHROW { qSwap(d, other.d); }
+inline int size() const { return d->size; }
+inline int count() const { return d->size; }
+inline int length() const;
+inline bool isEmpty() const;
+inline bool isNull() const { return d == Data::sharedNull(); }
+QString &insert(int pos, QChar c);
+QString &insert(int pos, const QChar *uc, int len);
+inline QString &insert(int pos, const QString &s) { return insert(i, s.constData(), s.length()); }
+inline QString &insert(int pos, const QStringRef &s);
+QString &append(QChar c);
+QString &append(const QChar *uc, int len);
+QString &append(const QString &s);
+QString &append(const QStringRef &s);
+inline QString &prepend(QChar c) { return insert(0, c); }
+inline QString &prepend(const QChar *uc, int len) { return insert(0, uc, len); }
+inline QString &prepend(const QString &s) { return insert(0, s); }
+inline QString &prepend(const QStringRef &s) { return insert(0, s); }
+inline QString &operator+=(QChar c);
+inline QString &operator+=(const QString &s) { return append(s); }
+inline QString &operator+=(const QStringRef &s) { return append(s); }
+QString &remove(int pos, int len);
+QString &replace(int pos, int len, QChar after);
+QString &replace(int pos, int len, const QChar *s, int slen);
+QString &replace(int pos, int len, const QString &after);
+QString &replace(QChar before, QChar after, Qt::CaseSensitivity cs = Qt::CaseSensitive);
+QString &replace(const QString &before, const QString &after,
+                Qt::CaseSensitivity cs = Qt::CaseSensitive);
+inline iterator begin();
+inline const_iterator begin() const;
+inline const_iterator cbegin() const;
+inline const_iterator constBegin() const;
+inline iterator end();
+inline const_iterator end() const;
+inline const_iterator cend() const;
+inline const_iterator constEnd() const;
+reverse_iterator rbegin() { return reverse_iterator(end()); }
+reverse_iterator rend() { return reverse_iterator(begin()); }
+const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
+const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
+const_reverse_iterator crbegin() const { return const_reverse_iterator(end()); }
+const_reverse_iterator crend() const { return const_reverse_iterator(begin()); }
+inline void push_back(QChar c) { append(c); }
+inline void push_back(const QString &s) { append(s); }
+inline void push_front(QChar c) { prepend(c); }
+inline void push_front(const QString &s) { prepend(s); }
+```
+
+这些函数什么意思，熟悉`std::string`的应该很容易猜到，下面就来做一些试验：
+
+```c++
+// main.cpp
+#include <QTextStream>
+#include <string>
+
+int main(void)
+{
+	QTextStream out(stdout);
+
+	QString s1;
+
+	Q_ASSERT(s1.isEmpty());
+	Q_ASSERT(s1.isNull());
+
+	s1.append("34");
+	out << "append: " << s1 << "\n";
+
+	s1.prepend("12");
+	out << "prepend: " << s1 << "\n";
+
+	s1 += "56";
+	out << "+=: " << s1 << "\n";
+
+	s1.insert(2, "333"); // 注意插入是在位置之前
+	out << "insert: " << s1 << "\n";
+
+	s1.replace(2, 3, "777");
+	out << "replace: " << s1 << "\n";
+
+	s1.remove(2, 3);
+	out << "remove: " << s1 << "\n";
+
+	s1.push_back("789");
+	out << "push_back: " << s1 << "\n";
+
+	s1.push_front("0");
+	out << "push_front: " << s1 << endl;
+
+
+
+	out << s1 << "\n"
+		<< "size: " << s1.size() << "\n"
+		<< "length: " << s1.length() << "\n"
+		<< "count: " << s1.count() << endl;
+
+	for (int i = 0; i < s1.size(); ++i)
+	{
+		out << s1.at(i) << " ";
+	}
+	out << endl;
+
+	QString s2;
+	s2.swap(s1);
+	for (auto it = s2.begin(); it != s2.end(); ++it)
+	{
+		out << *it << " ";
+	}
+	out << endl;
+
+	return 0;
+}
+```
+
+结果：
+
+```text
+append: 34
+prepend: 1234
++=: 123456
+insert: 123333456
+replace: 127773456
+remove: 123456
+push_back: 123456789
+push_front: 0123456789
+0123456789
+size: 10
+length: 10
+count: 10
+0 1 2 3 4 5 6 7 8 9
+0 1 2 3 4 5 6 7 8 9
+```
