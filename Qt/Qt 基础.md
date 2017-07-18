@@ -15,6 +15,16 @@ tags:
 *   [Qt 概述](#overview)
 *	[Hello World](#hello_world)
 *	[QString](#qstring)
+*	[QDate, QTime and QDateTime](#qdate_qtime_and_qdatetime)
+	*	[QDate](#qdate)
+	*	[QTime](#qtime)
+	*	[QDateTime](#qdatetime)
+*	[Qt 容器](#qt_containers)
+	*	[QVector](#qvector)
+	*	[QList](#qlist)
+	*	[QStringList](#qstringlist)
+	*	[QSet](#qset)
+	*	[QMap](#qmao)
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -89,91 +99,9 @@ QString类是Qt自行封装的专门用于处理字符串的类，**其实例保
 
 除QString外，Qt还提供了QByteArray来存储原始字节（包括"\0"）和传统的8位"\0"端接字符串，**使用QByteArray比使用`const char *`更方便**，它确保数据后跟"\0"终止符。当你需要存储原始二进制数据，或者当内存保护至关重要时（例如，使用嵌入式Linux的Qt），使用QByteArray会比较适合。
 
-我们首先下载[qt base](https://github.com/qt/qtbase)源代码，在`qtbase-5.9\src\corelib\tools`目录下找到`qstring.h`和`qstring.cpp`。
+下载[qt base](https://github.com/qt/qtbase)源代码，你可以在`qtbase-5.9\src\corelib\tools`目录下找到`qstring.h`和`qstring.cpp`。
 
-我们先查看其构造函数：
-
-```c++
-typedef QStringData Data;
-Data *d;
-
-inline QString() Q_DECL_NOTHROW : d(Data::sharedNull()) {};
-
-inline QString(const QString &) Q_DECL_NOTHROW : d(other.d)
-{ Q_ASSERT(&other != this); d->ref.ref(); }
-
-#ifdef Q_COMPILER_RVALUE_REFS
-inline QString(QString && other) Q_DECL_NOTHROW : d(other.d) { other.d = Data::sharedNull(); }
-#endif
-
-explicit QString(const QChar *unicode, int size = -1)
-{
-   if (!unicode) {
-        d = Data::sharedNull();
-    } else {
-        if (size < 0) {
-            size = 0;
-            while (!unicode[size].isNull())
-                ++size;
-        }
-        if (!size) {
-            d = Data::allocate(0);
-        } else {
-            d = Data::allocate(size + 1);
-            Q_CHECK_PTR(d);
-            d->size = size;
-            memcpy(d->data(), unicode, size * sizeof(QChar));
-            d->data()[size] = '\0';
-        }
-    }
-}
-
-QString(QChar ch)
-{
-    d = Data::allocate(2);
-    Q_CHECK_PTR(d);
-    d->size = 1;
-    d->data()[0] = ch.unicode();
-    d->data()[1] = '\0';
-}
-
-QString(int size, QChar ch)
-{
-   if (size <= 0) {
-        d = Data::allocate(0);
-    } else {
-        d = Data::allocate(size + 1);
-        Q_CHECK_PTR(d);
-        d->size = size;
-        d->data()[size] = '\0';
-        ushort *i = d->data() + size;
-        ushort *b = d->data();
-        const ushort value = ch.unicode();
-        while (i != b)
-           *--i = value;
-    }
-}
-
-inline QT_ASCII_CAST_WARN QString(const char *ch)
-    : d(fromAscii_helper(ch, ch ? int(strlen(ch)) : -1))
-{}
-
-inline QT_ASCII_CAST_WARN QString(const QByteArray &a)
-    : d(fromAscii_helper(a.constData(), qstrnlen(a.constData(), a.size())))
-{}
-
-inline QString(const Null &): d(Data::sharedNull()) {}
-
-inline std::string QString::toStdString() const
-{ return toUtf8().toStdString(); }
-
-inline QString QString::fromStdString(const std::string &s)
-{ return fromUtf8(s.data(), int(s.size())); }
-```
-
-通过其源代码可以看到，QString支持多种构造，包含默认构造、复制构造、移动构造、QChar构造、QByteArray构造、`const char*`构造，你甚至可以使用`fromStdString`从`std::string`构造，另外你还可以使用`toStdString`来得到一个标准字符串。**这些构造函数都有对应的赋值运算符重载**。
-
-做一些简单的试验：
+### QString 构造
 
 ```c++
 // main.cpp
@@ -207,68 +135,11 @@ hahaha
 adfa
 ```
 
-再来看一些常用的添加、访问、删除操作：
-
-```c++
-inline const QChar at(int pos) const;
-const QChar operator[](int pos) const;
-QCharRef operator[](int pos);
-const QChar operator[](uint pos) const;
-QCharRef operator[](uint pos);
-inline void swap(QString &other) Q_DECL_NOTHROW { qSwap(d, other.d); }
-inline int size() const { return d->size; }
-inline int count() const { return d->size; }
-inline int length() const;
-inline bool isEmpty() const;
-inline bool isNull() const { return d == Data::sharedNull(); }
-QString &insert(int pos, QChar c);
-QString &insert(int pos, const QChar *uc, int len);
-inline QString &insert(int pos, const QString &s) { return insert(i, s.constData(), s.length()); }
-inline QString &insert(int pos, const QStringRef &s);
-QString &append(QChar c);
-QString &append(const QChar *uc, int len);
-QString &append(const QString &s);
-QString &append(const QStringRef &s);
-inline QString &prepend(QChar c) { return insert(0, c); }
-inline QString &prepend(const QChar *uc, int len) { return insert(0, uc, len); }
-inline QString &prepend(const QString &s) { return insert(0, s); }
-inline QString &prepend(const QStringRef &s) { return insert(0, s); }
-inline QString &operator+=(QChar c);
-inline QString &operator+=(const QString &s) { return append(s); }
-inline QString &operator+=(const QStringRef &s) { return append(s); }
-QString &remove(int pos, int len);
-QString &replace(int pos, int len, QChar after);
-QString &replace(int pos, int len, const QChar *s, int slen);
-QString &replace(int pos, int len, const QString &after);
-QString &replace(QChar before, QChar after, Qt::CaseSensitivity cs = Qt::CaseSensitive);
-QString &replace(const QString &before, const QString &after,
-                Qt::CaseSensitivity cs = Qt::CaseSensitive);
-inline iterator begin();
-inline const_iterator begin() const;
-inline const_iterator cbegin() const;
-inline const_iterator constBegin() const;
-inline iterator end();
-inline const_iterator end() const;
-inline const_iterator cend() const;
-inline const_iterator constEnd() const;
-reverse_iterator rbegin() { return reverse_iterator(end()); }
-reverse_iterator rend() { return reverse_iterator(begin()); }
-const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
-const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
-const_reverse_iterator crbegin() const { return const_reverse_iterator(end()); }
-const_reverse_iterator crend() const { return const_reverse_iterator(begin()); }
-inline void push_back(QChar c) { append(c); }
-inline void push_back(const QString &s) { append(s); }
-inline void push_front(QChar c) { prepend(c); }
-inline void push_front(const QString &s) { prepend(s); }
-```
-
-这些函数什么意思，熟悉`std::string`的应该很容易猜到，下面就来做一些试验：
+### 添加、访问、删除
 
 ```c++
 // main.cpp
 #include <QTextStream>
-#include <string>
 
 int main(void)
 {
@@ -288,7 +159,7 @@ int main(void)
 	s1 += "56";
 	out << "+=: " << s1 << "\n";
 
-	s1.insert(2, "333"); // 注意插入是在位置之前
+	s1.insert(2, "333");
 	out << "insert: " << s1 << "\n";
 
 	s1.replace(2, 3, "777");
@@ -302,8 +173,6 @@ int main(void)
 
 	s1.push_front("0");
 	out << "push_front: " << s1 << endl;
-
-
 
 	out << s1 << "\n"
 		<< "size: " << s1.size() << "\n"
@@ -346,3 +215,741 @@ count: 10
 0 1 2 3 4 5 6 7 8 9
 0 1 2 3 4 5 6 7 8 9
 ```
+
+### 动态创建、获取子串
+
+QString 有一个非常牛逼的成员函数split，该成员函数可以通过传递的分隔符将字符串分解为多个子串，并且支持正则表达式，其将在[QStringList](#qstringlist)中演示。
+
+```c++
+// main.cpp
+#include <QTextStream>
+
+int main(void)
+{
+	QTextStream out(stdout);
+
+	QString s1 = "file name is %1, function name is %2.";
+	QString s2 = s1.arg(__FILE__);
+	QString s3 = s2.arg(__func__);
+
+	out << "s1: " << s1 << "\n"
+		<< "s2: " << s2 << "\n"
+		<< "s3: " << s3 << "\n";
+
+	QString sub1 = s1.right(3);
+	QString sub2 = s1.mid(5, 4);
+	QString sub3 = s1.left(4);
+
+	out << "sub1: " << sub1 << "\n"
+		<< "sub2: " << sub2 << "\n"
+		<< "sub3: " << sub3 << "\n";
+
+	QStringRef subRef1 = s1.rightRef(3);
+	QStringRef subRef2 = s1.midRef(5, 4);
+	QStringRef subRef3 = s1.leftRef(4);
+
+	out << "subRef1: " << subRef1 << "\n"
+		<< "subRef2: " << subRef2 << "\n"
+		<< "subRef3: " << subRef3.toString() << "\n";
+
+	QString s4("Rain");
+	QString s5 = s4.toLower();
+	QString s6 = s4.toUpper();
+
+	out << "sensitive: " << "\n"
+		<< s4 << " < " << s5 << " is "
+		<< s4.compare(s5) << "\n"
+		<< s4 << " < " << s6 << " is "
+		<< QString::compare(s4, s6) << "\n"
+		<< "insensitive: " << "\n"
+		<< s4 << " < " << s5 << " is "
+		<< s4.compare(s5, Qt::CaseInsensitive) << "\n"
+		<< s4 << " < " << s6 << " is "
+		<< QString::compare(s4, s6, Qt::CaseInsensitive) << "\n";
+
+	return 0;
+}
+```
+
+结果：
+
+```text
+s1: file name is %1, function name is %2.
+s2: file name is main.cpp, function name is %2.
+s3: file name is main.cpp, function name is main.
+sub1: %2.
+sub2: name
+sub3: file
+subRef1: %2.
+subRef2: name
+subRef3: file
+sensitive:
+Rain < rain is -32
+Rain < RAIN is 32
+insensitive:
+Rain < rain is 0
+Rain < RAIN is 0
+```
+
+### 数值转换、字符分类、输出排版
+
+我们知道标准库`<string>`里面有`to_string`、`stoi`、`stof`等数值转换操作，标准库`<cctype>`里面也有`tolower`、`isdigit`、`ispunct`等字符操作，相应的，QString也有对应的数值转换操作，QChar也有相应的字符操作。
+
+```c++
+#include <QTextStream>
+
+int main(void)
+{
+	QTextStream out(stdout);
+
+	QString s1;
+
+	s1 = QString::number(123);
+	out << s1 << " "
+		<< "toInt: " << s1.toInt()
+		<< endl;
+
+	s1.setNum(1.234);
+	out << s1 << " "
+		<< "toDouble: " << s1.toDouble()
+		<< endl;
+
+	s1 = "7 white, 3 red roses.";
+	int digits = 0, letters = 0;
+	int spaces = 0, puncts = 0;
+	foreach(auto &s, s1)
+	{
+		if (s.isDigit()) {
+			digits++;
+		}
+		else if (s.isLetter()) {
+			letters++;
+		}
+		else if (s.isSpace()) {
+			spaces++;
+		}
+		else if (s.isPunct()) {
+			puncts++;
+		}
+	}
+
+	out << QString("There are %1 characters").arg(s1.count()) << endl;
+	out << QString("There are %1 letters").arg(letters) << endl;
+	out << QString("There are %1 digits").arg(digits) << endl;
+	out << QString("There are %1 spaces").arg(spaces) << endl;
+	out << QString("There are %1 punctuation characters").arg(puncts) << endl;
+
+	QString field1 = "Name: ";
+	QString field2 = "Occupation: ";
+	QString field3 = "Residence: ";
+	QString field4 = "Marital status: ";
+
+	int width = field4.size();
+
+	out << field1.rightJustified(width, ' ') << "Robert\n";
+	out << field2.rightJustified(width, ' ') << "programmer\n";
+	out << field3.rightJustified(width, ' ') << "New York\n";
+	out << field4.rightJustified(width, ' ') << "single\n";
+
+	return 0;
+}
+```
+
+结果：
+
+```text
+123 toInt: 123
+1.234 toDouble: 1.234
+There are 21 characters
+There are 13 letters
+There are 2 digits
+There are 4 spaces
+There are 2 punctuation characters
+          Name: Robert
+    Occupation: programmer
+     Residence: New York
+Marital status: single
+```
+
+<h2 id="qdate_qtime_and_qdatetime">QDate, QTime and QDateTime</h2>
+
+我们知道标准库处理日期、时间的方式是使用`<chrono>`或`<ctime>`，如果你想在Qt中处理日期的话，你可以使用 QDate，如果你想处理时间的话，你可以使用 QTime，如果你想日期、时间一起处理的话，你可以使用 QDateTime。
+
+你可以在`qtbase-5.9\src\corelib\tools`目录下找到`qdatetime.h`和`qdatetime.cpp`。
+
+<h3 id="qdate">QDate</h3>
+
+```c++
+#include <QTextStream>
+#include <QDate>
+
+/*
+enum DateFormat {
+TextDate,      // default Qt
+ISODate,       // ISO 8601
+SystemLocaleDate, // deprecated
+LocalDate = SystemLocaleDate, // deprecated
+LocaleDate,     // deprecated
+SystemLocaleShortDate,
+SystemLocaleLongDate,
+DefaultLocaleShortDate,
+DefaultLocaleLongDate,
+RFC2822Date,        // RFC 2822 (+ 850 and 1036 during parsing)
+ISODateWithMs
+};
+*/
+
+int main(void)
+{
+	QTextStream out(stdout);
+
+	QDate d1(2017, 7, 18);
+	out << d1.toString(Qt::TextDate) << "\n"
+		<< d1.toString(Qt::ISODate) << "\n"
+		<< d1.toString(Qt::SystemLocaleShortDate) << "\n"
+		<< d1.toString(Qt::SystemLocaleLongDate) << "\n"
+		<< d1.toString(Qt::DefaultLocaleShortDate) << "\n"
+		<< d1.toString(Qt::DefaultLocaleLongDate) << "\n"
+		<< d1.toString(Qt::RFC2822Date) << "\n"
+		<< d1.toString(Qt::ISODateWithMs) << "\n"
+		<< d1.year() << " " << d1.month() << " " << d1.day() << "\n"
+		<< d1.dayOfWeek() << " " << d1.dayOfYear() << "\n"
+		<< d1.daysInMonth() << " " << d1.daysInYear() << "\n"
+		<< d1.weekNumber() << endl;
+
+	QString str("2017-07-29");
+	d1 = QDate::fromString(str, Qt::ISODate);
+	out << d1.toString(Qt::ISODate) << endl;
+
+	d1.setDate(2017, 7, 20);
+	out << d1.daysTo(QDate::currentDate()) << "\n"
+		<< d1.addDays(2).toString(Qt::ISODate) << "\n"
+		<< d1.addMonths(2).toString(Qt::ISODate) << "\n"
+		<< d1.addYears(2).toString(Qt::ISODate) << "\n"
+		<< d1.toString(Qt::ISODate) << " > "
+		<< QDate::currentDate().toString(Qt::ISODate)
+		<< " is " << (d1 > QDate::currentDate())
+		<< endl;
+
+	return 0;
+}
+```
+
+结果：
+
+```text
+周二 七月 18 2017
+2017-07-18
+2017/7/18
+2017年7月18日
+2017/7/18
+2017年7月18日
+18 Jul 2017
+2017-07-18
+2017 7 18
+2 199
+31 365
+29
+2017-07-29
+-2
+2017-07-22
+2017-09-20
+2019-07-20
+2017-07-20 > 2017-07-18 is 1
+```
+
+上面没有演示以下两个函数，因为它们需要自定义日期格式：
+
+```c++
+QString toString(const QString &format) const;
+static QDate fromString(const QString &s, const QString &format);
+```
+
+自定义日期格式：
+
+Expression | Output
+------------ | ---------------------------------
+yy | 两位数年份(00~99)
+yyyy | 四位数年份
+M | 不带前置零的月份数(1 ~ 12)
+MM | 带有前置零的月份数(01 ~ 12)
+MMM | 短的本地化月份名(如 Jan ~ Dec)
+MMMM | 长的本地化月份名(如 January ~ December)
+d | 不带前置零的天数(1 ~ 31)
+dd | 带有前置零的天数(01 ~ 31)
+ddd | 短的本地化天名(如 Mon ~ Sun)
+dddd | 长的本地化天名(如 Monday ~ Sunday)
+
+```c++
+#include <QTextStream>
+#include <QDate>
+
+int main(void)
+{
+	QTextStream out(stdout);
+
+	QDate cd = QDate::currentDate();
+
+	out << "Today is " << cd.toString("yyyy-MM-dd") << endl;
+	out << "Today is " << cd.toString("yy/M/dd") << endl;
+	out << "Today is " << cd.toString("d. M. yyyy") << endl;
+	out << "Today is " << cd.toString("d-MMMM-yyyy") << endl;
+
+	QString fmt("yyyy-MM-dd");
+	QString str("2017-07-18");
+	out << QDate::fromString(str, fmt).toString("yy/M/dd") << endl;
+
+	return 0;
+}
+```
+
+结果：
+
+```text
+Today is 2017-07-18
+Today is 17/7/18
+Today is 18. 7. 2017
+Today is 18-七月-2017
+17/7/18
+```
+
+<h3 id="qtime">QTime</h3>
+
+```c++
+#include <QTextStream>
+#include <QTime>
+
+int main(void)
+{
+	QTextStream out(stdout);
+
+	QTime t1(20, 01, 18, 50);
+	out << t1.toString(Qt::TextDate) << "\n"
+		<< t1.toString(Qt::ISODate) << "\n"
+		<< t1.toString(Qt::SystemLocaleShortDate) << "\n"
+		<< t1.toString(Qt::SystemLocaleLongDate) << "\n"
+		<< t1.toString(Qt::DefaultLocaleShortDate) << "\n"
+		<< t1.toString(Qt::DefaultLocaleLongDate) << "\n"
+		<< t1.toString(Qt::RFC2822Date) << "\n"
+		<< t1.toString(Qt::ISODateWithMs) << "\n"
+		<< t1.hour() << " " << t1.minute() << " "
+		<< t1.second() << " " << t1.msec()
+		<< endl;
+
+	QString str("20:02:20.22");
+	QTime t2 = QTime::fromString(str, Qt::ISODate);
+	out << t2.toString(Qt::ISODate) << endl;
+
+	t2 = QTime::currentTime();
+	t2.setHMS(21, 01, 18, 50);
+	out << t2.secsTo(t1) << "\n"
+		<< t2.msecsTo(t1) << "\n"
+		<< t2.addSecs(2).toString(Qt::ISODate) << "\n"
+		<< t2.addMSecs(950).toString(Qt::ISODate) << "\n"
+		<< t2.toString(Qt::ISODate) << " > " << t1.toString(Qt::ISODate)
+		<< " is " << (t2 > t1)
+		<< endl;
+
+	return 0;
+}
+```
+
+结果：
+
+```text
+20:01:18
+20:01:18
+20:01
+20:01:18
+20:01
+20:01:18
+20:01:18
+20:01:18.050
+20 1 18 50
+20:02:20
+-3600
+-3600000
+21:01:20
+21:01:19
+21:01:18 > 20:01:18 is 1
+```
+
+自定义时间格式：
+
+Expression | Output
+------------ | ---------------------------------
+AP <br> A | AM/PM
+ap <br> a | am/pm
+t | 时区
+h | 0 ~ 23 或 1 ~ 12
+hh | 00 ~ 23 或 01 ~ 12
+H | 0 ~ 23
+HH | 00 ~ 23
+m | 0 ~ 59
+mm | 00 ~ 59
+s | 0 ~ 59
+ss | 00 ~ 59
+z | 0 ~ 999
+zzz | 000 ~ 999
+
+```c++
+#include <QTextStream>
+#include <QTime>
+
+int main(void)
+{
+	QTextStream out(stdout);
+
+	QTime cd = QTime::currentTime();
+
+	out << "The time is " << cd.toString("hh:mm:ss.zzz") << endl;
+	out << "The time is " << cd.toString("h:m:s a") << endl;
+	out << "The time is " << cd.toString("H:m:s A") << endl;
+	out << "The time is " << cd.toString("h:m AP") << endl;
+
+	QString fmt("hh:mm:ss.zzz");
+	QString str("20:20:20.200");
+	out << QTime::fromString(str, fmt).toString("h:m:s a") << endl;
+
+	return 0;
+}
+```
+
+结果：
+
+```text
+Today is 13:40:26.653
+Today is 1:40:26 下午
+Today is 13:40:26 下午
+Today is 1:40 下午
+8:20:20 下午
+```
+
+仔细查看 QTime 的成员函数，发现还有三个特别的函数：
+
+```c++
+// 一天86400秒
+void QTime::start()
+{
+    *this = currentTime();
+}
+
+int QTime::restart()
+{
+    QTime t = currentTime();
+    int n = msecsTo(t);
+    if (n < 0)                                // passed midnight
+        n += 86400*1000;
+    *this = t;
+    return n;
+}
+
+int QTime::elapsed() const
+{
+    int n = msecsTo(currentTime());
+    if (n < 0)                                // passed midnight
+        n += 86400 * 1000;
+    return n;
+}
+```
+
+这三个函数时干什么的呢，从名字上很容易猜出来，它们是用来计时的。根据源代码，当时间超过24小时后，`restart`和`elapsed`将会从零重新开始计时。
+
+```c++
+#include <QTextStream>
+#include <QTime>
+#include <thread>
+#include <chrono>
+
+int main(void)
+{
+	QTextStream out(stdout);
+
+	QTime t;
+	t.start();
+	std::this_thread::sleep_for(
+		std::chrono::duration<double, std::milli>(100));
+	out << "took " << t.restart() << " ms" << "\n";
+	std::this_thread::sleep_for(
+		std::chrono::duration<double, std::milli>(200));
+	out << "took " << t.elapsed() << " ms" << "\n";
+
+	return 0;
+}
+```
+
+结果：
+
+```text
+took 100 ms
+took 200 ms
+```
+
+<h3 id="qdatetime">QDateTime</h3>
+
+你可以把 QDateTime 当做 QDate 和 QTime 的并集，使用时可以使用成员函数`date()`和`time()`来获取对应的 QDate 和 QTime，修改之后再通过成员函数`setDate`和`setTime`将修改合并到原 QDateTime 实例中；剩余比较独立的函数是`toUTC`和`toTime_t`，其中UTC时间是世界标准时间，不随地区、季节的改变而改变，`time_t`是Unix时间。
+
+```c++
+#include <QTextStream>
+#include <QDateTime>
+
+int main(void)
+{
+	QTextStream out(stdout);
+
+	QDate d = QDate::currentDate();
+	QTime t = QTime::currentTime();
+	QDateTime dt1(d, t);
+	QDateTime dt2 = QDateTime::currentDateTime();
+	QDateTime dt3 = QDateTime::currentDateTimeUtc();
+
+	out << dt1.toString(Qt::ISODate) << "\n"
+		<< dt2.toString(Qt::ISODate) << "\n"
+		<< dt3.toString(Qt::ISODate) << "\n"
+		<< dt2.date().toString(Qt::ISODate) << "\n"
+		<< dt2.time().toString(Qt::ISODate) << "\n"
+		<< dt1.toUTC().toString(Qt::ISODate) << "\n"
+		<< dt2.toTime_t()
+		<< endl;
+
+	return 0;
+}
+```
+
+结果：
+
+```text
+2017-07-18T14:56:57
+2017-07-18T14:56:57
+2017-07-18T06:56:57Z
+2017-07-18
+14:56:57
+2017-07-18T06:56:57Z
+1500361017
+```
+
+<h2 id="qt_containers">Qt 容器</h2>
+
+容器分为顺序容器与关联容器。顺序容器中元素的顺序由其加入容器时的位置决定；关联容器中元素的顺序由其相关联的关键字值决定。
+
+Qt中的顺序容器包含QVector、QList、QStringList，关联容器包含QSet、QMap。
+
+<h3 id="qvector">QVector</h3>
+
+你可以在`qtbase-5.9\src\corelib\tools`目录下找到`qvector.h`。
+
+仔细看其实现，你可以简单的把它当标准vector来用：
+
+```c++
+#include <QTextStream>
+#include <QVector>
+
+template <typename T>
+QTextStream& operator<<(QTextStream& out, QVector<T> &v);
+
+int main(void)
+{
+	QTextStream out(stdout);
+
+	QVector<int> v1{ 1,2,3,4,5 };
+	QVector<int> v2(5, 1);
+
+	v1.swap(v2);
+	v2.push_back(7);
+	v2.push_front(0);
+	v2.insert(v2.end() - 1, 6);
+	v2.pop_back();
+	v2.pop_front();
+
+	out << "v1: " << v1 << "\n"
+		<< "v2: " << v2 << "\n"
+		<< "v1.size = " << v1.size() << "\n"
+		<< "v1[1] = " << v1[1] << "\n"
+		<< "v2[2] = " << v2.at(2) << "\n"
+		<< "v2.front = " << v2.front() << "\n"
+		<< "v2.back = " << v2.back()
+		<< endl;
+
+	return 0;
+}
+
+template <typename T>
+QTextStream& operator<<(QTextStream& out, QVector<T> &v)
+{
+	if (!v.empty())
+	{
+		for (auto &i : v)
+		{
+			out << i << " ";
+		}
+	}
+	return out;
+}
+```
+
+结果：
+
+```text
+v1: 1 1 1 1 1
+v2: 1 2 3 4 5 6
+v1.size = 5
+v1[1] = 1
+v2[2] = 3
+v2.front = 1
+v2.back = 6
+```
+
+<h3 id="qlist">QList</h3>
+
+你可以在`qtbase-5.9\src\corelib\tools`目录下找到`qlist.h`和`qlist.cpp`。
+
+QList 的使用跟 QVector 差不多。
+
+```c++
+#include <QTextStream>
+#include <QVector>
+#include <QList>
+
+template <typename T>
+QTextStream& operator<<(QTextStream& out, QList<T> &l);
+
+int main(void)
+{
+	QTextStream out(stdout);
+
+	QList<int> l1{ 1,2,3,4,5 };
+	QList<int> l2 = QVector<int>(5, 1).toList();
+
+	l1.swap(l2);
+	l2.push_back(7);
+	l2.push_front(0);
+	l2.insert(l2.end() - 1, 6);
+	l2.pop_back();
+	l2.pop_front();
+
+	out << "l1: " << l1 << "\n"
+		<< "l2: " << l2 << "\n"
+		<< "l1.size = " << l1.size() << "\n"
+		<< "l1[1] = " << l1[1] << "\n"
+		<< "l2[2] = " << l2.at(2) << "\n"
+		<< "l2.front = " << l2.front() << "\n"
+		<< "l2.back = " << l2.back()
+		<< endl;
+
+
+	return 0;
+}
+
+template <typename T>
+QTextStream& operator<<(QTextStream& out, QList<T> &l)
+{
+	if (!l.empty())
+	{
+		for (auto &i : l)
+		{
+			out << i << " ";
+		}
+	}
+	return out;
+}
+```
+
+结果：
+
+```text
+l1: 1 1 1 1 1
+l2: 1 2 3 4 5 6
+l1.size = 5
+l1[1] = 1
+l2[2] = 3
+l2.front = 1
+l2.back = 6
+```
+
+<h3 id="qstringlist">QStringList</h3>
+
+你可以在`qtbase-5.9\src\corelib\tools`目录下找到`qstringlist.h`和`qstringlist.cpp`。
+
+QStringList 继承自`QList<QString>`，它比较有用的函数是`filter`，该函数返回当前list中包含传入子串的字符串组成的list，其它使用与QList没什么区别，相当于一个特例化版本，有时候与 QString 的 split 配合使用。
+
+```c++
+#include <QTextStream>
+#include <QStringList>
+#include <QVector>
+
+QTextStream& operator<<(QTextStream& out, QStringList &sl);
+
+int main(void)
+{
+	QTextStream out(stdout);
+
+	QList<QString> l1{ "1","2","3","4","5" };
+	QList<QString> l2 = QVector<QString>(5, "1").toList();
+
+	QStringList sl1(l1);
+	QStringList sl2(l2);
+
+	sl1.swap(sl2);
+	sl2.push_back("7");
+	sl2.push_front("0");
+	sl2.insert(sl2.end() - 1, "6");
+	sl2.pop_back();
+	sl2.pop_front();
+
+	out << "sl1: " << sl1 << "\n"
+		<< "sl2: " << sl2 << "\n"
+		<< "sl1.size = " << sl1.size() << "\n"
+		<< "sl1[1] = " << sl1[1] << "\n"
+		<< "sl2[2] = " << sl2.at(2) << "\n"
+		<< "sl2.front = " << sl2.front() << "\n"
+		<< "sl2.back = " << sl2.back()
+		<< endl;
+
+	QStringList sl3{ "Bill Murray","John Doe","Bill Clinton" };
+	sl3 = sl3.filter("Bill");
+
+	out << "sl3: " << sl3 << endl;
+
+	QString str = "a,,b,c";
+	QStringList sl4 = str.split(',');
+	QStringList sl5 = str.split(',', QString::SkipEmptyParts);
+
+	out << "sl4: " << sl4 << "\n"
+		<< "sl5: " << sl5
+		<< endl;
+
+	return 0;
+}
+
+QTextStream& operator<<(QTextStream& out, QStringList &sl)
+{
+	if (!sl.empty())
+	{
+		for (auto &i : sl)
+		{
+			out << i << " ";
+		}
+	}
+	return out;
+}
+```
+
+结果：
+
+```text
+sl1: 1 1 1 1 1
+sl2: 1 2 3 4 5 6
+sl1.size = 5
+sl1[1] = 1
+sl2[2] = 3
+sl2.front = 1
+sl2.back = 6
+sl3: Bill Murray Bill Clinton
+sl4: a  b c
+sl5: a b c
+```
+
+<h3 id="qset">QSet</h3>
+
+你可以在`qtbase-5.9\src\corelib\tools`目录下找到`qset.h`。
+
