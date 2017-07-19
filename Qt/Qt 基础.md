@@ -24,7 +24,12 @@ tags:
 	*	[QList](#qlist)
 	*	[QStringList](#qstringlist)
 	*	[QSet](#qset)
-	*	[QMap](#qmao)
+	*	[QMap](#qmap)
+*	[IO](#io)
+	*	[QTextStream](#qtextstream)
+	*	[QFile](#qfile)
+	*	[QDir](#qdir)
+	*	[QFileInfo](#qfileinfo)
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -952,4 +957,383 @@ sl5: a b c
 <h3 id="qset">QSet</h3>
 
 你可以在`qtbase-5.9\src\corelib\tools`目录下找到`qset.h`。
+
+众所周知，关联容器的查找速度相当快，所以在很多查找算法中都使用了关联容器。相比于`std::set`，**QSet 不对元素进行默认排序**，如果你一定要排序的话，可以使用`std::sort`。
+
+QSet 的实现基于 QHash。**一个type要想使用 QSet，它必须提供一个默认构造函数、复制构造函数、一个赋值运算符、以及一个全局的qHash函数**，该函数返回一个传入type值的hash值。
+
+**默认 QSet 可以使用的类型包含基础类型如int、double、指针等，以及 Qt 数据类型QString、QDate、QTime等，QObject 以及 任何其派生类(QWidget、QDialog、QTimer等)都不能使用 QSet**。如果你想对一种类型使用 QSet，你可以编译试验或者查看其实现是否满足条件，直接编译或许更快一点。
+
+**在实现qHash函数时，对于一个给定值，任何时候调用此函数都应该返回相同的结果，对于不等的对象几乎总是产生不同的结果**。在`qtbase-5.9\src\corelib\tools`目录下的`qhashfunctions.h`和`qhash.cpp`中，你能看到相当多的qHash函数定义及实现，所有类型最终都转成了uint，uint的qHash实现如下：
+
+```c++
+inline uint qHash(uint key, uint seed = 0) Q_DECL_NOTHROW { return key ^ seed; }
+```
+
+qHash函数可以是以下四种签名的任何一种：
+
+```c++
+uint qHash(K key);
+uint qHash(const K &key);
+
+uint qHash(K key, uint seed);
+uint qHash(const K &key, uint seed);
+```
+
+如果你每种都实现了，那么QHsh会使用两个参数的实现。仔细看源码，你会发现所有的qHash实现都没有使用单参数的签名方式，相对的，它们对第二个参数设置了默认值，这就相当于同时实现了单参数与双参数的qHash函数。再查看官方说明，**要想自定义一个qHash函数，还需要定义`operator==()`**。
+
+下面我们就来实现一个自定义的类型，并使它满足 QSet 的使用条件：
+
+```c++
+#ifndef MYQSETTYPE_HPP
+#define MYQSETTYPE_HPP
+
+#include <QString>
+#include <QDate>
+#include <QHash>
+#include <QTextStream>
+
+class myQSetType
+{
+	QString name;
+	QDate birth;
+	int height;
+
+public:
+	myQSetType() = default;
+	~myQSetType() = default;
+
+	myQSetType(QString name_, QDate birth_, int height_)
+		: name(name_), birth(birth_), height(height_)
+	{}
+
+	myQSetType(const myQSetType &other)
+	{
+		operator=(other);
+	}
+
+	myQSetType& operator=(const myQSetType &other)
+	{
+		if (this != &other)
+		{
+			name = other.name;
+			birth = other.birth;
+			height = other.height;
+		}
+		return *this;
+	}
+
+	inline QString getName() const
+	{
+		return name;
+	}
+
+	inline QDate getBirth() const
+	{
+		return birth;
+	}
+
+	inline int getHeight() const
+	{
+		return height;
+	}
+};
+
+inline bool operator==(const myQSetType &t1, const myQSetType &t2)
+{
+	return t1.getName() == t2.getName() &&
+		t1.getBirth() == t2.getBirth() &&
+		t1.getHeight() == t2.getHeight();
+}
+
+inline uint qHash(const myQSetType &key, uint seed = 0)
+{
+	return qHash(key.getName(), seed) ^
+		qHash(key.getBirth().toString("yyyyMMdd"), seed) ^
+		key.getHeight();
+}
+
+QTextStream& operator<<(QTextStream& out, const myQSetType& t)
+{
+	out << "name: " << t.getName() << " "
+		<< "borth: " << t.getBirth().toString("yyyyMMdd") << " "
+		<< "height: " << t.getHeight();
+	return out;
+}
+
+#endif // MYQSETTYPE_HPP
+```
+
+QSet 的使用方式也可以参照`std::set`来使用：
+
+```c++
+#include <QTextStream>
+#include <QSet>
+
+#include "myQSetType.hpp"
+
+template <typename T>
+QTextStream& operator<<(QTextStream& out, QSet<T> &s);
+
+int main(void)
+{
+	QTextStream out(stdout);
+
+	QSet<myQSetType> qset;
+
+	myQSetType s1("Bill Murray", QDate(1970, 1, 1), 180);
+	myQSetType s2("John Doe", QDate(1993, 12, 5), 170);
+	myQSetType s3("Bill Clinton", QDate(1993, 8, 18), 210);
+
+	qset.insert(s1);
+	qset.insert(s2);
+	qset.insert(s3);
+
+	out << qset
+		<< qset.size() << "\n"
+		<< *(qset.find(s1)) << "\n";
+
+	qset.erase(qset.begin());
+	out << qset
+		<< qset.size() << "\n"
+		<< (qset.end() == qset.find(s1)) << "\n";
+
+	return 0;
+}
+
+template <typename T>
+QTextStream& operator<<(QTextStream& out, QSet<T> &s)
+{
+	if (!s.empty())
+	{
+		for (auto &i : s)
+		{
+			out << i << "\n";
+		}
+	}
+	return out;
+}
+```
+
+结果1：
+
+```text
+name: Bill Murray borth: 19700101 height: 180
+name: Bill Clinton borth: 19930818 height: 210
+name: John Doe borth: 19931205 height: 170
+3
+name: Bill Murray borth: 19700101 height: 180
+name: Bill Clinton borth: 19930818 height: 210
+name: John Doe borth: 19931205 height: 170
+2
+1
+```
+
+结果2：
+
+```text
+name: Bill Clinton borth: 19930818 height: 210
+name: John Doe borth: 19931205 height: 170
+name: Bill Murray borth: 19700101 height: 180
+3
+name: Bill Murray borth: 19700101 height: 180
+name: John Doe borth: 19931205 height: 170
+name: Bill Murray borth: 19700101 height: 180
+2
+0
+```
+
+从结果来看，**QSet 的元素是无序的**。
+
+<h3 id="qmap">QMap</h3>
+
+你可以在`qtbase-5.9\src\corelib\tools`目录下找到`qmap.h`和`qmap.cpp`。
+
+QMap 是一个基于红黑树的词典，相对于 QHash 来说，**QMap 的平均查找速度略低于 QHash 的查找速度，QMap 的元素总是按其键值进行排序**，这意味着键类型必须提供一个比较运算符，根据官方说明，**这个运算符是小于符号**，比较运算符的要求是：对于两个值x、y，如果`x < y`和`y < x`都为假，那么`x == y`。
+
+QMap 默认一个键只能对应一个值，当你在添加已存在的键值对时，原来的键值对会被移除。但是 QMap 提供了一个成员函数`insertMulti`使得你可以为一个键提供多个值，然后你可以通过成员函数`values`来获取该键对应的值的 QList，你也可以使用 QMap 的继承类 QMultiMap，该类只是将`insert`的实现移交到了`insertMulti`，仅此而已。
+
+通过上面的了解，我们应当注意到 QMultiMap 与 `std::multimap`的不同，前者是一个键对多个值，后者是可以拥有多个键，但是每个键只能对应一个值。
+
+**要想一个type能够作为 QMap 的键，该type必须提供一个默认构造函数、复制构造函数、赋值运算符、和一个非成员小于运算符**。
+
+将上面的 myQSetType 重构为支持 QMap 的自定义类型：
+
+```c++
+#ifndef MYQSETTYPE_HPP
+#define MYQSETTYPE_HPP
+
+#include <QString>
+#include <QDate>
+#include <QHash>
+#include <QTextStream>
+
+class myQSetType
+{
+	QString name;
+	QDate birth;
+	int height;
+
+public:
+	myQSetType() = default;
+	~myQSetType() = default;
+
+	myQSetType(QString name_, QDate birth_, int height_)
+		: name(name_), birth(birth_), height(height_)
+	{}
+
+	myQSetType(const myQSetType &other)
+	{
+		operator=(other);
+	}
+
+	myQSetType& operator=(const myQSetType &other)
+	{
+		if (this != &other)
+		{
+			name = other.name;
+			birth = other.birth;
+			height = other.height;
+		}
+		return *this;
+	}
+
+	inline QString getName() const
+	{
+		return name;
+	}
+
+	inline QDate getBirth() const
+	{
+		return birth;
+	}
+
+	inline int getHeight() const
+	{
+		return height;
+	}
+};
+
+inline bool operator<(const myQSetType &t1, const myQSetType &t2)
+{
+	return t1.getBirth() < t2.getBirth() ||
+		(t1.getBirth() == t2.getBirth() && t1.getName() < t2.getName()) ||
+		(t1.getBirth() == t2.getBirth() && t1.getName() == t2.getName() && t1.getHeight() < t2.getHeight());
+}
+
+QTextStream& operator<<(QTextStream& out, const myQSetType& t)
+{
+	out << "name: " << t.getName() << " "
+		<< "borth: " << t.getBirth().toString("yyyyMMdd") << " "
+		<< "height: " << t.getHeight();
+	return out;
+}
+
+#endif // MYQSETTYPE_HPP
+```
+
+QMap 的使用方式也可以参照`std::map`来使用：
+
+```c++
+#include <QTextStream>
+#include <QMap>
+
+#include "myQSetType.hpp"
+
+template <typename KEY, typename VALUE>
+QTextStream& operator<<(QTextStream& out, QMap<KEY, VALUE> &m);
+
+int main(void)
+{
+	QTextStream out(stdout);
+
+	myQSetType s1("Bill Murray", QDate(1970, 1, 1), 180);
+	myQSetType s2("John Doe", QDate(1993, 12, 5), 170);
+	myQSetType s3("Bill Clinton", QDate(1993, 12, 5), 210);
+
+	QMap<myQSetType, QString> qmap
+	{
+		{ s1,"Bill Murray" },
+		{ s2,"John Doe" },
+		{ s3,"Bill Clinton" }
+	};
+	qmap.clear();
+	qmap.insert(s1, "Bill Murray");
+	qmap[s2] = "John Doe";
+	qmap.insertMulti(s3, "Bill Clinton");
+
+	out << qmap
+		<< qmap.size() << "\n"
+		<< *(qmap.find(s1)) << "\n"
+		<< endl;
+
+	qmap.erase(qmap.begin());
+	out << qmap
+		<< qmap.size() << "\n"
+		<< (qmap.end() == qmap.find(s1)) << "\n"
+		<< endl;
+
+	QList<QString> s3Values = qmap.values(s3);
+	out << s3Values.size() << endl;
+
+	return 0;
+}
+
+template <typename KEY, typename VALUE>
+QTextStream& operator<<(QTextStream& out, QMap<KEY, VALUE> &m)
+{
+	if (!m.empty())
+	{
+		QList<KEY> keys = m.keys();
+		QList<VALUE> values = m.values();
+
+		out << "keys: \n";
+		for (auto &i : keys)
+		{
+			out << i << "\n";
+		}
+
+		out << "values: \n";
+		for (auto &i : values)
+		{
+			out << i << "\n";
+		}
+	}
+	return out;
+}
+```
+
+结果：
+
+```text
+keys:
+name: Bill Murray borth: 19700101 height: 180
+name: Bill Clinton borth: 19931205 height: 210
+name: John Doe borth: 19931205 height: 170
+values:
+Bill Murray
+Bill Clinton
+John Doe
+3
+Bill Murray
+
+keys:
+name: Bill Clinton borth: 19931205 height: 210
+name: John Doe borth: 19931205 height: 170
+values:
+Bill Clinton
+John Doe
+2
+1
+
+1
+```
+
+<h2 id="io">IO</h2>
+
+Qt5 中处理文件的基本类是 QFile、QDir 和 QFileInfo。其中 QFile 用来读写文件，QDir 用来访问文件夹，QFileInfo 用来获取文件的相关信息(如路径、文件名、修改时间、权限等)。
+
+<h3 id="qtextstream">QTextStream</h3>
+
+<h3 id="qfile">QFile</h3>
 
