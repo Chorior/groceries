@@ -26,10 +26,11 @@ tags:
 	*	[QSet](#qset)
 	*	[QMap](#qmap)
 *	[IO](#io)
-	*	[QTextStream](#qtextstream)
 	*	[QFile](#qfile)
 	*	[QDir](#qdir)
 	*	[QFileInfo](#qfileinfo)
+	*	[QTextStream](#qtextstream)
+	*	[QDataStream](#qdatastream)
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -750,7 +751,7 @@ Qt中的顺序容器包含QVector、QList、QStringList，关联容器包含QSet
 #include <QVector>
 
 template <typename T>
-QTextStream& operator<<(QTextStream& out, QVector<T> &v);
+QTextStream& operator<<(QTextStream& out, const QVector<T> &v);
 
 int main(void)
 {
@@ -779,7 +780,7 @@ int main(void)
 }
 
 template <typename T>
-QTextStream& operator<<(QTextStream& out, QVector<T> &v)
+QTextStream& operator<<(QTextStream& out, const QVector<T> &v)
 {
 	if (!v.empty())
 	{
@@ -816,7 +817,7 @@ QList 的使用跟 QVector 差不多。
 #include <QList>
 
 template <typename T>
-QTextStream& operator<<(QTextStream& out, QList<T> &l);
+QTextStream& operator<<(QTextStream& out, const QList<T> &l);
 
 int main(void)
 {
@@ -846,7 +847,7 @@ int main(void)
 }
 
 template <typename T>
-QTextStream& operator<<(QTextStream& out, QList<T> &l)
+QTextStream& operator<<(QTextStream& out, const QList<T> &l)
 {
 	if (!l.empty())
 	{
@@ -882,7 +883,7 @@ QStringList 继承自`QList<QString>`，它比较有用的函数是`filter`，�
 #include <QStringList>
 #include <QVector>
 
-QTextStream& operator<<(QTextStream& out, QStringList &sl);
+QTextStream& operator<<(QTextStream& out, const QStringList &sl);
 
 int main(void)
 {
@@ -926,7 +927,7 @@ int main(void)
 	return 0;
 }
 
-QTextStream& operator<<(QTextStream& out, QStringList &sl)
+QTextStream& operator<<(QTextStream& out, const QStringList &sl)
 {
 	if (!sl.empty())
 	{
@@ -1073,7 +1074,7 @@ QSet 的使用方式也可以参照`std::set`来使用：
 #include "myQSetType.hpp"
 
 template <typename T>
-QTextStream& operator<<(QTextStream& out, QSet<T> &s);
+QTextStream& operator<<(QTextStream& out, const QSet<T> &s);
 
 int main(void)
 {
@@ -1102,7 +1103,7 @@ int main(void)
 }
 
 template <typename T>
-QTextStream& operator<<(QTextStream& out, QSet<T> &s)
+QTextStream& operator<<(QTextStream& out, const QSet<T> &s)
 {
 	if (!s.empty())
 	{
@@ -1241,7 +1242,7 @@ QMap 的使用方式也可以参照`std::map`来使用：
 #include "myQSetType.hpp"
 
 template <typename KEY, typename VALUE>
-QTextStream& operator<<(QTextStream& out, QMap<KEY, VALUE> &m);
+QTextStream& operator<<(QTextStream& out, const QMap<KEY, VALUE> &m);
 
 int main(void)
 {
@@ -1280,7 +1281,7 @@ int main(void)
 }
 
 template <typename KEY, typename VALUE>
-QTextStream& operator<<(QTextStream& out, QMap<KEY, VALUE> &m)
+QTextStream& operator<<(QTextStream& out, const QMap<KEY, VALUE> &m)
 {
 	if (!m.empty())
 	{
@@ -1333,7 +1334,261 @@ John Doe
 
 Qt5 中处理文件的基本类是 QFile、QDir 和 QFileInfo。其中 QFile 用来读写文件，QDir 用来访问文件夹，QFileInfo 用来获取文件的相关信息(如路径、文件名、修改时间、权限等)。
 
+<h3 id="qfile">QFile</h3>
+
+你可以在`qtbase-5.9\src\corelib\io`目录下找到`qfile.h`和`qfile.cpp`。
+
+我们先回想一下`std::fstream`是如何对文件进行读写的，然后顺着这个思路去看 QFile 是如何对应的：
+
+*	首先，`std::fstream`由默认构造函数，QFile 也有；
+*	`std::fstream`可以传递一个文件名构造并打开该文件，QFile 也有，但是 **QFile 只支持带正斜杠`/`的文件名**；
+*	`std::fstream`可以使用成员函数`open`打开一个文件并设置打开模式，QFile 没有，但可以组合其成员函数`setFileName`和`open`来达到这一效果；
+*	`std::fstream`可以使用成员函数`is_open`来检验文件是否成功打开，QFile 有`isOpen`；
+*	`std::fstream`可以使用成员函数`close`来关闭打开的文件，QFile 也有；
+*	`std::fstream`的析构函数会自动调用`close`，QFile 也是；
+*	`std::fstream`可以使用非成员函数`getline`来从流中获取一行数据，QFile 有成员函数`readLine`；
+*	`std::fstream`可以使用运算符`>>`和`<<`进行读写，QFile 可以使用`read`和`write`，另外你还可以绑定 QFile 到 QDataStream 或 QTextStream 来获得使用`>>`和`<<`读写的功能；
+*	`std::fstream`可以使用成员函数`eof`来检测是否到达文件结尾，QFile 有`atEnd`；
+
+我们知道`std::fstream`是没有直接获取文件大小的函数的，但 QFile 的成员函数`size`实现了这个功能，**在Unix下一些特别的系统文件(如`/proc`)的`size`总是返回0，`atEnd`也会一直返回true，但是你却可以从中读取到数据**，这时候你就需要这么做：
+
+```c++
+QFile file("/proc/modules");
+if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+	return;
+
+QTextStream in(&file);
+QString line = in.readLine();
+while (!line.isNull()) {
+	process_line(line);
+	line = in.readLine();
+}
+```
+
+上面的代码来自官方文档，通过该代码，我们知道 QFile 的文件打开模式在 QIODevice 中定义，所以我们查看`qiodevice.h`：
+
+```c++
+enum OpenModeFlag {
+	NotOpen = 0x0000,
+	ReadOnly = 0x0001,
+	WriteOnly = 0x0002,
+	ReadWrite = ReadOnly | WriteOnly,
+	Append = 0x0004,
+	Truncate = 0x0008,
+	Text = 0x0010,
+	Unbuffered = 0x0020
+};
+```
+
+通过上面的对比学习，我们来做一个演示：
+
+```c++
+#include <QTextStream>
+#include <QFile>
+#include <QTextStream>
+
+int main(void)
+{
+	QTextStream out(stdout);
+	QString filename("test.txt");
+
+	QFile file;
+	file.setFileName(filename);
+	file.open(QIODevice::ReadWrite);
+	if (!file.isOpen())
+	{
+		out << "open " << filename << "failed.\n";
+		return 1;
+	}
+
+	file.write("line1 line1 line1\n");
+	file.write("line2 line2 line2\n");
+	file.write("line3 line3 line3\n");
+	file.seek(0);
+
+	QString str1 = file.read(11);
+	QString str2 = file.read(12);
+	QString str3 = file.readLine();
+	QString str4 = file.readAll();
+	bool isEnd = file.atEnd();
+	qint64 size = file.size();
+
+	file.close();
+
+	out << "str1: " << str1 << "\n"
+		<< "str2: " << str2 << "\n"
+		<< "str3: " << str3 << "\n"
+		<< "str4: " << str4 << "\n"
+		<< isEnd << "\n"
+		<< size << endl;
+
+	return 0;
+}
+```
+
+结果：
+
+```text
+str1: line1 line1
+str2:  line1
+line2
+str3:  line2 line2
+
+str4: line3 line3 line3
+
+1
+54
+```
+
+<h3 id="qdir">QDir</h3>
+
+你可以在`qtbase-5.9\src\corelib\io`目录下找到`qdir.h`和`qdir.cpp`。
+
+标准库没有处理文件夹的类，但是网上有很多自己实现的类，你可以在[这里](https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c)得到相当多的建议。
+
+QDir 也使用正斜杠`/`作为其目录分隔符，并且支持相对路径，你可以使用其成员函数`isRelative()`或`isAbsolute()`来判断使用的路径的是相对的还是绝对的，你甚至可以使用成员函数`makeAbsolute`从一个相对路径得到一个绝对路径。
+
+QDir 有一些相似shell命令行的函数，如`mkdir`、`rmdir`、`cd`；一些有用的非静态成员函数：
+
+*	`exists`；
+*	`isReadable`；
+*	`count`：获取当前目录下的文件夹和文件总数；
+*	`entryList`：获取当前目录下的文件夹和文件名列表；
+*	`entryInfoList`：获取当前目录下的文件夹和文件信息列表；
+*	`remove`：删除文件；
+*	`setFilter`：文件类型过滤器，影响`entryList`和`entryInfoList`；
+*	`setNameFilters`：文件名过滤器，影响`entryList`和`entryInfoList`；
+*	`setSorting`：设置文件排序顺序，如按大小排列、按修改时间排列等，影响`entryList`和`entryInfoList`；
+*	`filePath`：返回当前目录下的指定文件名的路径，不检查其是否存在，如果当前目录是相对的，返回的路径也是相对的；
+*	`absoluteFilePath`：返回当前目录下的指定文件名的绝对路径，不检查其是否存在。
+
+一些静态成员函数：
+
+QDir | QString | 返回值
+--------------- | -------------- | ------------------------
+current() | currentPath() | 当前工作目录 <br>你可以使用`setCurrent`来设置当前工作目录
+home() | homePath() | 当前用户目录
+root() | rootPath() | 根目录
+temp() | tempPath() | 系统临时文件夹
+
+演示：
+
+```c++
+#include <QTextStream>
+#include <QDir>
+#include <QFile>
+#include <QTextStream>
+
+QTextStream& operator<<(QTextStream& out, const QStringList &sl);
+
+int main(void)
+{
+	QTextStream out(stdout);
+	QString dir_name("directory");
+
+	out << "current: " << QDir::currentPath() << "\n"
+		<< "home: " << QDir::homePath() << "\n"
+		<< "root: " << QDir::rootPath() << "\n"
+		<< "temp: " << QDir::tempPath() << endl;
+
+	QDir temp(QDir::temp());
+	if (!temp.exists())
+	{
+		out << QDir::tempPath()
+			<< "is not exist.\n";
+		return 1;
+	}
+	if (!temp.isReadable())
+	{
+		out << QDir::tempPath()
+			<< "is not readable.\n";
+		return 1;
+	}
+	if (!temp.exists(dir_name))
+	{
+		temp.mkdir(dir_name);
+	}
+
+	temp.cd(dir_name);
+	QString dir_path = temp.absolutePath();
+	out << "after cd(\"directory\"): "
+		<< dir_path << endl;
+	temp.cd("..");
+	out << "after cd(\"..\"): "
+		<< temp.absolutePath() << endl;
+	temp.setPath(dir_path);
+
+	QString subDir("dir%1");
+	QString subFile("file%1");
+	for (int i = 1; i <= 3; ++i)
+	{
+		QString tmp_dir = subDir.arg(i);
+		temp.mkdir(tmp_dir);
+
+		QString tmp_file = subFile.arg(i);
+		QFile file(temp.filePath(tmp_file));
+		file.open(QIODevice::WriteOnly);
+	}
+	out << "after created: \n"
+		<< temp.entryList()
+		<< endl;
+
+	temp.rmdir("dir2");
+	temp.remove("file2");
+
+	out << "after removed: \n";
+	out << "dirs: ";
+	temp.setFilter(QDir::Dirs);
+	temp.setSorting(QDir::Name | QDir::Reversed);
+	out << temp.entryList() << "\n";
+	out << "files: ";
+	temp.setFilter(QDir::Files);
+	temp.setSorting(QDir::Name | QDir::Reversed);
+	out << temp.entryList() << "\n";
+
+	return 0;
+}
+
+QTextStream& operator<<(QTextStream& out, const QStringList &sl)
+{
+	if (!sl.empty())
+	{
+		for (auto &i : sl)
+		{
+			out << i << " ";
+		}
+	}
+	return out;
+}
+```
+
+结果：
+
+```text
+current: E:/qt_project
+home: C:/Users/pengzhen
+root: C:/
+temp: C:/Users/pengzhen/AppData/Local/Temp
+after cd("directory"): C:/Users/pengzhen/AppData/Local/Temp/directory
+after cd(".."): C:/Users/pengzhen/AppData/Local/Temp
+after created:
+. .. dir1 dir2 dir3 file1 file2 file3
+after removed:
+dirs: dir3 dir1 .. .
+files: file3 file1
+```
+
+<h3 id="qfileinfo">QFileInfo</h3>
+
+你可以在`qtbase-5.9\src\corelib\io`目录下找到`qfileinfo.h`和`qfileinfo.cpp`。
+
+前面我们说过，QFileInfo 提供关于文件或文件夹的相关信息
+
 <h3 id="qtextstream">QTextStream</h3>
 
-<h3 id="qfile">QFile</h3>
+你可以在`qtbase-5.9\src\corelib\io`目录下找到`qtextstream.h`和`qtextstream.cpp`。
+
+QTextStream 是 Qt 用来读写文本的流，你可以类比 `std::iostream` 进行理解。
+
+<h3 id="qdatastream">QDataStream</h3>
 
