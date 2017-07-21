@@ -31,6 +31,7 @@ tags:
 	*	[QFileInfo](#qfileinfo)
 	*	[QTextStream](#qtextstream)
 	*	[QDataStream](#qdatastream)
+	*	[QDebug](#qdebug)
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -1347,7 +1348,7 @@ Qt5 中处理文件的基本类是 QFile、QDir 和 QFileInfo。其中 QFile 用
 *	`std::fstream`可以使用成员函数`close`来关闭打开的文件，QFile 也有；
 *	`std::fstream`的析构函数会自动调用`close`，QFile 也是；
 *	`std::fstream`可以使用非成员函数`getline`来从流中获取一行数据，QFile 有成员函数`readLine`；
-*	`std::fstream`可以使用运算符`>>`和`<<`进行读写，QFile 可以使用`read`和`write`，另外你还可以绑定 QFile 到 QDataStream 或 QTextStream 来获得使用`>>`和`<<`读写的功能；
+*	`std::fstream`可以使用运算符`>>`和`<<`进行读写，QFile 可以使用`read`和`write`，另外你还可以绑定 QFile 到[QDataStream](#qdatastream)或[QTextStream](#qtextstream)来获得使用`>>`和`<<`读写的功能；
 *	`std::fstream`可以使用成员函数`eof`来检测是否到达文件结尾，QFile 有`atEnd`；
 
 我们知道`std::fstream`是没有直接获取文件大小的函数的，但 QFile 的成员函数`size`实现了这个功能，**在Unix下一些特别的系统文件(如`/proc`)的`size`总是返回0，`atEnd`也会一直返回true，但是你却可以从中读取到数据**，这时候你就需要这么做：
@@ -1477,7 +1478,6 @@ temp() | tempPath() | 系统临时文件夹
 #include <QTextStream>
 #include <QDir>
 #include <QFile>
-#include <QTextStream>
 
 QTextStream& operator<<(QTextStream& out, const QStringList &sl);
 
@@ -1582,13 +1582,299 @@ files: file3 file1
 
 你可以在`qtbase-5.9\src\corelib\io`目录下找到`qfileinfo.h`和`qfileinfo.cpp`。
 
-前面我们说过，QFileInfo 提供关于文件或文件夹的相关信息
+前面我们说过，QFileInfo 提供关于文件或文件夹的相关信息，它可以使用绝对路径，又可以使用相对路径，你可以使用成员函数`isRelative`进行确认，也可以使用成员函数`makeAbsolute`从一个相对路径得到一个绝对路径。
+
+查看其头文件，你会发现其实它能用的函数并不多：
+
+```c++
+QFileInfo(const QString &file);
+QFileInfo(const QFile &file);
+QFileInfo(const QDir &dir, const QString &file);
+void setFile(const QString &file);
+void setFile(const QFile &file);
+void setFile(const QDir &dir, const QString &file);
+bool exists() const;
+static bool exists(const QString &file);
+void refresh(); // 刷新文件信息
+QString fileName() const;
+QString filePath() const;
+QString absoluteFilePath() const;
+QString suffix() const; // 返回文件名最后一个.后所有字符
+QString completeSuffix() const; // 返回文件名第一个.后所有字符
+bool isReadable() const;
+bool isWritable() const;
+bool isExecutable() const;
+bool isHidden() const;
+bool isFile() const;
+bool isDir() const;
+bool isSymLink() const;
+QString readLink() const;
+qint64 size() const;
+QDateTime created() const;
+QDateTime lastModified() const;
+QDateTime lastRead() const;
+QString owner() const;
+QString group() const;
+bool permission(QFile::Permissions permissions) const;
+QFile::Permissions permissions() const;
+```
+
+其中`owner`、`group`、`permissions`在NTFS文件系统上的返回值是不准确的，因为NTFS系统默认禁用了所有权的权限的检查，要想启用它，你需要：
+
+```c++
+extern Q_CORE_EXPORT int qt_ntfs_permission_lookup;
+qt_ntfs_permission_lookup++; // turn checking on
+qt_ntfs_permission_lookup--; // turn it off again
+```
+
+查看`qfile.h`，再转到`qfiledevice.h`：
+
+```c++
+enum Permission {
+	ReadOwner = 0x4000, WriteOwner = 0x2000, ExeOwner = 0x1000,
+	ReadUser  = 0x0400, WriteUser  = 0x0200, ExeUser  = 0x0100,
+	ReadGroup = 0x0040, WriteGroup = 0x0020, ExeGroup = 0x0010,
+	ReadOther = 0x0004, WriteOther = 0x0002, ExeOther = 0x0001
+};
+```
+
+演示：
+
+```c++
+#include <QTextStream>
+#include <QFileInfo>
+#include <QDir>
+#include <QFile>
+#include <QDateTime>
+
+extern Q_CORE_EXPORT int qt_ntfs_permission_lookup;
+
+int main(void)
+{
+	qt_ntfs_permission_lookup++; // turn checking on
+	QTextStream out(stdout);
+
+	QFileInfo fileinfo1("release/qt_project.exe");
+	QFileInfo fileinfo2(QDir::current(), "main.cpp");
+
+	out << "path: "
+		<< fileinfo1.filePath() << "\n"
+		<< fileinfo2.filePath() << "\n"
+		<< "name: "
+		<< fileinfo1.fileName() << " "
+		<< fileinfo2.fileName() << "\n"
+		<< "exists: "
+		<< fileinfo1.exists() << " "
+		<< fileinfo2.exists() << "\n"
+		<< "suffix: "
+		<< fileinfo1.suffix() << " "
+		<< fileinfo2.suffix() << "\n"
+		<< "created: "
+		<< fileinfo1.created().toString(Qt::ISODate) << " "
+		<< fileinfo2.created().toString(Qt::ISODate) << "\n"
+		<< "owner: "
+		<< fileinfo1.owner() << " "
+		<< fileinfo2.owner() << "\n"
+		<< "permissions: "
+		<< fileinfo1.permission(QFile::ExeUser) << " "
+		<< fileinfo2.permission(QFile::ExeUser)
+		<< endl;
+
+	return 0;
+}
+```
+
+结果：
+
+```text
+path: release/qt_project.exe
+E:/qt_project/main.cpp
+name: qt_project.exe main.cpp
+exists: 1 1
+suffix: exe cpp
+created: 2017-07-21T12:24:37 2017-07-14T15:16:35
+owner: pengzhen pengzhen
+permissions: 1 1
+```
 
 <h3 id="qtextstream">QTextStream</h3>
 
 你可以在`qtbase-5.9\src\corelib\io`目录下找到`qtextstream.h`和`qtextstream.cpp`。
 
-QTextStream 是 Qt 用来读写文本的流，你可以类比 `std::iostream` 进行理解。
+QTextStream 是 Qt 用来读写文本的流，查看其头文件，QTextStream 可以对 QIODevice、`FILE*`、QString 和 QByteArray进行操作。我们知道 QFile 继承自 QIODevice，所以 QTextStream 可以在 QFile 上进行操作；我们之前一直在使用`stdout`，它到底是个什么类型呢，在`C:\Program Files (x86)\Windows Kits\10\Include\10.0.15063.0\ucrt\corecrt_wstdio.h`中我们找到：
+
+```c++
+_ACRTIMP_ALT FILE* __cdecl __acrt_iob_func(unsigned _Ix);
+
+#define stdin  (__acrt_iob_func(0))
+#define stdout (__acrt_iob_func(1))
+#define stderr (__acrt_iob_func(2))
+```
+
+所以`stdin`、`stdout`、`stderr`都是`FILE*`类型，所以可以使用 QTextStream 进行操作。
+
+我们知道`std::iostream`有很多格式化控制符，如`hex`、`boolalpha`、`flush`、`ends`、`endl`等等，QTextStream 也有很多这样的控制符：
+
+控制符(*前缀代表默认) | 说明
+------------------------ | -----------------------------------
+bin | 整型值设置为二进制
+oct | 整型值设置为八进制
+*dec | 整型值设置为十进制
+hex | 整型值设置为十六进制
+showbase | 对整型值输出表示进制的前缀 <br> 二进制：0b，八进制：0，十六进制：0x
+*noshowbase | 不输出表示进制的前缀
+forcesign | 总是显示正负号
+*noforcesign | 需要时显示负号
+forcepoint | 总是显示小数分隔符
+*noforcepoint | 需要时显示小数分隔符
+uppercasebase | 使用大写的进制前缀 <br> 二进制：0B，八进制：0，十六进制：0X
+*lowercasebase | 使用小写的进制前缀 <br> 二进制：0b，八进制：0，十六进制：0x
+uppercasedigits | 使用大写字母表示10~35
+lowercasedigits | 使用小写字母表示10~35
+fixed | 浮点值显示为定点十进制，e小写
+scientific | 科学计数法，e小写
+left | 左对齐
+right | 右对齐
+center | 中对齐
+endl | 输出换行，并刷新缓冲区
+flush | 刷新缓冲区
+reset | 重置格式选项，返回到原始状态
+ws | 按字符读取时丢弃空白字符
+bom | 如果使用UTF解码器，那么每次写入数据时会插入BOM
+
+除了上面的控制符外，QTextStream 还提供了`setFieldWidth`来设定每次输出宽度、`setPadChar`来设定填充字符、`setRealNumberPrecision`来设定输出数字的精度，默认是6。
+
+QTextStream 默认使用unicode编码，你也可以使用成员函数`setCodec`手动设置(**操作QString时无效**)。在输入输出时，你可以使用流运算符`<<`和`>>`，你也可以使用成员函数`read`、`readLine`和`readAll`。
+
+仿照[QFile 中的演示](#qfile)，最后再加一些格式控制：
+
+```c++
+#include <QTextStream>
+#include <QFile>
+
+int main(void)
+{
+	QTextStream out(stdout);
+	QString filename("test.txt");
+
+	QFile file(filename);
+	file.open(QIODevice::ReadWrite);
+	if (!file.isOpen())
+	{
+		out << "open " << filename << "failed.\n";
+		return 1;
+	}
+
+	QTextStream fStream(&file);
+	fStream << "line1 line1 line1\n"
+		<< "line2 line2 line2\n"
+		<< "line3 line3 line3\n";
+	fStream.seek(0);
+
+	QString str1 = fStream.read(11);
+	QString str2 = fStream.read(12);
+	QString str3 = fStream.readLine();
+	QString str4 = fStream.readAll();
+	bool isEnd = file.atEnd();
+	qint64 size = file.size();
+
+	fStream.flush();
+	file.close();
+
+	out << "str1: " << str1 << "\n"
+		<< "str2: " << str2 << "\n"
+		<< "str3: " << str3 << "\n"
+		<< "str4: " << str4 << "\n"
+		<< isEnd << "\n"
+		<< size << endl;
+
+	QTextStream sStream("0x50 0x20");
+	int num1, num2, num3;
+	char ch;
+	sStream >> num1
+		>> dec >> num2
+		>> ch >> num3;
+
+	out.setFieldWidth(10);
+	out.setPadChar('*');
+	out << left << hex << showbase << num1;
+	out.setPadChar('-');
+	out.setFieldWidth(5);
+	out << "\n"
+		<< dec << num2 << "\n"
+		<< right
+		<< ch << "\n"
+		<< num3 << endl;
+
+	return 0;
+}
+```
+
+结果：
+
+```text
+str1: line1 line1
+str2:  line1
+line2
+str3:  line2 line2
+str4: line3 line3 line3
+
+1
+54
+0x50******
+----0----
+--------x----
+---20----
+```
+
+通过与 QFile 中的结果对比，我们发现 **QTextStream 的`readLine`会丢弃换行符**，而 QFile 的不会；QTextStream 的`size`与其流的位置无关；**QTextStream 会根据流中的数据自动检测基数**；**如果设定输出宽度大于1，那么输出换行符会输出输出宽度减1个填充字符**。
 
 <h3 id="qdatastream">QDataStream</h3>
 
+你可以在`qtbase-5.9\src\corelib\io`目录下找到`qdatastream.h`和`qdatastream.cpp`。
+
+QDataStream 支持 QIODevice 和 QByteArray，它提供二进制数据的序列化。查看[这篇文章](http://blog.csdn.net/feiyinzilgd/article/details/6107587)，大概了解了**QDataStream 与 QTextStream 唯一的不同就是它提供了数据的序列化，这样在传输数据和解析数据时会更加方便**。
+
+<h3 id="qdebug">QDebug</h3>
+
+你可以在`qtbase-5.9\src\corelib\io`目录下找到`qdebug.h`和`qdebug.cpp`。
+
+QDebug 提供调试信息的输出流，其有五个全局的默认实例定义：
+
+```c++
+#define qDebug QMessageLogger(QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).debug
+#define qInfo QMessageLogger(QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).info
+#define qWarning QMessageLogger(QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).warning
+#define qCritical QMessageLogger(QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).critical
+#define qFatal QMessageLogger(QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).fatal
+```
+
+你可以简单的像printf一样使用，也可以像流一样使用：
+
+```c++
+#include <QDebug>
+
+int main(void)
+{
+	qInfo() << "C++ Style Info Message";
+	qInfo("C Style Info Message");
+
+	qDebug() << "C++ Style Debug Message";
+	qDebug("C Style Debug Message");
+
+	qWarning() << "C++ Style Warning Message";
+	qWarning("C Style Warning Message");
+
+	qCritical() << "C++ Style Critical Error Message";
+	qCritical("C Style Critical Error Message");
+
+	// qFatal does not have a C++ style method.
+	qFatal("C Style Fatal Error Message");
+
+	return 0;
+}
+```
+
+**定义`QT_NO_WARNING_OUTPUT`或`QT_NO_DEBUG_OUTPUT`会屏蔽掉qWarning或qDebug的输出**。
+
+**一般在Qt中打印输出信息时，都会使用 QDebug**。
