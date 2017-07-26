@@ -32,6 +32,9 @@ tags:
 	*	[QTextStream](#qtextstream)
 	*	[QDataStream](#qdatastream)
 	*	[QDebug](#qdebug)
+*	[Qt 部件](#qt_widget)
+	*	[QApplication](#qapplication)
+	*	[QWidget](#qwidget)
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -1335,6 +1338,8 @@ John Doe
 
 Qt5 中处理文件的基本类是 QFile、QDir 和 QFileInfo。其中 QFile 用来读写文件，QDir 用来访问文件夹，QFileInfo 用来获取文件的相关信息(如路径、文件名、修改时间、权限等)。
 
+Qt5 的输出流一般使用 QDebug，你也可以使用 QTextStream 或 QDataStream 同时处理输入输出。
+
 <h3 id="qfile">QFile</h3>
 
 你可以在`qtbase-5.9\src\corelib\io`目录下找到`qfile.h`和`qfile.cpp`。
@@ -1878,3 +1883,240 @@ int main(void)
 **定义`QT_NO_WARNING_OUTPUT`或`QT_NO_DEBUG_OUTPUT`会屏蔽掉qWarning或qDebug的输出**。
 
 **一般在Qt中打印输出信息时，都会使用 QDebug**。
+
+<h2 id="qt_widget">Qt 部件</h2>
+
+<h3 id="qapplication">QApplication</h3>
+
+你可以在`qtbase-5.9\src\widgets\kernel`目录下找到`qapplication.h`和`qapplication.cpp`。
+
+QApplication 管理GUI应用的控制流和主要设置，它继承自 QGUIApplication，实现了一些基于 QWidget 的应用程序所需要的功能。**使用Qt的任何GUI应用，都需要一个 QApplication 对象，不管该应用有多少个窗口**。**对于非基于 QWidget 的Qt应用，可以使用 QGUIApplication 代替**，因为 QGUIApplication 不依赖于 QtWidget 库。
+
+一些GUI应用提供特殊的批处理模式，如根据提供的命令行参数执行相关任务而不能人工干预，在这种非GUI模式下，**只需要实例化一个简单的 QCoreApplication 就足够了**，这避免了不必要的图形用户界面所需资源的初始化，官方示例如下：
+
+```c++
+QCoreApplication* createApplication(int &argc, char *argv[])
+{
+	for (int i = 1; i < argc; ++i)
+		if (!qstrcmp(argv[i], "-no-gui"))
+			return new QCoreApplication(argc, argv);
+	return new QApplication(argc, argv);
+}
+
+int main(int argc, char* argv[])
+{
+	QScopedPointer<QCoreApplication> app(createApplication(argc, argv));
+
+	if (qobject_cast<QApplication *>(app.data())) {
+		// start GUI version...
+	}
+	else {
+		// start non-GUI version...
+	}
+
+	return app->exec();
+}
+```
+
+查看 QCoreApplication、QGUIApplication、QApplication 源码，你会发现一个名为`qApp`的预定义变量：
+
+```c++
+// QCoreApplication.h
+#define qApp QCoreApplication::instance()
+static QCoreApplication *instance() { return self; }
+static QCoreApplication *self;
+
+// QGUIApplication.h
+#if defined(qApp)
+#undef qApp
+#endif
+#define qApp (static_cast<QGuiApplication *>(QCoreApplication::instance()))
+
+// QApplication.h
+#if defined(qApp)
+#undef qApp
+#endif
+#define qApp (static_cast<QApplication *>(QCoreApplication::instance()))
+```
+
+通过上面的源码我们知道，该qApp指向当前 QCoreApplication 系列实例。
+
+QApplication 的主要责任有：
+
+*	使用用户的桌面设置初始化应用；
+*	执行事件处理；
+*	解析常见的命令行参数，从而设置相应的内部状态；
+*	定义应用的外观和感觉；
+*	指定应用如何分配颜色；
+*	字符串的本地化；
+*	提供了一些神奇的实例，如`desktop()`和`clipboard()`
+*	掌控所有窗口的部件位置；
+*	管理应用的鼠标光标处理；
+
+由于 QApplication 做了这么多初始化，所以**它必须在创建与用户界面相关的任何其他对象之前被创建**。
+
+<h3 id="qwidget">QWidget</h3>
+
+你可以在`qtbase-5.9\src\widgets\kernel`目录下找到`qwidget.h`和`qwidget.cpp`。
+
+QWidget 是所有用户界面对象的基类，QDialog、QMainWindow、QLabel、QPushButton、QListWidget等都是它的子类。查看其公有构造函数：
+
+```c++
+explicit QWidget(QWidget* parent = Q_NULLPTR, Qt::WindowFlags f = Qt::WindowFlags());
+```
+
+当不传入参数或传入的第一个参数为空时，表示该部件是一个窗口，也被称为顶层部件(top-level widget)，你可以使用成员函数`setWindowTitle`来设置标题栏，`setWindowIcon`来设置窗口图标。**QMainWindow 和 QDialog 的各种子类是Qt中最常用的窗口类型**。
+
+当传入的第一个参数不为空时，表示该部件是传入参数的一个子部件，**当父部件被删除时，所有该父部件的子部件都将被删除**。**当你为一个可视部件添加一个子部件时，要想子部件变得可见，你必须显式调用成员函数`show()`**。
+
+关于第二个参数，你可以在`qtbase-5.9\src\corelib\global\qnamespace.h`中找到`enum WindowType`，它随后被声明为`WindowFlags`；该参数被用来指定部件的各种窗口系统属性，它们通常不怎么被使用，你可以查看[官方文档](http://doc.qt.io/qt-5/qt.html#WindowType-enum)了解各种标志的意义。
+
+QWidget 包含[相当多的功能和属性](http://doc.qt.io/qt-5/qwidget.html#groups-of-functions-and-properties)，其中最常用的就是事件处理。**要想进行事件处理，你必须继承 QWidget，然后重新定义相关的事件处理函数**，下面就来做一些演示：
+
+我们首先继承 QWidget，定义一个 myWidget 新类，该类重定义了相当多的事件：
+
+```c++
+#ifndef MYWIDGET_HPP
+#define MYWIDGET_HPP
+
+#include <QDebug>
+#include <QWidget>
+#include <QString>
+#include <QMouseEvent>
+
+class myWidget :public QWidget
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QWidget(parent)
+	{}
+
+private:
+#define eventOccured qDebug() << __func__ << " called."
+
+protected:
+	// 鼠标按下、移动、释放、双击、滚轮滚动事件
+	void mousePressEvent(QMouseEvent* event) override;
+	void mouseMoveEvent(QMouseEvent*) override { eventOccured; };
+	void mouseReleaseEvent(QMouseEvent*) override { eventOccured; };
+	void mouseDoubleClickEvent(QMouseEvent*) override { eventOccured; };
+	void wheelEvent(QWheelEvent*) override { eventOccured; };
+
+	// 键盘按下、释放事件
+	void keyPressEvent(QKeyEvent*) override { eventOccured; };
+	void keyReleaseEvent(QKeyEvent*) override { eventOccured; };
+
+	// 鼠标光标进入部件区域、离开部件区域事件
+	void enterEvent(QEvent*) override { eventOccured; };
+	void leaveEvent(QEvent*) override { eventOccured; };
+
+	// 部件移动事件
+	void moveEvent(QMoveEvent*) override { eventOccured; };
+
+	// 绘制事件，当update()或repaint()被调用或组件需要被绘制时发生
+	void paintEvent(QPaintEvent*) override { eventOccured; };
+
+	// 组件大小发生了变化
+	void resizeEvent(QResizeEvent*) override { eventOccured; };
+
+	// 组件被关闭了
+	void closeEvent(QCloseEvent*) override { eventOccured; };
+};
+
+// ！！！注意：不加inline会报错，这与Q_OBJECT有关
+inline void myWidget::mousePressEvent(QMouseEvent* event)
+{
+	QString button;
+	switch (event->button())
+	{
+	case Qt::LeftButton:
+		button = "LeftButton"; break;
+	case Qt::RightButton:
+		button = "RightButton"; break;
+	case Qt::MidButton:
+		button = "MidButton"; break;
+	default:
+		return;
+	}
+	qDebug() << button << " clicked.";
+}
+
+#endif // MYWIDGET_HPP
+```
+
+然后在main.cpp中使用它：
+
+```c++
+#include <QApplication>
+#include "myWidget.hpp"
+
+int main(int argc, char *argv[]) 
+{
+	QApplication app(argc, argv);
+
+	myWidget window;
+
+	window.resize(250, 150);
+	window.move(300, 300);
+	window.setWindowTitle("event handlers");
+	window.show();
+
+	return app.exec();
+}
+```
+
+重新构建工程`qmake -project`，在生成的`.pro`文件后添加：
+
+```text
+QT += widgets
+CONFIG += console
+```
+
+其中widgets用来显示部件、console用来在命令行下输出打印信息。
+
+触发相应事件，得到打印输出如下：
+
+```text
+moveEvent  called.
+resizeEvent  called.
+paintEvent  called.
+enterEvent  called.
+leaveEvent  called.
+moveEvent  called.
+moveEvent  called.
+moveEvent  called.
+enterEvent  called.
+"LeftButton"  clicked.
+mouseReleaseEvent  called.
+mouseDoubleClickEvent  called.
+mouseReleaseEvent  called.
+wheelEvent  called.
+"MidButton"  clicked.
+mouseReleaseEvent  called.
+"RightButton"  clicked.
+mouseReleaseEvent  called.
+leaveEvent  called.
+resizeEvent  called.
+paintEvent  called.
+resizeEvent  called.
+paintEvent  called.
+resizeEvent  called.
+paintEvent  called.
+keyPressEvent  called.
+keyReleaseEvent  called.
+keyPressEvent  called.
+keyReleaseEvent  called.
+enterEvent  called.
+"LeftButton"  clicked.
+mouseMoveEvent  called.
+mouseMoveEvent  called.
+mouseMoveEvent  called.
+mouseMoveEvent  called.
+mouseMoveEvent  called.
+mouseMoveEvent  called.
+mouseReleaseEvent  called.
+leaveEvent  called.
+closeEvent  called.
+```
