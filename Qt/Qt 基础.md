@@ -1270,6 +1270,7 @@ int main(void)
 	qmap[s2] = "John Doe";
 	qmap.insertMulti(s3, "Bill Clinton");
 
+	// 注意这里find得到的迭代器类型与标准迭代器的区别
 	out << qmap
 		<< qmap.size() << "\n"
 		<< *(qmap.find(s1)) << "\n"
@@ -2371,7 +2372,7 @@ int main(int argc, char *argv[]) {
 
 <h3 id="qt_common_widgets">常用小部件</h3>
 
-GUI常用的小部件无非按钮、文本框、标签、下拉框、复选框、滚动条、状态栏七种，在Qt中，按钮用`QPushButton`实现、文本框分为`QTextEdit`(大型文本)和`QLineEdit`(行文本)以及`QPlainTextEdit`(纯文本)、标签用`QLabel`实现、下拉框分为`QComboBox`和`QSpinBox`以及`QDoubleSpinBox`、复选框用`QComboBox`实现、滚动条分为`QSlider`和`QScrollBar`、状态栏用`QStatusBar`实现。
+GUI常用的小部件无非按钮、文本框、标签、下拉框、复选框、滚动条、状态栏七种，在Qt中，按钮用`QPushButton`实现、文本框分为`QTextEdit`(大型文本)和`QLineEdit`(行文本)以及`QPlainTextEdit`(纯文本)、标签用`QLabel`实现、下拉框分为`QComboBox`和`QSpinBox`以及`QDoubleSpinBox`、复选框用`QCheckBox`实现、滚动条分为`QSlider`和`QScrollBar`、状态栏用`QStatusBar`实现。
 
 这些小部件非常简单，查看其头文件就知道怎么用了，看看官方说明文档也非常快，再结合之前的事件处理、信号槽知识，使用起来应该没什么大问题：
 
@@ -2380,11 +2381,21 @@ GUI常用的小部件无非按钮、文本框、标签、下拉框、复选框�
 #define MYWIDGET_HPP
 
 #include <QDebug>
+#include <QLabel>
+#include <QSlider>
+#include <QPixmap>
 #include <QString>
+#include <QSpinBox>
+#include <QCheckBox>
 #include <QTextEdit>
+#include <QLineEdit>
+#include <QComboBox>
+#include <QStatusBar>
+#include <QStringList>
 #include <QPushButton>
 #include <QMainWindow>
 #include <QApplication>
+#include <QPlainTextEdit>
 
 class myWidget :public QMainWindow
 {
@@ -2399,13 +2410,19 @@ public:
 
 	void showPushButton();
 	void showTextEdit();
+	void showLineEdit();
+	void showPlainTextEdit();
+	void showLabel();
+	void showComboBox();
+	void showSpinBox();
+	void showCheckBox();
+	void showSlider();
+	void showStatusBar();
 
 protected:
 	void paintEvent(QPaintEvent*) override;
 
 private:
-	void init();
-
 	QWidget *mWidget;
 };
 
@@ -2424,7 +2441,7 @@ inline void myWidget::paintEvent(QPaintEvent*)
 
 inline void myWidget::showPushButton()
 {
-	QPushButton *tmp = new QPushButton("Button", this);
+	QPushButton *tmp = new QPushButton("QPushButton", this);
 	connect(tmp, &QPushButton::clicked,
 		[] {qDebug() << "QPushButton clicked."; });
 
@@ -2442,6 +2459,97 @@ inline void myWidget::showTextEdit()
 	update();
 }
 
+inline void myWidget::showLineEdit()
+{
+	QLineEdit *tmp = new QLineEdit("QLineEdit", this);
+	connect(tmp, &QLineEdit::editingFinished,
+		[] {qDebug() << "QLineEdit editingFinished."; });
+
+	mWidget = tmp;
+	update();
+}
+
+inline void myWidget::showPlainTextEdit()
+{
+	QPlainTextEdit *tmp = new QPlainTextEdit("QPlainTextEdit", this);
+	connect(tmp, &QPlainTextEdit::textChanged,
+		[] {qDebug() << "QPlainTextEdit textChanged."; });
+
+	mWidget = tmp;
+	update();
+}
+
+inline void myWidget::showLabel()
+{
+	QLabel *tmp = new QLabel("QLabel", this);
+	tmp->setPixmap(QPixmap("stock-photo-8"));
+
+	mWidget = tmp;
+	update();
+}
+
+inline void myWidget::showComboBox()
+{
+	QComboBox *tmp = new QComboBox(this);
+	QStringList strList{ "str0","str1","str2","str3" };
+	tmp->addItems(strList);
+	tmp->setCurrentIndex(2);
+	connect(tmp, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::currentIndexChanged),
+		[](const QString &str) {qDebug() << "QComboBox current item is " << str; });
+
+	mWidget = tmp;
+	update();
+}
+
+inline void myWidget::showSpinBox()
+{
+	QSpinBox *tmp = new QSpinBox(this);
+	tmp->setRange(0, 100);
+	tmp->setWrapping(true);
+	tmp->setValue(1);
+	tmp->setSingleStep(2);
+	connect(tmp, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+		[](int i) {qDebug() << "QSpinBox current value is " << i; });
+
+	mWidget = tmp;
+	update();
+}
+
+inline void myWidget::showCheckBox()
+{
+	QCheckBox *tmp = new QCheckBox("QCheckBox", this);
+	connect(tmp, &QCheckBox::stateChanged,
+		[](int state) {qDebug() << "QCheckBox current state is " << (state ? "true" : "false"); });
+
+	mWidget = tmp;
+	update();
+}
+
+inline void myWidget::showSlider()
+{
+	QSlider *tmp = new QSlider(Qt::Horizontal, this);
+	tmp->setRange(0, 100);
+	tmp->setSingleStep(10);
+	tmp->setSliderPosition(50);
+	connect(tmp, &QSlider::sliderMoved,
+		[](int pos) {qDebug() << "QSlider current position is " << pos; });
+
+	mWidget = tmp;
+	update();
+}
+
+inline void myWidget::showStatusBar()
+{
+	QStatusBar *tmp = new QStatusBar(this);
+	connect(tmp, &QStatusBar::messageChanged,
+		[](const QString &text) {qDebug() << "QStatusBar messageChanged: " << text; });
+	tmp->showMessage("QStatusBar");
+	statusBar()->showMessage("QStatusBar");
+
+	mWidget = tmp;
+	update();
+}
+
 #endif // MYWIDGET_HPP
 ```
 
@@ -2451,7 +2559,15 @@ inline void myWidget::showTextEdit()
 
 static QMap<QString, int> COMMAND_MAP{
 	{ "pushButton",0 },
-	{ "textEdit",1 }
+	{ "textEdit",1 },
+	{ "lineEdit",2 },
+	{ "plainTextEdit",3 },
+	{ "label",4 },
+	{ "comboBox",5 },
+	{ "spinBox",6 },
+	{ "checkBox",7 },
+	{ "slider",8 },
+	{ "statusBar",9 }
 };
 
 void showWidget(myWidget *w, QString state);
@@ -2483,13 +2599,37 @@ void showWidget(myWidget *w, QString state)
 		return;
 	}
 
-	switch (*ret)
+	switch (ret.value())
 	{
 	case 0:
 		w->showPushButton();
 		break;
 	case 1:
 		w->showTextEdit();
+		break;
+	case 2:
+		w->showLineEdit();
+		break;
+	case 3:
+		w->showPlainTextEdit();
+		break;
+	case 4:
+		w->showLabel();
+		break;
+	case 5:
+		w->showComboBox();
+		break;
+	case 6:
+		w->showSpinBox();
+		break;
+	case 7:
+		w->showCheckBox();
+		break;
+	case 8:
+		w->showSlider();
+		break;
+	case 9:
+		w->showStatusBar();
 		break;
 	default:
 		break;
