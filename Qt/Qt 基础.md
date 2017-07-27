@@ -35,6 +35,9 @@ tags:
 *	[Qt 部件](#qt_widget)
 	*	[QApplication](#qapplication)
 	*	[QWidget](#qwidget)
+	*	[QMenu](#qmenu)
+	*	[QToolBar](#qtoolbar)
+	*	[常用小部件](#qt_common_widgets)
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -2119,4 +2122,377 @@ mouseMoveEvent  called.
 mouseReleaseEvent  called.
 leaveEvent  called.
 closeEvent  called.
+```
+
+<h3 id="qmenu">QMenu</h3>
+
+你可以在`qtbase-5.9\src\widgets\widgets`目录下找到`qmenu.h`和`qmenu.cpp`。
+
+菜单栏是GUI应用的常见部分，QMenu 就是Qt专门用来做菜单的类。**一个菜单栏部件是一个选择菜单，它可以是位于菜单栏的下拉菜单、也可以是点击右键或某个特定按钮出现的独立上下文菜单**。QMenu 还支持撕下菜单(tear-off menu)，撕下菜单是一个顶层窗口，用户可以把它“撕下”放在其他位置。
+
+**一个菜单包含一个操作选项列表，该列表垂直排列，每个操作选项可以拥有一个文本标签、位于左侧的图标和一个快捷键**。操作选项有四种类型：分割线、子菜单、部件(QWidgetAction)、执行某个特定操作。
+
+当插入某个操作选项时，你通常需要为其指定一个接收者和一个槽(slot)：每当该操作选项被触发时，就会发出信号提醒接收者，然后执行对应的slot。这是Qt中的一大特性，**如果你想自定义类支持这种信号槽机制的话，就需要像上面的myWidget一样在头文件中加上`Q_OBJECT`宏，然后信号函数用`Q_SIGNALS`标注、槽函数用`Q_SLOTS`标注，如下所示：
+
+```c++
+class Example
+{
+	Q_OBJECT
+
+public:
+	Example();
+	~Example();
+Q_SIGNALS:
+	void signal();
+Q_SLOTS:
+	void slot();
+}
+```
+
+我们查看 QMenu 的源代码：
+
+```c++
+// 菜单系列函数
+QAction *addMenu(QMenu *menu);
+QMenu *addMenu(const QString &title);
+QMenu *addMenu(const QIcon &icon, const QString &title); // 专为子菜单
+QAction *addSeparator();
+QAction *insertMenu(QAction *before, QMenu *menu);
+QAction *insertSeparator(QAction *before);
+// 操作选项系列函数
+void addAction(QAction *action);
+void addActions(QList<QAction*> actions);
+...
+void insertActions(QAction *before, QList<QAction*> actions);
+void insertAction(QAction *before, QAction *action);
+void removeAction(QAction *action);
+QList<QAction*> actions() const;
+// 使能撕下菜单
+void setTearOffEnabled(bool);
+// 要想QMenu可见，必须调用popup或exec而不是show
+void popup(const QPoint &pos, QAction *at = Q_NULLPTR);
+QAction *exec();
+QAction *exec(const QPoint &pos, QAction *at = Q_NULLPTR);
+// 信号
+Q_SIGNALS:
+    void aboutToShow();
+    void aboutToHide();
+    void triggered(QAction *action);
+    void hovered(QAction *action);
+```
+
+演示：
+
+```c++
+#ifndef MYWIDGET_HPP
+#define MYWIDGET_HPP
+
+#include <QIcon>
+#include <QDebug>
+#include <QCursor>
+#include <QString>
+#include <QMenuBar>
+#include <QMouseEvent>
+#include <QMainWindow>
+#include <QKeySequence>
+#include <QApplication>
+
+class myWidget :public QMainWindow
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QMainWindow(parent)
+	{
+		menu = menuBar()->addMenu(QString("&File"));
+
+		QAction *openAction = menu->addAction(
+			QIcon("open.png"),
+			QString("&Open"),
+			[] {qDebug() << "open action clicked."; },
+			QKeySequence("CTRL+O"));
+
+		QAction *quitAction = menu->addAction(
+			QIcon("quit.png"),
+			QString("&Quit"),
+			qApp,
+			&QApplication::quit,
+			QKeySequence("CTRL+Q"));
+
+		QAction *SepAction = menu->insertSeparator(quitAction);
+
+		QAction *newAction = new QAction(QIcon("new.png"), "&New", this);
+		newAction->setShortcut(QKeySequence("CTRL+N"));
+		menu->insertAction(SepAction, newAction);
+		// 连接信号槽
+		connect(newAction, &QAction::triggered, this, &myWidget::newActionClicked);
+
+		// 设置鼠标光标悬停提示
+		menu->setTearOffEnabled(true);
+		menu->setToolTipsVisible(true);
+		openAction->setToolTip("open action");
+		newAction->setToolTip("new action");
+		SepAction->setToolTip("separator");
+		quitAction->setToolTip("quit action");
+	}
+
+private:
+	void newActionClicked()
+	{
+		qDebug() << "new action clicked.";
+	}
+
+	void mousePressEvent(QMouseEvent* event) override;
+
+	QMenu *menu;
+};
+
+inline void myWidget::mousePressEvent(QMouseEvent* event)
+{
+	if (event->button() == Qt::RightButton)
+	{
+		if (menu) {
+			menu->exec(QCursor::pos());
+		}
+	}
+}
+
+#endif // MYWIDGET_HPP
+```
+
+```c++
+#include "myWidget.hpp"
+
+int main(int argc, char *argv[]) {
+
+	QApplication app(argc, argv);
+
+	myWidget window;
+
+	window.resize(250, 150);
+	window.move(300, 300);
+	window.setWindowTitle("QMenu");
+	window.show();
+
+	return app.exec();
+}
+```
+
+<h3 id="qtoolbar">QToolBar</h3>
+
+你可以在`qtbase-5.9\src\widgets\widgets`目录下找到`qtoolbar.h`和`qtoolbar.cpp`。
+
+工具栏也是GUI应用常见的部分，其通常包含菜单栏里比较常用的操作选项，QToolBar 是Qt专门用来做工具栏的类。
+
+与 QMenu 不同，QToolBar 没有`addMenu`或`insertMenu`函数，但是它有`addWidget`和`insertWidget`函数，这意味着你可以显式向工具栏里添加各种部件，但是**如果你的 QToolBar 不是 QMainWindow 的子部件的话，你就不能使用`addWidget`和`insertWidget`函数，你只能像 QMenu 一样继承`QWidgetAction`，然后使用`addAction`或`insertAction`**。**另外 QToolBar 不能设置快捷键**，所以相应的`addAction`会少一个参数。
+
+默认工具栏是可以在工具栏区域移动的，你也可以使用`setMovable`来禁用这个功能。当工具栏项目太多导致工具栏无法全部显示时，工具栏会自动在最后面显示一个扩展按钮，点击该扩展按钮，将会弹出一个菜单显示没有在工具栏里显示的项目。
+
+**由于 QToolBar 很多特性都是基于 QMainWindow 的，所以如果你要使用 QToolBar 的话，建议一致使用 QMainWindow**。
+
+演示：
+
+```c++
+#ifndef MYWIDGET_HPP
+#define MYWIDGET_HPP
+
+#include <QIcon>
+#include <QDebug>
+#include <QString>
+#include <QToolBar>
+#include <QMainWindow>
+#include <QKeySequence>
+#include <QApplication>
+
+class myWidget :public QMainWindow
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QMainWindow(parent)
+	{
+		QToolBar *toolbar = addToolBar("main toolbar");
+		toolbar->setMovable(false);
+
+		QAction *openAction = toolbar->addAction(
+			QIcon("open.png"),
+			QString("&Open"),
+			[] {qDebug() << "open action clicked."; });
+
+		QAction *quitAction = toolbar->addAction(
+			QIcon("quit.png"),
+			QString("&Quit"),
+			qApp,
+			&QApplication::quit);
+
+		QAction *SepAction = toolbar->insertSeparator(quitAction);
+
+		QAction *newAction = new QAction(QIcon("new.png"), "&New", this);
+		toolbar->insertAction(SepAction, newAction);
+		// 连接信号槽
+		connect(newAction, &QAction::triggered, this, &myWidget::newActionClicked);
+
+		// 设置鼠标光标悬停提示
+		openAction->setToolTip("open action");
+		newAction->setToolTip("new action");
+		SepAction->setToolTip("separator");
+		quitAction->setToolTip("quit action");
+	}
+
+private:
+	void newActionClicked()
+	{
+		qDebug() << "new action clicked.";
+	}
+};
+
+#endif // MYWIDGET_HPP
+```
+
+```c++
+#include "myWidget.hpp"
+
+int main(int argc, char *argv[]) {
+
+	QApplication app(argc, argv);
+
+	myWidget window;
+
+	window.resize(250, 150);
+	window.move(300, 300);
+	window.setWindowTitle("QToolBar");
+	window.show();
+
+	return app.exec();
+}
+```
+
+<h3 id="qt_common_widgets">常用小部件</h3>
+
+GUI常用的小部件无非按钮、文本框、标签、下拉框、复选框、滚动条、状态栏七种，在Qt中，按钮用`QPushButton`实现、文本框分为`QTextEdit`(大型文本)和`QLineEdit`(行文本)以及`QPlainTextEdit`(纯文本)、标签用`QLabel`实现、下拉框分为`QComboBox`和`QSpinBox`以及`QDoubleSpinBox`、复选框用`QComboBox`实现、滚动条分为`QSlider`和`QScrollBar`、状态栏用`QStatusBar`实现。
+
+这些小部件非常简单，查看其头文件就知道怎么用了，看看官方说明文档也非常快，再结合之前的事件处理、信号槽知识，使用起来应该没什么大问题：
+
+```c++
+#ifndef MYWIDGET_HPP
+#define MYWIDGET_HPP
+
+#include <QDebug>
+#include <QString>
+#include <QTextEdit>
+#include <QPushButton>
+#include <QMainWindow>
+#include <QApplication>
+
+class myWidget :public QMainWindow
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QMainWindow(parent)
+	{
+		mWidget = nullptr;
+	}
+
+	void showPushButton();
+	void showTextEdit();
+
+protected:
+	void paintEvent(QPaintEvent*) override;
+
+private:
+	void init();
+
+	QWidget *mWidget;
+};
+
+inline void myWidget::paintEvent(QPaintEvent*)
+{
+	if (mWidget) {
+		int relative_x = width() / 4;
+		int relative_y = height() / 4;
+		int widget_width = width() / 2;
+		int widget_height = height() / 2;
+		mWidget->setGeometry(relative_x, relative_y, widget_width, widget_height);
+		mWidget->setVisible(true);
+		mWidget->show();
+	}
+}
+
+inline void myWidget::showPushButton()
+{
+	QPushButton *tmp = new QPushButton("Button", this);
+	connect(tmp, &QPushButton::clicked,
+		[] {qDebug() << "QPushButton clicked."; });
+
+	mWidget = tmp;
+	update();
+}
+
+inline void myWidget::showTextEdit()
+{
+	QTextEdit *tmp = new QTextEdit("QTextEdit", this);
+	connect(tmp, &QTextEdit::textChanged,
+		[] {qDebug() << "QTextEdit textChanged."; });
+
+	mWidget = tmp;
+	update();
+}
+
+#endif // MYWIDGET_HPP
+```
+
+```c++
+#include <QMap>
+#include "myWidget.hpp"
+
+static QMap<QString, int> COMMAND_MAP{
+	{ "pushButton",0 },
+	{ "textEdit",1 }
+};
+
+void showWidget(myWidget *w, QString state);
+
+int main(int argc, char *argv[]) {
+
+	QApplication app(argc, argv);
+
+	myWidget window;
+
+	window.resize(250, 150);
+	window.move(300, 300);
+	window.setWindowTitle("mutiWidgets");
+	window.show();
+
+	if (argc != 1) {
+		showWidget(&window, argv[1]);
+	}
+
+	return app.exec();
+}
+
+void showWidget(myWidget *w, QString state)
+{
+	if (!w) return;
+
+	auto ret = COMMAND_MAP.find(state);
+	if (COMMAND_MAP.end() == ret) {
+		return;
+	}
+
+	switch (*ret)
+	{
+	case 0:
+		w->showPushButton();
+		break;
+	case 1:
+		w->showTextEdit();
+		break;
+	default:
+		break;
+	}
+}
 ```
