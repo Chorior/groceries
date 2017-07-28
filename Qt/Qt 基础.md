@@ -38,6 +38,7 @@ tags:
 	*	[QMenu](#qmenu)
 	*	[QToolBar](#qtoolbar)
 	*	[常用小部件](#qt_common_widgets)
+	*	[layout](#layout)
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -2636,3 +2637,260 @@ void showWidget(myWidget *w, QString state)
 	}
 }
 ```
+
+<h3 id="layout">layout</h3>
+
+上面我们只是将每个小部件单独显示在窗口中央，要是需要显示多个小部件的话，你就需要管理这些部件的位置和大小，这在GUI应用中通常称为布局管理(layout management)。
+
+Qt 提供了四种布局方式：垂直布局(QVBoxLayout)、水平布局(QHBoxLayout)、网格布局(QGridLayout)和表单布局(QFormLayout)。其中表单布局由输入型控件和关联的标签组成，其布局就像你注册账号时的表单差不多，左边一列标签，右边一列输入。
+
+你可以在`qtbase-5.9\src\widgets\kernel`目录下找到`qboxlayout.h`、`qformlayout.h`和`qgridlayout.h`。
+
+#### QVBoxLayout、QHBoxLayout
+
+查看`qboxlayout.h`，我们知道 QVBoxLayout 和 QHBoxLayout 都是 QBoxLayout 的子类，它们只是分别在构造时强制了项目排列的方向，QVBoxLayout 是 TopToBottom、QHBoxLayout 是 LeftToRight，所以如果你想布置一个水平或者垂直的布局，你也可以直接使用 QBoxLayout，其支持的排列方向包括：
+
+```c++
+enum Direction { LeftToRight, RightToLeft, TopToBottom, BottomToTop, 
+				Down = TopToBottom, Up = BottomToTop };
+```
+
+QBoxLayout 可以添加四种项目：
+
+*	`addWidget`,`insertWidget`：添加一个部件，可以指定拉伸因子和摆放位置，注意这个摆放位置与排列方向有很大关系；
+*	`addSpacing`,`insertSpacing`：添加一个不可拉伸的空间；
+*	`addStretch`,`insertStretch`：添加一个可拉伸的空项目；
+*	`addLayout`,`insertLayout`：添加一个子布局。
+
+如果你想要移除布局中某个部件，你可以使用成员函数`removeWidget`，或者你也可以调用`QWidget::hide()`来隐藏(且不占用空间)这个插件直到`QWidget::show()`被调用。
+
+```c++
+#ifndef MYWIDGET_HPP
+#define MYWIDGET_HPP
+
+#include <QDebug>
+#include <QLabel>
+#include <QWidget>
+#include <QString>
+#include <QLineEdit>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QApplication>
+
+// 做一个表单，注意不能继承QMainWindow
+// https://stackoverflow.com/questions/18947375/qt-compiler-complains-when-invoking-setlayout-on-my-mainwindow
+class myWidget :public QWidget
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QWidget(parent)
+	{
+		QVBoxLayout *vbox = new QVBoxLayout(this);
+
+		QHBoxLayout *hbox1 = new QHBoxLayout();
+		QHBoxLayout *hbox2 = new QHBoxLayout();
+		QHBoxLayout *hbox3 = new QHBoxLayout();
+
+		QLabel *label1 = new QLabel("label1", this);
+		QLabel *label2 = new QLabel("label2", this);
+		QLabel *label3 = new QLabel("label3", this);
+
+		QLineEdit *lineEdit1 = new QLineEdit("lineEdit1", this);
+		QLineEdit *lineEdit2 = new QLineEdit("lineEdit2", this);
+		QLineEdit *lineEdit3 = new QLineEdit("lineEdit3", this);
+
+		hbox1->addWidget(label1);
+		hbox1->addWidget(lineEdit1);
+		hbox2->addWidget(label2);
+		hbox2->addWidget(lineEdit2);
+		hbox3->addWidget(label3);
+		hbox3->addWidget(lineEdit3);
+
+		vbox->addLayout(hbox1);
+		vbox->addLayout(hbox2);
+		vbox->addLayout(hbox3);
+
+		setLayout(vbox);
+	}
+};
+
+#endif // MYWIDGET_HPP
+```
+
+```c++
+#include "myWidget.hpp"
+
+int main(int argc, char *argv[]) {
+
+	QApplication app(argc, argv);
+
+	myWidget window;
+
+	window.resize(250, 150);
+	window.move(300, 300);
+	window.setWindowTitle("QBoxLayout");
+	window.show();
+
+	return app.exec();
+}
+```
+
+#### QGridLayout
+
+QGridLayout 的布局是网格型的，你可以使用`addWidget`或`addLayout`来添加部件或子布局，并指定行列位置，你也可以使用`addItem`来添加占用多个格子的项目。
+
+与 QBoxLayout 一样，你可以使用`removeWidget`彻底删除某个部件，也可以使用`QWidget::hide()`来隐藏(但不占用空间)某个部件。
+
+```c++
+#ifndef MYWIDGET_HPP
+#define MYWIDGET_HPP
+
+#include <QDebug>
+#include <QLabel>
+#include <QWidget>
+#include <QString>
+#include <QLineEdit>
+#include <QCheckBox>
+#include <QGridLayout>
+#include <QApplication>
+
+class myWidget :public QWidget
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QWidget(parent)
+	{
+		QGridLayout *gl = new QGridLayout(this);
+
+		for (int i = 0; i < 3; ++i)
+		{
+			QCheckBox *checkBox = new QCheckBox(this);
+			QLabel *label = new QLabel(this);
+			QLineEdit *lineEdit = new QLineEdit(this);
+
+			QString num = QString::number(i);
+			checkBox->setCheckState(Qt::Unchecked);
+			checkBox->setText("checkBox" + num);
+			label->setText("label" + num);
+			lineEdit->setText("lineEdit" + num);
+
+			gl->addWidget(checkBox, i, 0);
+			gl->addWidget(label, i, 1);
+			gl->addWidget(lineEdit, i, 2);
+		}
+
+		setLayout(gl);
+	}
+};
+
+#endif // MYWIDGET_HPP
+```
+
+```c++
+#include "myWidget.hpp"
+
+int main(int argc, char *argv[]) {
+
+	QApplication app(argc, argv);
+
+	myWidget window;
+
+	window.resize(250, 150);
+	window.move(300, 300);
+	window.setWindowTitle("QGridLayout");
+	window.show();
+
+	return app.exec();
+}
+```
+
+#### QFormLayout
+
+QFormLayout 只有两列，它最初被设计出来就是为了写表单用的，你可以使用如下成员函数为其添加项目：
+
+```c++
+void addRow(QWidget *label, QWidget *field);
+void addRow(QWidget *label, QLayout *field);
+void addRow(const QString &labelText, QWidget *field);
+void addRow(const QString &labelText, QLayout *field);
+void addRow(QWidget *widget);
+void addRow(QLayout *layout);
+
+void insertRow(int row, QWidget *label, QWidget *field);
+void insertRow(int row, QWidget *label, QLayout *field);
+void insertRow(int row, const QString &labelText, QWidget *field);
+void insertRow(int row, const QString &labelText, QLayout *field);
+void insertRow(int row, QWidget *widget);
+void insertRow(int row, QLayout *layout);
+
+void removeRow(int row);
+void removeRow(QWidget *widget);
+void removeRow(QLayout *layout);
+```
+
+演示：
+
+```c++
+#ifndef MYWIDGET_HPP
+#define MYWIDGET_HPP
+
+#include <QDebug>
+#include <QLabel>
+#include <QWidget>
+#include <QString>
+#include <QLineEdit>
+#include <QFormLayout>
+#include <QApplication>
+
+class myWidget :public QWidget
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QWidget(parent)
+	{
+		QFormLayout *fl = new QFormLayout(this);
+
+		for (int i = 0; i < 3; ++i)
+		{
+			QLabel *label = new QLabel(this);
+			QLineEdit *lineEdit = new QLineEdit(this);
+
+			QString num = QString::number(i);
+			label->setText("label" + num);
+			lineEdit->setText("lineEdit" + num);
+
+			fl->addRow(label, lineEdit);
+		}
+
+		setLayout(fl);
+	}
+};
+
+#endif // MYWIDGET_HPP
+```
+
+```c++
+#include "myWidget.hpp"
+
+int main(int argc, char *argv[]) {
+
+	QApplication app(argc, argv);
+
+	myWidget window;
+
+	window.resize(250, 150);
+	window.move(300, 300);
+	window.setWindowTitle("QFormLayout");
+	window.show();
+
+	return app.exec();
+}
+```
+
+<h3 id="view">view</h3>
