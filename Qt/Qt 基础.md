@@ -38,7 +38,8 @@ tags:
 	*	[QMenu](#qmenu)
 	*	[QToolBar](#qtoolbar)
 	*	[常用小部件](#qt_common_widgets)
-	*	[layout](#layout)
+	*	[各种 layout](#layout)
+	*	[各种 view](#view)
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -2638,7 +2639,7 @@ void showWidget(myWidget *w, QString state)
 }
 ```
 
-<h3 id="layout">layout</h3>
+<h3 id="layout">各种 layout</h3>
 
 上面我们只是将每个小部件单独显示在窗口中央，要是需要显示多个小部件的话，你就需要管理这些部件的位置和大小，这在GUI应用中通常称为布局管理(layout management)。
 
@@ -2893,4 +2894,6 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-<h3 id="view">view</h3>
+<h3 id="view">各种 view</h3>
+
+Qt 包含四种视图：QListView、QTreeView、QTableView、QColumnView。其中 QListView、QTreeView、QTableView为了方便又实现了对应三个子类 QListWidget、QTreeWidget、QTableWidget。查看[Model/View Programming](http://doc.qt.io/qt-5/model-view-programming.html)，了解它们的区别。
