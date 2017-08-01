@@ -2896,4 +2896,12 @@ int main(int argc, char *argv[]) {
 
 <h3 id="view">各种 view</h3>
 
-Qt 包含四种视图：QListView、QTreeView、QTableView、QColumnView。其中 QListView、QTreeView、QTableView为了方便又实现了对应三个子类 QListWidget、QTreeWidget、QTableWidget。查看[Model/View Programming](http://doc.qt.io/qt-5/model-view-programming.html)，了解它们的区别。
+Qt 包含四种视图：QListView、QTreeView、QTableView、QColumnView。查看[Model/View Programming](http://doc.qt.io/qt-5/model-view-programming.html)，如果你学过Android的话，应该知道MVC设计模式：
+
+应用的所有对象分为三类：
+
+*	模型(model)对象：存储数据与业务逻辑。不关心用户界面，它存在的唯一目的就是存储和管理应用数据；
+*	视图(view)对象：凡是能够在屏幕上看见的对象，就是视图对象。视图对象知道如何在屏幕上绘制自己以及如何响应用户输入；
+*	控制器(controller)对象：视图对象与模型对象的联系纽带，响应由视图对象触发的各种事件，以及管理模型对象与视图层间的数据流动。
+
+**如果将视图对象与控制器对象合并，其结果就是模型/视图(model/view)架构**。很明显，模型/视图架构可以使用不同的视图来表示相同的数据。
