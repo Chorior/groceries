@@ -2896,12 +2896,250 @@ int main(int argc, char *argv[]) {
 
 <h3 id="view">各种 view</h3>
 
-Qt 包含四种视图：QListView、QTreeView、QTableView、QColumnView。查看[Model/View Programming](http://doc.qt.io/qt-5/model-view-programming.html)，如果你学过Android的话，应该知道MVC设计模式：
+Qt 包含四种视图：QListView、QTreeView、QTableView、QColumnView，其中 QListView、QTreeView、QTableView为了方便又实现了对应三个子类 QListWidget、QTreeWidget、QTableWidget。**view基于模型(model)，widget基于项目(item)**。
 
-应用的所有对象分为三类：
+#### 模型与模型索引
+
+查看[Model/View Programming](http://doc.qt.io/qt-5/model-view-programming.html)，如果你学过Android的话，应该知道MVC设计模式--应用的所有对象分为三类：
 
 *	模型(model)对象：存储数据与业务逻辑。不关心用户界面，它存在的唯一目的就是存储和管理应用数据；
 *	视图(view)对象：凡是能够在屏幕上看见的对象，就是视图对象。视图对象知道如何在屏幕上绘制自己以及如何响应用户输入；
 *	控制器(controller)对象：视图对象与模型对象的联系纽带，响应由视图对象触发的各种事件，以及管理模型对象与视图层间的数据流动。
 
 **如果将视图对象与控制器对象合并，其结果就是模型/视图(model/view)架构**。很明显，模型/视图架构可以使用不同的视图来表示相同的数据。
+
+查看[model class](http://doc.qt.io/qt-5/model-view-programming.html#model-classes)，我们知道**模型就是用来提供访问数据的接口，视图使用模型索引(model index)来访问数据**，模型索引包含创建它的模型的指针，**由于模型可以随时重构其内部结构，所以其模型索引(QModeIndex)可能变得不可用；如果你需要长期引用某个数据，你就需要一个持久的模型索引(QPersistentModelIndex)**。
+
+**模型索引是访问模型数据的唯一方式**，要想获得与数据项相对应的模型索引，你必须指定模型的三个属性：行数、列数、父模型索引：
+
+```c++
+QModelIndex index = model->index(row, column, parent);
+```
+
+如果数据项是顶层数据，或者说数据项没有父模型索引，你就需要使用`QModelIndex()`来构建一个空的模型索引来充当父模型索引。查看[这里](http://doc.qt.io/qt-5/model-view-programming.html#rows-and-columns)获取更多详细信息。
+
+演示：
+
+```c++
+#include <QDir>
+#include <QDebug>
+#include <QString>
+#include <QDirModel>
+#include <QModelIndex>
+
+int main(void)
+{
+	QString path = QDir::currentPath();
+	qDebug() << path;
+
+	// QDirModel类似于树模型(tree model)
+	QDirModel *model = new QDirModel();
+	model->setSorting(QDir::Name | QDir::Reversed);
+	QModelIndex parentIndex = model->index(path);
+	int numRows = model->rowCount(parentIndex);
+	for (int row = 0; row < numRows; ++row) {
+		QModelIndex index = model->index(row, 0, parentIndex);
+		QString text = model->data(index, QDirModel::Roles::FileNameRole).toString();
+		qDebug() << text;
+	}
+	return 0;
+}
+```
+
+查看[这里](http://doc.qt.io/qt-5/qfilesystemmodel.html#caching-and-performance)了解不用 QFileSystemModel 的原因，结果：
+
+```text
+e:\qt_project>release\qt_project.exe
+"E:/qt_project"
+"release"
+"quit.png"
+"qt_project.pro"
+"open.png"
+"new.png"
+"myWidget.hpp"
+"main.cpp"
+"file.png"
+"debug"
+"Makefile.Release"
+"Makefile.Debug"
+"Makefile"
+".qmake.stash"
+```
+
+#### view 使用
+
+```c++
+#ifndef MYWIDGET_HPP
+#define MYWIDGET_HPP
+
+#include <QDir>
+#include <QDebug>
+#include <QLayout>
+#include <QDirModel>
+#include <QListView>
+#include <QTreeView>
+#include <QTableView>
+#include <QPaintEvent>
+#include <QColumnView>
+#include <QStringList>
+#include <QMainWindow>
+#include <QApplication>
+#include <QFileSystemModel>
+#include <QStringListModel>
+#include <QAbstractItemView>
+#include <QAbstractItemModel>
+#include <QStandardItemModel>
+
+class myWidget :public QMainWindow
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QMainWindow(parent)
+	{
+		mpView = nullptr;
+	}
+
+	void showListView();
+	void showTreeView();
+	void showTableView();
+	void showColumnView();
+protected:
+	void paintEvent(QPaintEvent*) override;
+private:
+	QAbstractItemView *mpView;
+};
+
+inline void myWidget::paintEvent(QPaintEvent*)
+{
+	if (mpView) {
+		mpView->resize(width(), height());
+		mpView->show();
+	}
+}
+
+inline void myWidget::showListView()
+{
+	QListView *view = new QListView(this);
+
+	QStringList numbers;
+	numbers << "One" << "Two" << "Three" << "Four" << "Five";
+	QStringListModel *model = new QStringListModel(numbers);
+	view->setModel(model);
+
+	mpView = view;
+}
+
+inline void myWidget::showTreeView()
+{
+	QTreeView *view = new QTreeView(this);
+
+	// QDirModel *model = new QDirModel();
+	// model->setSorting(QDir::DirsFirst);
+
+	QFileSystemModel *model = new QFileSystemModel();
+	model->setRootPath(QDir::currentPath());
+	view->setModel(model);
+	view->setRootIndex(model->index(QDir::currentPath()));
+
+	mpView = view;
+}
+
+inline void myWidget::showTableView()
+{
+	QTableView *view = new QTableView(this);
+
+	QStandardItemModel *model = new QStandardItemModel(2, 3);
+	QStringList header{ "col1","col2","col3" };
+	model->setHorizontalHeaderLabels(header);
+	view->setModel(model);
+
+	mpView = view;
+}
+
+inline void myWidget::showColumnView()
+{
+	QColumnView *view = new QColumnView(this);
+	QStandardItemModel *model = new QStandardItemModel();
+	for (int groupnum = 0; groupnum < 3; ++groupnum)
+	{
+		QStandardItem *group = new QStandardItem(QString("Group %1").arg(groupnum));
+
+		for (int personnum = 0; personnum < 5; ++personnum)
+		{
+			QStandardItem *child = new QStandardItem(
+				QString("Person %1 (group %2)").arg(personnum).arg(groupnum));
+			group->appendRow(child);
+		}
+		model->appendRow(group);
+	}
+	view->setModel(model);
+
+	mpView = view;
+}
+
+#endif // MYWIDGET_HPP
+```
+
+```c++
+#include <QMap>
+#include "myWidget.hpp"
+
+static QMap<QString, int> COMMAND_MAP{
+	{ "list",0 },
+	{ "tree",1 },
+	{ "table",2 },
+	{ "column",3 }
+};
+
+void showView(myWidget *w, QString state);
+
+int main(int argc, char *argv[]) {
+
+	QApplication app(argc, argv);
+
+	myWidget window;
+
+	window.resize(250, 150);
+	window.move(300, 300);
+	window.setWindowTitle("QFormLayout");
+	window.show();
+
+	if (argc != 1) {
+		showView(&window, argv[1]);
+	}
+
+	return app.exec();
+}
+
+void showView(myWidget *w, QString state)
+{
+	if (!w) return;
+
+	auto ret = COMMAND_MAP.find(state);
+	if (COMMAND_MAP.end() == ret) {
+		return;
+	}
+
+	switch (ret.value())
+	{
+	case 0:
+		w->showListView();
+		break;
+	case 1:
+		w->showTreeView();
+		break;
+	case 2:
+		w->showTableView();
+		break;
+	case 3:
+		w->showColumnView();
+		break;
+	default:
+		break;
+	}
+}
+```
+
+#### widget 使用
