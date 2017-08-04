@@ -38,8 +38,27 @@ tags:
 	*	[QMenu](#qmenu)
 	*	[QToolBar](#qtoolbar)
 	*	[常用小部件](#qt_common_widgets)
-	*	[各种 layout](#layout)
-	*	[各种 view](#view)
+	*	[QSplitter](#qsplitter)
+	*	[QProgressBar](#progressbar)
+	*	[QGraphicsView](#qgraphicsview)
+	*	[QPainter](#qgraphicsview)
+*	[部件容器](#qpainter)
+	*	[QGroupBox](#qgroupbox)
+	*	[QScrollArea](#qscrollarea)
+	*	[QToolBox](#qtoolbox)
+	*	[QTabWidget](#qtabwidget)
+	*	[QStackedWidget](#qstackedwidget)
+	*	[QFrame](#qframe)
+	*	[QMdiArea](#qmdiarea)
+	*	[QDockWidget](#qdockwidget)
+*	[各种 layout](#layout)
+	*	[QVBoxLayout、QHBoxLayout](#qvboxlayout_qhboxlayout)
+	*	[QGridLayout](#qgridlayout)
+	*	[QFormLayout](#qformlayout)
+*	[各种 view](#view)
+	*	[模型与模型索引](#model_and_model_index)
+	*	[QListView、QTreeView、QTableView、QColumnView](#qlistview_qtreeview_qtableview_qcolumnview)
+	*	[QListWidget、QTreeWidget、QTableWidget](#qlistwidget_qtreewidget_qtablewidget)
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -2639,7 +2658,282 @@ void showWidget(myWidget *w, QString state)
 }
 ```
 
-<h3 id="layout">各种 layout</h3>
+<h3 id="qsplitter">QSplitter</h3>
+
+QSplitter 可以让用户通过拖拽相邻组件的边界来控制组件的相对大小，它不怎么常用：
+
+```c++
+#ifndef MYWIDGET_HPP
+#define MYWIDGET_HPP
+
+#include <QDebug>
+#include <QWidget>
+#include <QTextEdit>
+#include <QSplitter>
+#include <QHeaderView>
+#include <QListWidget>
+#include <QTreeWidget>
+#include <QVBoxLayout>
+#include <QApplication>
+#include <QListWidgetItem>
+#include <QTreeWidgetItem>
+
+class myWidget :public QWidget
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QWidget(parent)
+	{
+		initListWidget();
+		initTreeWidget();
+
+		QSplitter *splitter1 = new QSplitter(Qt::Horizontal, this);
+		QSplitter *splitter2 = new QSplitter(Qt::Vertical, this);
+
+		splitter1->addWidget(mpListWidget);
+		splitter1->addWidget(mpTreeWidget);
+		splitter2->addWidget(splitter1);
+		splitter2->addWidget(new QTextEdit("QTextEdit", this));
+
+		QVBoxLayout *vbox = new QVBoxLayout(this);
+		vbox->addWidget(splitter2);
+		setLayout(vbox);
+	}
+
+private:
+	void initListWidget();
+	void initTreeWidget();
+
+	QListWidget *mpListWidget;
+	QTreeWidget *mpTreeWidget;
+};
+
+inline void myWidget::initListWidget()
+{
+	mpListWidget = new QListWidget(this);
+
+	QListWidgetItem *item1 = new QListWidgetItem();
+	QListWidgetItem *item2 = new QListWidgetItem();
+	QListWidgetItem *item3 = new QListWidgetItem();
+
+	item1->setText("file");
+	item1->setIcon(QIcon("file.png"));
+	item2->setText("new");
+	item2->setIcon(QIcon("new.png"));
+	item3->setText("open");
+	item3->setIcon(QIcon("open.png"));
+
+	mpListWidget->addItem(item1);
+	mpListWidget->addItem(item2);
+	mpListWidget->addItem(item3);
+}
+
+inline void myWidget::initTreeWidget()
+{
+	mpTreeWidget = new QTreeWidget(this);
+
+	mpTreeWidget->setHeaderLabel("header");
+	mpTreeWidget->header()->close();
+
+	QTreeWidgetItem *item1 = new QTreeWidgetItem();
+	QTreeWidgetItem *item2 = new QTreeWidgetItem();
+	QTreeWidgetItem *item3 = new QTreeWidgetItem();
+	QTreeWidgetItem *item4 = new QTreeWidgetItem();
+
+	item1->setText(0, "file");
+	item1->setIcon(0, QIcon("file.png"));
+	item2->setText(0, "new");
+	item2->setIcon(0, QIcon("new.png"));
+	item3->setText(0, "open");
+	item3->setIcon(0, QIcon("open.png"));
+	item4->setText(0, "quit");
+	item4->setIcon(0, QIcon("quit.png"));
+
+	item1->addChild(item2);
+	item2->addChild(item3);
+
+	mpTreeWidget->addTopLevelItem(item1);
+	mpTreeWidget->addTopLevelItem(item4);
+}
+
+#endif // MYWIDGET_HPP
+```
+
+```c++
+#include "myWidget.hpp"
+
+int main(int argc, char *argv[]) {
+
+	QApplication app(argc, argv);
+
+	myWidget window;
+
+	window.resize(250, 150);
+	window.move(300, 300);
+	window.setWindowTitle("view");
+	window.show();
+
+	return app.exec();
+}
+```
+
+<h3 id="progressbar">QProgressBar</h3>
+
+优秀的gui应用都是立即响应的，这意味着当用户做完某个操作时，可以立即做下一个操作。如果某个操作特别耗时，应用就会卡住，所以一般耗时的操作都是交给另一个线程去做的，主线程只需要显示操作的进度即可。
+
+Qt中的线程类是 QThread，你可以参照[官网](http://doc.qt.io/qt-5/qthread.html#details)进行使用；QProgressBar 是Qt中用来显示进度的组件，你可以在`qtbase-5.9\src\widgets\widgets`目录下找到`qprogressbar.h`和`qprogressbar.cpp`，其使用非常简单，但有一些技巧：
+
+```c++
+#ifndef MYWIDGET_HPP
+#define MYWIDGET_HPP
+
+#include <QDebug>
+#include <QTimer>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QApplication>
+#include <QProgressBar>
+
+class myWidget :public QWidget
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QWidget(parent)
+	{
+		mpTimer = new QTimer();
+		mpTimer->setInterval(100);
+
+		mpProgressBar = new QProgressBar(this);
+		mpProgressBar->setRange(0, 100);
+
+		mProgressValue = 0;
+
+		QVBoxLayout *vbox = new QVBoxLayout(this);
+		vbox->addWidget(mpProgressBar);
+		setLayout(vbox);
+	}
+
+	void progressStart()
+	{
+		connect(mpTimer, &QTimer::timeout, this, &myWidget::onTimeout);
+
+		mProgressValue = 0;
+		mpTimer->start();
+		show();
+	}
+
+	void progressEnd()
+	{
+		disconnect(mpTimer, &QTimer::timeout, this, &myWidget::onTimeout);
+
+		mProgressValue = mpProgressBar->maximum();
+		mpTimer->stop();
+		close();
+	}
+
+	void setProgressValue(int value)
+	{
+		if (value <= mpProgressBar->maximum() &&
+			value >= mpProgressBar->minimum()) {
+			mProgressValue = value;
+		}
+	}
+
+private:
+	void onTimeout();
+
+	QTimer *mpTimer;
+	QProgressBar *mpProgressBar;
+	int mProgressValue;
+};
+
+inline void myWidget::onTimeout()
+{
+	mpProgressBar->setValue(mProgressValue);
+}
+
+#endif // MYWIDGET_HPP
+```
+
+```c++
+#ifndef MYPROGRESS_HPP
+#define MYPROGRESS_HPP
+
+#include "myWidget.hpp"
+#include <QThread>
+#include <thread> // slepp_for
+
+class myProgress :public QThread
+{
+	Q_OBJECT
+
+private:
+	myWidget *mpProgressBar;
+
+	void run() override
+	{
+		if (mpProgressBar) {
+			emit begin();
+			std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(2000));
+			mpProgressBar->setProgressValue(10);
+			std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(5000));
+			mpProgressBar->setProgressValue(70);
+			std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(3000));
+			mpProgressBar->setProgressValue(100);
+			std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(500));
+			emit end();
+		}
+	}
+
+public:
+	myProgress(myWidget *w)
+		:mpProgressBar(w)
+	{}
+
+signals:
+	void begin();
+	void end();
+};
+
+#endif // MYPROGRESS_HPP
+```
+
+```c++
+#include "myProgress.hpp"
+
+int main(int argc, char *argv[]) {
+
+	QApplication app(argc, argv);
+
+	myWidget window;
+
+	window.resize(250, 50);
+	window.move(300, 300);
+	window.setWindowTitle("QProgressBar");
+
+	myProgress *pro = new myProgress(&window);
+	QObject::connect(pro, &myProgress::begin, &window, &myWidget::progressStart);
+	QObject::connect(pro, &myProgress::end, &window, &myWidget::progressEnd);
+	QObject::connect(pro, &QThread::finished, pro, &QObject::deleteLater);
+	pro->start();
+
+	return app.exec();
+}
+```
+
+<h3 id="qgraphicsview">QGraphicsView</h3>
+
+<h3 id="qpainter">QPainter</h3>
+
+<h2 id="widget_containers">部件容器</h2>
+
+TBC
+
+<h2 id="layout">各种 layout</h2>
 
 上面我们只是将每个小部件单独显示在窗口中央，要是需要显示多个小部件的话，你就需要管理这些部件的位置和大小，这在GUI应用中通常称为布局管理(layout management)。
 
@@ -2647,7 +2941,7 @@ Qt 提供了四种布局方式：垂直布局(QVBoxLayout)、水平布局(QHBoxL
 
 你可以在`qtbase-5.9\src\widgets\kernel`目录下找到`qboxlayout.h`、`qformlayout.h`和`qgridlayout.h`。
 
-#### QVBoxLayout、QHBoxLayout
+<h3 id="qvboxlayout_qhboxlayout">QVBoxLayout、QHBoxLayout</h3>
 
 查看`qboxlayout.h`，我们知道 QVBoxLayout 和 QHBoxLayout 都是 QBoxLayout 的子类，它们只是分别在构造时强制了项目排列的方向，QVBoxLayout 是 TopToBottom、QHBoxLayout 是 LeftToRight，所以如果你想布置一个水平或者垂直的布局，你也可以直接使用 QBoxLayout，其支持的排列方向包括：
 
@@ -2738,7 +3032,7 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-#### QGridLayout
+<h3 id="qgridlayout">QGridLayout</h3>
 
 QGridLayout 的布局是网格型的，你可以使用`addWidget`或`addLayout`来添加部件或子布局，并指定行列位置，你也可以使用`addItem`来添加占用多个格子的项目。
 
@@ -2809,7 +3103,7 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-#### QFormLayout
+<h3 id="qformlayout">QFormLayout</h3>
 
 QFormLayout 只有两列，它最初被设计出来就是为了写表单用的，你可以使用如下成员函数为其添加项目：
 
@@ -2894,11 +3188,13 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-<h3 id="view">各种 view</h3>
+<h2 id="view">各种 view</h2>
 
-Qt 包含四种视图：QListView、QTreeView、QTableView、QColumnView，其中 QListView、QTreeView、QTableView为了方便又实现了对应三个子类 QListWidget、QTreeWidget、QTableWidget。**view基于模型(model)，widget基于项目(item)**。
+Qt 包含四种视图：QListView、QTreeView、QTableView、QColumnView，其中 QListView、QTreeView、QTableView为了方便又实现了对应三个子类 QListWidget、QTreeWidget、QTableWidget。
 
-#### 模型与模型索引
+**view基于模型(model)，widget基于项目(item)**。
+
+<h3 id="model_and_model_index">模型与模型索引</h3>
 
 查看[Model/View Programming](http://doc.qt.io/qt-5/model-view-programming.html)，如果你学过Android的话，应该知道MVC设计模式--应用的所有对象分为三类：
 
@@ -2966,7 +3262,7 @@ e:\qt_project>release\qt_project.exe
 ".qmake.stash"
 ```
 
-#### view 使用
+<h3 id="qlistview_qtreeview_qtableview_qcolumnview">QListView、QTreeView、QTableView、QColumnView</h3>
 
 ```c++
 #ifndef MYWIDGET_HPP
@@ -3103,7 +3399,7 @@ int main(int argc, char *argv[]) {
 
 	window.resize(250, 150);
 	window.move(300, 300);
-	window.setWindowTitle("QFormLayout");
+	window.setWindowTitle("view");
 	window.show();
 
 	if (argc != 1) {
@@ -3142,4 +3438,200 @@ void showView(myWidget *w, QString state)
 }
 ```
 
-#### widget 使用
+<h3 id="qlistwidget_qtreewidget_qtablewidget">QListWidget、QTreeWidget、QTableWidget</h3>
+
+```c++
+#ifndef MYWIDGET_HPP
+#define MYWIDGET_HPP
+
+#include <QIcon>
+#include <QDebug>
+#include <QHeaderView>
+#include <QPaintEvent>
+#include <QStringList>
+#include <QMainWindow>
+#include <QListWidget>
+#include <QTreeWidget>
+#include <QTableWidget>
+#include <QApplication>
+#include <QTreeWidgetItem>
+#include <QListWidgetItem>
+#include <QTableWidgetItem>
+#include <QAbstractItemView>
+
+class myWidget :public QMainWindow
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QMainWindow(parent)
+	{
+		mpWidget = nullptr;
+	}
+
+	void showListWidget();
+	void showTreeWidget();
+	void showTableWidget();
+protected:
+	void paintEvent(QPaintEvent*) override;
+private:
+	QAbstractItemView *mpWidget;
+};
+
+inline void myWidget::paintEvent(QPaintEvent*)
+{
+	if (mpWidget) {
+		mpWidget->resize(width(), height());
+		mpWidget->show();
+	}
+}
+
+inline void myWidget::showListWidget()
+{
+	QListWidget *widget = new QListWidget(this);
+
+	QListWidgetItem *item1 = new QListWidgetItem();
+	QListWidgetItem *item2 = new QListWidgetItem();
+	QListWidgetItem *item3 = new QListWidgetItem();
+
+	item1->setText("file");
+	item1->setIcon(QIcon("file.png"));
+	item2->setText("new");
+	item2->setIcon(QIcon("new.png"));
+	item3->setText("open");
+	item3->setIcon(QIcon("open.png"));
+
+	widget->addItem(item1);
+	widget->addItem(item2);
+	widget->addItem(item3);
+
+	mpWidget = widget;
+}
+
+inline void myWidget::showTreeWidget()
+{
+	QTreeWidget *widget = new QTreeWidget(this);
+
+	widget->setHeaderLabel("header");
+	widget->header()->close();
+
+	QTreeWidgetItem *item1 = new QTreeWidgetItem();
+	QTreeWidgetItem *item2 = new QTreeWidgetItem();
+	QTreeWidgetItem *item3 = new QTreeWidgetItem();
+	QTreeWidgetItem *item4 = new QTreeWidgetItem();
+
+	item1->setText(0, "file");
+	item1->setIcon(0, QIcon("file.png"));
+	item2->setText(0, "new");
+	item2->setIcon(0, QIcon("new.png"));
+	item3->setText(0, "open");
+	item3->setIcon(0, QIcon("open.png"));
+	item4->setText(0, "quit");
+	item4->setIcon(0, QIcon("quit.png"));
+
+	item1->addChild(item2);
+	item2->addChild(item3);
+
+	widget->addTopLevelItem(item1);
+	widget->addTopLevelItem(item4);
+
+	mpWidget = widget;
+}
+
+inline void myWidget::showTableWidget()
+{
+	QTableWidget *widget = new QTableWidget(this);
+
+	widget->setRowCount(2);
+	widget->setColumnCount(3);
+	QStringList header{ "col1","col2","col3" };
+	widget->setHorizontalHeaderLabels(header);
+
+	QTableWidgetItem *item1 = new QTableWidgetItem();
+	QTableWidgetItem *item2 = new QTableWidgetItem();
+	QTableWidgetItem *item3 = new QTableWidgetItem();
+
+	item1->setText("file");
+	item1->setIcon(QIcon("file.png"));
+	item2->setText("new");
+	item2->setIcon(QIcon("new.png"));
+	item3->setText("open");
+	item3->setIcon(QIcon("open.png"));
+
+	widget->setItem(0, 0, item1);
+	widget->setItem(0, 1, item2);
+	widget->setItem(0, 2, item3);
+
+	mpWidget = widget;
+}
+
+#endif // MYWIDGET_HPP
+```
+
+```c++
+#include <QMap>
+#include "myWidget.hpp"
+
+static QMap<QString, int> COMMAND_MAP{
+	{ "list",0 },
+	{ "tree",1 },
+	{ "table",2 }
+};
+
+void showWidget(myWidget *w, QString state);
+
+int main(int argc, char *argv[]) {
+
+	QApplication app(argc, argv);
+
+	myWidget window;
+
+	window.resize(250, 150);
+	window.move(300, 300);
+	window.setWindowTitle("widget");
+	window.show();
+
+	if (argc != 1) {
+		showWidget(&window, argv[1]);
+	}
+
+	return app.exec();
+}
+
+void showWidget(myWidget *w, QString state)
+{
+	if (!w) return;
+
+	auto ret = COMMAND_MAP.find(state);
+	if (COMMAND_MAP.end() == ret) {
+		return;
+	}
+
+	switch (ret.value())
+	{
+	case 0:
+		w->showListWidget();
+		break;
+	case 1:
+		w->showTreeWidget();
+		break;
+	case 2:
+		w->showTableWidget();
+		break;
+	default:
+		break;
+	}
+}
+```
+
+### 建议
+
+在演示了view和widget的使用之后，你应该感觉到使用widget会方便的多，但是要想[自定义model](http://doc.qt.io/qt-5/model-view-programming.html#creating-new-models)的话，还是要使用view才行。查看[这里](https://forum.qt.io/topic/17481/easiest-way-to-have-a-simple-list-with-custom-items/3)了解如何在widget中自定义组件：
+
+```c++
+void QListWidget::setItemWidget(QListWidgetItem *item, QWidget *widget);
+void QTreeWidget::setItemWidget(QTreeWidgetItem *item, int column, QWidget *widget);
+void QTableWidget::setCellWidget(int row, int column, QWidget *widget);
+```
+
