@@ -40,9 +40,9 @@ tags:
 	*	[常用小部件](#qt_common_widgets)
 	*	[QSplitter](#qsplitter)
 	*	[QProgressBar](#progressbar)
-	*	[QGraphicsView](#qgraphicsview)
-	*	[QPainter](#qgraphicsview)
-*	[部件容器](#qpainter)
+	*	[QPainter](#qpainter)
+	*	[QGraphicsScene、QGraphicsView、QGraphicsItem](#qgraphicsscene_qgraphicsview_qgraphicsitem)
+*	[部件容器](#widget_containers)
 	*	[QGroupBox](#qgroupbox)
 	*	[QScrollArea](#qscrollarea)
 	*	[QToolBox](#qtoolbox)
@@ -2925,9 +2925,183 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-<h3 id="qgraphicsview">QGraphicsView</h3>
-
 <h3 id="qpainter">QPainter</h3>
+
+你可以在`qtbase-5.9\src\gui\painting`目录下找到`qpainter.h`和`qpainter.cpp`。
+
+<h3 id="qgraphicsscene_qgraphicsview_qgraphicsitem">QGraphicsScene、QGraphicsView、QGraphicsItem</h3>
+
+虽然 QLabel 可以用来显示图像，但是 Qt 有专门的图形视图工具。查看[Graphics View Framework](http://doc.qt.io/qt-5/graphicsview.html)，我们知道图形视图提供了一个用于管理和交互大量自定义的2D图形项目的界面，和一个用于可视化图形项目、并且支持缩放和旋转的视图组件。
+
+如果你有大量的图像需要同时显示的话，使用图形视图工具；如果只有固定几张图片，可以使用 QLabel 来实现，但是一个 QLabel 又只能显示一张图片，就不太好管理，所以**如果仅需要显示一张图片，你可以使用 QLabel，否则使用图形视图工具**。
+
+**图形视图基于项目，其场景(scene)使用 QGraphicsScene 实现、视图使用 QGraphicsView 实现、项目使用 QGraphicsItem 实现**。
+
+你可以在`qtbase-5.9\src\widgets\graphicsview`目录下找到对应的源码。
+
+QGraphicsScene 是 QGraphicsItem 的容器，你可以使用`QGraphicsScene::addItem()`来添加一个项目，然后通过各种项目搜索函数来获取一个或多个项目，项目的顺序与视图顺序一致；你也可以通过`QGraphicsScene::selectedItems()`和`QGraphicsScene::focusItem()`来管理选择项和聚焦项；你还可以使用`QGraphicsScene::render()`将场景中的部分渲染到 QPainter 中，这对截屏非常有用。
+
+QGraphicsView 用于可视化 QGraphicsScene 包含的项目，其视图是一个提供滚动条的滚动区域，而 QLabel 需要自行添加滚动条(如果图片太大的话)，所以**如果需要显示的图片足够大以致需要滚动条的话，使用 QGraphicsView 比使用 QLabel 更加方便**。另外，**使用`QGraphicsView::transform()`可以进行视图的缩放与旋转变换**。
+
+QGraphicsItem 是图形项目的基类，已实现的项目类有线(QGraphicsLineItem)、矩形(QGraphicsRectItem)、椭圆(QGraphicsEllipseItem)、多边形(QGraphicsPolygonItem)、图像(QGraphicsPixmapItem)、文本(QGraphicsTextItem)和简单文本(QGraphicsSimpleTextItem)，如果你想自定义项目的话，可以构建 QGraphicsItem 的子类来实现。**QGraphicsItem 也支持缩放和旋转，使用`QGraphicsItem::transform()`**。
+
+#### 缩放、旋转
+
+```c++
+#ifndef MYWIDGET_HPP
+#define MYWIDGET_HPP
+
+#include <QDebug>
+#include <QPixmap>
+#include <QWheelEvent>
+#include <QApplication>
+#include <QGraphicsView>
+#include <QGraphicsScene>
+
+class myWidget :public QGraphicsView
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QGraphicsView(parent)
+	{
+		mpScene = nullptr;
+		mScaleFactor = 0.1;
+	}
+
+	void setPixmap(const QPixmap&);
+	public slots:
+	void myRotate(int angle)
+	{
+		// rotate相对当前视图
+		static int preAngle = 0;
+		rotate(angle - preAngle);
+
+		preAngle = angle;
+	};
+
+protected:
+	void wheelEvent(QWheelEvent*) override;
+
+private:
+	void zoomIn()
+	{
+		qreal sx, sy;
+		sx = sy = 1 - mScaleFactor;
+		scale(sx, sy);
+	};
+
+	void zoomOut()
+	{
+		qreal sx, sy;
+		sx = sy = 1 + mScaleFactor;
+		scale(sx, sy);
+	};
+
+	QGraphicsScene* mpScene;
+	qreal mScaleFactor;
+};
+
+inline void myWidget::wheelEvent(QWheelEvent* e)
+{
+	// 固定值120，滚动幅度越大，事件触发次数越多
+	int angle = e->angleDelta().y();
+
+	angle > 0 ? zoomOut() : zoomIn();
+}
+
+inline void myWidget::setPixmap(const QPixmap &pixmap)
+{
+	QGraphicsScene* tmp = new QGraphicsScene();
+	tmp->addPixmap(pixmap);
+
+	qSwap(tmp, mpScene);
+	delete(tmp);
+
+	setScene(mpScene);
+	show();
+}
+
+#endif // MYWIDGET_HPP
+```
+
+```c++
+#ifndef MYWINDOW_HPP
+#define MYWINDOW_HPP
+
+#include "myWidget.hpp"
+#include <QSlider>
+#include <QWidget>
+#include <QVBoxLayout>
+
+class myWindow :public QWidget
+{
+	Q_OBJECT
+
+public:
+	myWindow(QWidget *parent = 0)
+		:QWidget(parent)
+	{
+		initGraphicsView();
+		initSlider();
+
+		QVBoxLayout *vbox = new QVBoxLayout(this);
+		vbox->addWidget(mpGraphicsView);
+		vbox->addWidget(mpSlider);
+		setLayout(vbox);
+
+		mpGraphicsView->setPixmap(QPixmap("file.png"));
+		mpGraphicsView->setPixmap(QPixmap("open.png"));
+	}
+
+private:
+	void initGraphicsView();
+	void initSlider();
+
+	myWidget *mpGraphicsView;
+	QSlider *mpSlider;
+};
+
+inline void myWindow::initGraphicsView()
+{
+	mpGraphicsView = new myWidget(this);
+}
+
+inline void myWindow::initSlider()
+{
+	mpSlider = new QSlider(Qt::Horizontal, this);
+	mpSlider->setRange(-180, 180);
+	mpSlider->setSingleStep(45);
+	mpSlider->setPageStep(45);
+	mpSlider->setSliderPosition(0);
+
+	connect(mpSlider, &QSlider::valueChanged,
+		mpGraphicsView, &myWidget::myRotate);
+}
+
+#endif // MYWINDOW_HPP
+```
+
+```c++
+#include "myWindow.hpp"
+
+int main(int argc, char *argv[]) {
+
+	QApplication app(argc, argv);
+
+	myWindow window;
+
+	window.resize(250, 150);
+	window.move(300, 300);
+	window.setWindowTitle("QGraphicsView");
+	window.show();
+
+	return app.exec();
+}
+```
+
+#### 截屏
 
 <h2 id="widget_containers">部件容器</h2>
 
