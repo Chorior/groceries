@@ -2939,24 +2939,28 @@ int main(int argc, char *argv[]) {
 
 你可以在`qtbase-5.9\src\widgets\graphicsview`目录下找到对应的源码。
 
-QGraphicsScene 是 QGraphicsItem 的容器，你可以使用`QGraphicsScene::addItem()`来添加一个项目，然后通过各种项目搜索函数来获取一个或多个项目，项目的顺序与视图顺序一致；你也可以通过`QGraphicsScene::selectedItems()`和`QGraphicsScene::focusItem()`来管理选择项和聚焦项；你还可以使用`QGraphicsScene::render()`将场景中的部分渲染到 QPainter 中，这对截屏非常有用。
+QGraphicsScene 是 QGraphicsItem 的容器，你可以使用`QGraphicsScene::addItem()`来添加一个项目，然后通过各种项目搜索函数来获取一个或多个项目，项目的顺序与视图顺序一致；你也可以通过`QGraphicsScene::selectedItems()`和`QGraphicsScene::focusItem()`来管理选择项和聚焦项。
 
-QGraphicsView 用于可视化 QGraphicsScene 包含的项目，其视图是一个提供滚动条的滚动区域，而 QLabel 需要自行添加滚动条(如果图片太大的话)，所以**如果需要显示的图片足够大以致需要滚动条的话，使用 QGraphicsView 比使用 QLabel 更加方便**。另外，**使用`QGraphicsView::transform()`可以进行视图的缩放与旋转变换**。
+QGraphicsView 用于可视化 QGraphicsScene 包含的项目，其视图是一个提供滚动条的滚动区域，而 QLabel 需要自行添加滚动条(如果图片太大的话)，所以**如果需要显示的图片足够大以致需要滚动条的话，使用 QGraphicsView 比使用 QLabel 更加方便**。另外，使用`QGraphicsView::transform()`可以进行视图的缩放与旋转变换(查看scale源码)；你还可以使用`QGraphicsView::render()`将场景中的部分渲染到 QPainter 中，这对截屏非常有用。
 
 QGraphicsItem 是图形项目的基类，已实现的项目类有线(QGraphicsLineItem)、矩形(QGraphicsRectItem)、椭圆(QGraphicsEllipseItem)、多边形(QGraphicsPolygonItem)、图像(QGraphicsPixmapItem)、文本(QGraphicsTextItem)和简单文本(QGraphicsSimpleTextItem)，如果你想自定义项目的话，可以构建 QGraphicsItem 的子类来实现。**QGraphicsItem 也支持缩放和旋转，使用`QGraphicsItem::transform()`**。
-
-#### 缩放、旋转
 
 ```c++
 #ifndef MYWIDGET_HPP
 #define MYWIDGET_HPP
 
+#include <QDir>
+#include <QList>
 #include <QDebug>
+#include <QPointF>
 #include <QPixmap>
+#include <QPainter>
+#include <QFileDialog>
 #include <QWheelEvent>
 #include <QApplication>
 #include <QGraphicsView>
 #include <QGraphicsScene>
+#include <QGraphicsPixmapItem>
 
 class myWidget :public QGraphicsView
 {
@@ -2966,12 +2970,15 @@ public:
 	myWidget(QWidget *parent = 0)
 		: QGraphicsView(parent)
 	{
-		mpScene = nullptr;
-		mScaleFactor = 0.1;
+		m_pScene = nullptr;
+		m_scaleFactor = 0.1;
 	}
 
 	void setPixmap(const QPixmap&);
+	void addPixmap(const QPixmap&);
 	public slots:
+
+	// 旋转
 	void myRotate(int angle)
 	{
 		// rotate相对当前视图
@@ -2981,6 +2988,43 @@ public:
 		preAngle = angle;
 	};
 
+	// 截屏
+	void capture()
+	{
+		// QRect viewRect = viewport()->rect();
+		// QPixmap pixmap(viewRect.size()); // 必须初始化！
+		// QPainter painter(&pixmap);
+		// painter.setRenderHint(QPainter::Antialiasing);
+		// render(&painter,QRectF(viewRect),viewRect);
+		// painter.end();
+
+		QPixmap pixmap = QWidget::grab(viewport()->rect());
+
+		QString fileName = QFileDialog::getSaveFileName(
+			this,
+			"Save image",
+			QDir::currentPath(),
+			"PNG (*.png);;BMP Files (*.bmp);;JPEG (*.JPEG)");
+		if (!fileName.isNull())
+		{
+			pixmap.save(fileName);
+		}
+	}
+
+	// 添加图片
+	void addImage()
+	{
+		QStringList imgList = QFileDialog::getOpenFileNames(
+			this,
+			"add images",
+			QDir::currentPath(),
+			"Images (*.png *.bmp *.jpg)");
+		for (QString &path : imgList)
+		{
+			addPixmap(QPixmap(path));
+		}
+	}
+
 protected:
 	void wheelEvent(QWheelEvent*) override;
 
@@ -2988,27 +3032,55 @@ private:
 	void zoomIn()
 	{
 		qreal sx, sy;
-		sx = sy = 1 - mScaleFactor;
-		scale(sx, sy);
+		sx = sy = 1 + m_scaleFactor;
+		myScale(sx, sy);
 	};
 
 	void zoomOut()
 	{
 		qreal sx, sy;
-		sx = sy = 1 + mScaleFactor;
-		scale(sx, sy);
+		sx = sy = 1 - m_scaleFactor;
+		myScale(sx, sy);
 	};
 
-	QGraphicsScene* mpScene;
-	qreal mScaleFactor;
+	// 缩放
+	void myScale(qreal sx, qreal sy)
+	{
+		// QGraphicsView::scale(qreal sx, qreal sy)源码修改
+		QTransform matrix = transform();
+		matrix.scale(sx, sy);
+
+		// 防止过大或过小
+		qreal factor = matrix.mapRect(QRectF(0, 0, 1, 1)).width();
+		if (factor < 0.07 || factor > 100)
+			return;
+
+		setTransform(matrix);
+	}
+
+	QGraphicsScene* m_pScene;
+	qreal m_scaleFactor;
 };
 
 inline void myWidget::wheelEvent(QWheelEvent* e)
 {
-	// 固定值120，滚动幅度越大，事件触发次数越多
-	int angle = e->angleDelta().y();
+	// 按下ctrl键+滚轮触发缩放，否则移动滚动条
+	if (e->modifiers() & Qt::ControlModifier)
+	{
+		// 固定值120，滚动幅度越大，事件触发次数越多
+		int angle = e->angleDelta().y();
 
-	angle > 0 ? zoomOut() : zoomIn();
+		// 在鼠标光标处进行缩放
+		const ViewportAnchor anchor = transformationAnchor();
+		setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+
+		angle > 0 ? zoomIn() : zoomOut();
+		setTransformationAnchor(anchor);
+	}
+	else
+	{
+		QGraphicsView::wheelEvent(e);
+	}
 }
 
 inline void myWidget::setPixmap(const QPixmap &pixmap)
@@ -3016,10 +3088,32 @@ inline void myWidget::setPixmap(const QPixmap &pixmap)
 	QGraphicsScene* tmp = new QGraphicsScene();
 	tmp->addPixmap(pixmap);
 
-	qSwap(tmp, mpScene);
+	qSwap(tmp, m_pScene);
 	delete(tmp);
 
-	setScene(mpScene);
+	setScene(m_pScene);
+	show();
+}
+
+inline void myWidget::addPixmap(const QPixmap &pixmap)
+{
+	if (!m_pScene) {
+		m_pScene = new QGraphicsScene();
+	}
+
+	int dy_newItem = 0;
+	for (QGraphicsItem *tmp : items())
+	{
+		const QRectF size = tmp->boundingRect();
+		dy_newItem += size.height() * tmp->scale();
+
+		// 间隙
+		dy_newItem += 5;
+	}
+
+	QGraphicsPixmapItem *pixmapItem = m_pScene->addPixmap(pixmap);
+	pixmapItem->moveBy(0, dy_newItem);
+	setScene(m_pScene);
 	show();
 }
 
@@ -3033,6 +3127,8 @@ inline void myWidget::setPixmap(const QPixmap &pixmap)
 #include "myWidget.hpp"
 #include <QSlider>
 #include <QWidget>
+#include <QPushButton>
+#include <QHBoxLayout>
 #include <QVBoxLayout>
 
 class myWindow :public QWidget
@@ -3045,39 +3141,61 @@ public:
 	{
 		initGraphicsView();
 		initSlider();
+		initAddImgBtn();
+		initCaptureBtn();
+
+		QHBoxLayout *hbox = new QHBoxLayout();
+		hbox->addWidget(m_pAddImgBtn);
+		hbox->addWidget(m_pCaptureBtn);
 
 		QVBoxLayout *vbox = new QVBoxLayout(this);
-		vbox->addWidget(mpGraphicsView);
-		vbox->addWidget(mpSlider);
+		vbox->addWidget(m_pGraphicsView);
+		vbox->addWidget(m_pSlider);
+		vbox->addLayout(hbox);
 		setLayout(vbox);
-
-		mpGraphicsView->setPixmap(QPixmap("file.png"));
-		mpGraphicsView->setPixmap(QPixmap("open.png"));
 	}
 
 private:
 	void initGraphicsView();
 	void initSlider();
+	void initAddImgBtn();
+	void initCaptureBtn();
 
-	myWidget *mpGraphicsView;
-	QSlider *mpSlider;
+	myWidget *m_pGraphicsView;
+	QSlider *m_pSlider;
+	QPushButton *m_pAddImgBtn;
+	QPushButton *m_pCaptureBtn;
 };
 
 inline void myWindow::initGraphicsView()
 {
-	mpGraphicsView = new myWidget(this);
+	m_pGraphicsView = new myWidget(this);
 }
 
 inline void myWindow::initSlider()
 {
-	mpSlider = new QSlider(Qt::Horizontal, this);
-	mpSlider->setRange(-180, 180);
-	mpSlider->setSingleStep(45);
-	mpSlider->setPageStep(45);
-	mpSlider->setSliderPosition(0);
+	m_pSlider = new QSlider(Qt::Horizontal, this);
+	m_pSlider->setRange(-180, 180);
+	m_pSlider->setSingleStep(45);
+	m_pSlider->setPageStep(45);
+	m_pSlider->setSliderPosition(0);
 
-	connect(mpSlider, &QSlider::valueChanged,
-		mpGraphicsView, &myWidget::myRotate);
+	connect(m_pSlider, &QSlider::valueChanged,
+		m_pGraphicsView, &myWidget::myRotate);
+}
+
+inline void myWindow::initAddImgBtn()
+{
+	m_pAddImgBtn = new QPushButton("add", this);
+	connect(m_pAddImgBtn, &QPushButton::clicked,
+		m_pGraphicsView, &myWidget::addImage);
+}
+
+inline void myWindow::initCaptureBtn()
+{
+	m_pCaptureBtn = new QPushButton("capture", this);
+	connect(m_pCaptureBtn, &QPushButton::clicked,
+		m_pGraphicsView, &myWidget::capture);
 }
 
 #endif // MYWINDOW_HPP
@@ -3100,8 +3218,6 @@ int main(int argc, char *argv[]) {
 	return app.exec();
 }
 ```
-
-#### 截屏
 
 <h2 id="widget_containers">部件容器</h2>
 
