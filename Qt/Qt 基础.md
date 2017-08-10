@@ -2929,6 +2929,10 @@ int main(int argc, char *argv[]) {
 
 你可以在`qtbase-5.9\src\gui\painting`目录下找到`qpainter.h`和`qpainter.cpp`。
 
+QPainter 可以用来绘制任何图形，小到线条大到图片。**任何继承了 QPaintDevice 的类都可以使用 QPainter，我们常用的 QWidget、QPixmap、QImage、QPicture都继承了 QPaintDevice**。
+
+QPainter 常被用在绘制事件中，即`void paintEvent(QPaintEvent *)`，
+
 <h3 id="qgraphicsscene_qgraphicsview_qgraphicsitem">QGraphicsScene、QGraphicsView、QGraphicsItem</h3>
 
 虽然 QLabel 可以用来显示图像，但是 Qt 有专门的图形视图工具。查看[Graphics View Framework](http://doc.qt.io/qt-5/graphicsview.html)，我们知道图形视图提供了一个用于管理和交互大量自定义的2D图形项目的界面，和一个用于可视化图形项目、并且支持缩放和旋转的视图组件。
@@ -3108,7 +3112,7 @@ inline void myWidget::addPixmap(const QPixmap &pixmap)
 		dy_newItem += size.height() * tmp->scale();
 
 		// 间隙
-		dy_newItem += 5;
+		dy_newItem += 5 * tmp->scale();
 	}
 
 	QGraphicsPixmapItem *pixmapItem = m_pScene->addPixmap(pixmap);
