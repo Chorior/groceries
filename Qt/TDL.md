@@ -60,3 +60,38 @@
 
 *	[进程间通信](http://doc.qt.io/qt-5/ipc.html)
 *	[多线程](http://doc.qt.io/qt-5/topics-core.html#threading)
+
+窗口部件
+{
+几何布局 图
+
+模态窗口与非模态窗口 modal modeless
+
+自动信号连接 手动信号连接 QMetaObject::connectSlotsByName(this); connect
+
+Dialog: QColorDialog QFileDialog QFontDialog QInputDialog QMessageBox QProcessDialog QErrorMessage QWizard QPageSetupDialog QPrintDialog QPrintPreviewDialog
+
+QFrame: QLabel(setBuddy()) QLCDNumber QStackedWidget QToolBox 
+
+QAbstractButton: QPushButton QCheckBox QRadioButton QGroupBox QButtonGroup
+
+QLineEdit: setFocus() setValidator() QRegExp QCompleter 
+
+QAbstractSpinBox: QDateTimeEdit QSpinBox QDoubleSpinBox 
+
+QAbstractSlider: QScrollBar QSlider QDial
+}
+
+布局管理
+{
+QLayout: QBoxLayout QGirdLayout QFromLayout QStackedLayout
+
+大小策略: QSizePolicy 伸缩因子
+
+QSplitter
+
+setTabOrder
+}
+
+QMainWindow
+
