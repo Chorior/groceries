@@ -29,7 +29,7 @@ Qt开放源代码，你可以在[Qt github](https://github.com/qt)上获取；�
 *	GNU LGPL：可以被专属软件作为类库引用、发布和销售；
 *	GNU GPL：可以自由运行，学习，共享和修改。
 
-<h2 id="hello_world">Hello QT</h2>
+<h2 id="hello_qt">Hello QT</h2>
 
 到<http://download.qt.io/official_releases/qt/>下载开源QT，选择 mingw 安装完成后开始我们的第一个程序--Hello QT。
 
@@ -91,7 +91,9 @@ Hello QT.
 
 我知道 linux 下面有 `getopt` 函数可以获取命令行参数，但标准 C++ 似乎没有这种函数，所以一般我都是将命令行参数转化为 `std::string`，然后自行解析。你可以查看 [stackoverflow](https://stackoverflow.com/questions/865668/how-to-parse-command-line-arguments-in-c) 获取如何在标准 C++ 中进行命令行参数解析。
 
-QT 提供了 QCommandLineParser 专门用于命令行参数解析。命令行选项通常以单个破折号或双个破折号开始，**单个字母的命令行选项可以进行合并**，如 `-a -b -c` 可以写成 `-abc`，**但多个字母的命令行选项不能进行合并，且一般以双个破折号开始**。**你可以使用等号或空格符为选项赋值**，如 `-v=value --verbose=value`、`-v value --verbose value`。**如果一个选项设置为需要一个值，则必须存在一个，如果这样的选项被放置在最后并且没有值，该选项将被视为没有被指定**。
+QT 提供了 QCommandLineParser 专门用于命令行参数解析。
+
+命令行选项通常以单个破折号或双个破折号开始，**单个字母的命令行选项可以进行合并**，如 `-a -b -c` 可以写成 `-abc`，**但多个字母的命令行选项不能进行合并，且一般以双个破折号开始**。**你可以使用等号或空格符为选项赋值**，如 `-v=value --verbose=value`、`-v value --verbose value`。
 
 我仿照官方示例做了一个演示：
 
@@ -152,8 +154,10 @@ void initInputParser(QCommandLineParser &parser)
 
 	// 添加基于位置的命令行参数，这意味着你不能随意调换它们的相对顺序
 	// QCoreApplication::translate: 返回第二个参数翻译后的字符串，这意味着支持多种语言
-	parser.addPositionalArgument("source", QCoreApplication::translate("main", "Source file to copy."));
-	parser.addPositionalArgument("destination", QCoreApplication::translate("main", "Destination directory."));
+	parser.addPositionalArgument("source", 
+		QCoreApplication::translate("main", "Source file to copy."));
+	parser.addPositionalArgument("destination", 
+		QCoreApplication::translate("main", "Destination directory."));
 
 	// http://doc.qt.io/qt-5/qcommandlineparser.html#addOptions
 	// http://doc.qt.io/qt-5/qcommandlineoption.html
@@ -236,6 +240,9 @@ positionalArguments:
 $ e:\qt_practice>release\qt_practice.exe -a
 Unknown option 'a'.
 
+$ e:\qt_practice>release\qt_practice.exe -t
+Missing value after '-t'.
+
 $ e:\qt_practice>release\qt_practice.exe -default name
 -p:  false
 -f:  false
@@ -257,6 +264,6 @@ positionalArguments:
 
 ```
 
-可以看到，**当不指定有默认值的命令行选项时，就会得到该选项的默认值，使用长字符选项时一定要使用双破折号**。
+可以看到，**如果一个选项被设置为需要一个值，则必须存在一个、当不指定有默认值的命令行选项时，就会得到该选项的默认值、使用长字符选项时一定要使用双破折号**。
 
 <h2 id="qstring">字符串</h2>
