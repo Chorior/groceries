@@ -15,7 +15,8 @@ tags:
 *   [Qt 概述](#overview)
 *	[Hello QT](#hello_qt)
 *	[命令行参数](#qcommandlineparser)
-*   [字符串](#qstring)
+*   [字符串](#qstring_qbytearray)
+*	[QVariant](#qvariant)
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -188,7 +189,7 @@ void initInputParser(QCommandLineParser &parser)
 
 编译完成之后，首先查看 help:
 
-```cmd
+```text
 $ e:\qt_practice>release\qt_practice.exe -h
 Usage: release\qt_practice.exe [options] source destination
 Test helper
@@ -266,4 +267,141 @@ positionalArguments:
 
 可以看到，**如果一个选项被设置为需要一个值，则必须存在一个、当不指定有默认值的命令行选项时，就会得到该选项的默认值、使用长字符选项时一定要使用双破折号**。
 
-<h2 id="qstring">字符串</h2>
+<h2 id="qstring_qbytearray">字符串</h2>
+
+QT5 默认兼容标准 C++11，但 QT4 需要在 `.pro` 文件中加上 `CONFIG += c++11`，这意味着你不必特意去学习新的类似的库，能用标准 C++ 处理的就用标准 C++ 进行处理，但在 QT 下写程序你却全部使用标准 C++，那使用 QT 的意义又在哪儿呢？由于 QT 所有 API 的参数和返回值除了简单类型之外都是自行封装的，这又意味着**你需要对 QT 的库有一定的了解才行**。
+
+QT 有两个类来存储字符串，它们分别是 QString 和 QByteArray。其中 QString 是 QT 最为常用的字符串，因为它存储了一串 QChar 字符，而一个 QChar 提供了一个16位的 Unicode 字符；而 QByteArray 提供的是一个字节数组，即一个元素是一个字节，以空字符`'\0'`结尾的8位字符串。**除了需要存储原始二进制数据或者对内存保护要求很高的情况下，一般都推荐使用 QString，但使用 QByteArray 比使用 `const char *` 更方便，它确保数据后跟`'\0'`终止符**。
+
+**QString 和 QByteArray 都是采用的[写时复制](http://doc.qt.io/qt-5/implicit-sharing.html)来减少内存使用量和不必要的复制操作**。
+
+下面我们就来对 QString 的常用操作来做一个简单的演示，更多的操作你可以查看[说明文档](http://doc.qt.io/qt-5/qstring.html#details)：
+
+```c++
+#include <string>     // 标准字符串
+
+#include <QDebug>
+#include <QString>
+
+int main()
+{
+	std::string std_str = "World";
+
+	// 赋值
+	QString str0 = QChar('H');                      // QChar 赋值运算符
+	QString str1 = "Hello";                         // const char* 赋值运算符
+	QString str2 = QString::fromStdString(std_str); // 标准字符串转 QString 
+	qDebug() << str0 << " " << str1 << " " << str2;
+
+	// 访问
+	bool isEmpty = str2.isEmpty();                  // 是否为空
+	int size = str0.size();                         // 获取字符串大小
+	str0[0] = QChar('E');                           // 修改字符
+	QChar ch = str1.at(1);                          // at 用于只读
+	qDebug() << str0 << " size: " << size;
+	qDebug() << str1 << ".at(1): " << ch;
+	qDebug() << str2 << " is empty?: " << isEmpty;
+
+	// 修改
+	str0.prepend("haha");                           // 前置添加
+	str0.push_front("wa");                          // 前置添加
+	str1.append(" ");                               // 后置添加
+	str1.push_back(str2);                           // 后置添加
+	str1 += "!";                                    // 后置添加
+	str2.insert(0, "Hello ");                       // 在位置0上插入“Hello "
+	QString str3 = str2;                            // str3: Hello World
+	str3.replace(6, 5, "QT");                       // 将从位置6开始的5个字符替换为"QT"
+	QString str4(str3);                             // str4: Hello QT
+	str4.remove(0, 6);                              // 移除从位置0开始的6个字符
+	str3.swap(str4);                                // 交换
+	qDebug() << str0 << " " << str1 << " "
+		<< str2 << " " << str3 << " " << str4;
+
+	// 获取子串
+	QString sub0 = str2.right(5);                   // 右边5个字符
+	QString sub1 = str2.mid(1, 4);                  // 位置1开始4个字符
+	QString sub2 = str2.left(5);                    // 左边5个字符
+	qDebug() << sub0 << " " << sub1 << " " << sub2;
+
+	// 比较
+	QString str5("_raw.png");
+	QString str6("_RAW.png");
+	bool equal = (str5 == str6);                    // 比较运算符
+	bool startsWith = str5.startsWith("_");         // 是否以"_"开始
+	bool endsWith = str5.endsWith(".png");          // 是否以".png"结尾
+	bool contains =
+		str5.contains("RAW", Qt::CaseInsensitive);  // 是否包含"raw",大小写无关
+	qDebug() << equal << " " << startsWith << " "
+		<< endsWith << " " << contains;
+
+	// 标记替换
+	QString s0 = "file name is %1, function name is %2.";
+	QString s1 = s0.arg(__FILE__);                  // 将s1的最小的标记%1替换为文件名
+	QString s2 = s1.arg(__func__);                  // 将s2的最小的标记%2替换为函数名
+	qDebug() << s0 << "\n" << s1 << "\n" << s2;
+
+	// 转换
+	QString str_num0 = QString::number(123);        // 数字转 QString
+	QString str_num1 = QString().setNum(1.234);     // 数字转 QString
+	std::string std_num = str_num0.toStdString();   // QString 转 std::string
+	int num0 = str_num0.toInt();                    // QString 转数字
+	double num1 = str_num1.toDouble();              // QString 转数字
+	str5 = str5.toUpper();                          // 转换为大写
+	str6 = str6.toLower();                          // 转换为小写
+	qDebug() << str_num0 << ": " << num0 << ", "
+		<< str_num1 << ": " << num1;
+	qDebug() << str5 << " " << str6;
+
+	// 字符类型
+	QString str7 = "7 white, 3 red roses.";
+	int digits = 0, letters = 0;
+	int spaces = 0, puncts = 0;
+	for (const QChar &s : str7)
+	{
+		if (s.isDigit()) {
+			digits++;
+		}
+		else if (s.isLetter()) {
+			letters++;
+		}
+		else if (s.isSpace()) {
+			spaces++;
+		}
+		else if (s.isPunct()) {
+			puncts++;
+		}
+	}
+	qDebug() << QString("There are %1 characters").arg(str7.count());
+	qDebug() << QString("There are %1 letters").arg(letters);
+	qDebug() << QString("There are %1 digits").arg(digits);
+	qDebug() << QString("There are %1 spaces").arg(spaces);
+	qDebug() << QString("There are %1 punctuation characters").arg(puncts);
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+"H"   "Hello"   "World"
+"E"  size:  1
+"Hello" .at(1):  'e'
+"World"  is empty?:  false
+"wahahaE"   "Hello World!"   "Hello World"   "QT"   "Hello QT"
+"World"   "ello"   "Hello"
+false   true   true   true
+"file name is %1, function name is %2."
+ "file name is main.cpp, function name is %2."
+ "file name is main.cpp, function name is main."
+"123" :  123 ,  "1.234" :  1.234
+"_RAW.PNG"   "_raw.png"
+"There are 21 characters"
+"There are 13 letters"
+"There are 2 digits"
+"There are 4 spaces"
+"There are 2 punctuation characters"
+```
+
+上面打印出来的字符串有引号，如果你觉得不爽的话，可以使用[qPrintable](http://doc.qt.io/qt-5/qtglobal.html#qPrintable)全局函数将 QString 转换为 `const char *`后再进行输出。
+
+<h2 id="qvariant">QVariant</h2>
