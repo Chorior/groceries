@@ -17,6 +17,11 @@ tags:
 *	[命令行参数](#qcommandlineparser)
 *   [字符串](#qstring_qbytearray)
 *	[QVariant](#qvariant)
+*	[日期时间](#qdate_qtime_and_qdatetime)
+	*	[QDate](#qdate)
+	*	[QTime](#qtime)
+	*	[QDateTime](#qdatetime)
+*	[文件输入输出](#qfile_qdir)
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -84,7 +89,7 @@ Hello QT.
 
 ```
 
-可以看到，qDebug 默认会输出换行。
+可以看到，qDebug 默认会输出换行，如果你了解输出缓冲和一些输出调试的知识的话，**这个换行是为了调试方便而加上的**。
 
 <h2 id="qcommandlineparser">命令行参数</h2>
 
@@ -405,3 +410,459 @@ false   true   true   true
 上面打印出来的字符串有引号，如果你觉得不爽的话，可以使用[qPrintable](http://doc.qt.io/qt-5/qtglobal.html#qPrintable)全局函数将 QString 转换为 `const char *`后再进行输出。
 
 <h2 id="qvariant">QVariant</h2>
+
+QVariant 像是一个 QT 常见数据类型的共用体。由于标准 union 只支持有默认构造函数和析构函数的类型，然而许多有用的 QT 类都不满足这一要求，所以有了 QVariant。
+
+**一个 QVariant 对象在同一时间只持有一种数据类型的一个值**，假定该类型为 T，那么你就可以使用成员函数 `toT()` 来获取这个值，你还可以使用成员函数 `canConvert` 来判断该类型是否能够转换到你想要的类型，你甚至可以使用成员函数 `typename()` 来得到该类型的类型字符串。
+
+由于 QVariant 是 Qt Core 模块的一部分，所以没有提供 Qt GUI 定义的数据类型的额转换函数 `toT()`，但是 [QVariant 支持的类型](http://doc.qt.io/qt-5/qvariant-obsolete.html#Type-enum)是包含一些 GUI 定义的类型的，如 QColor、QImage、QPixmap 等，这时你可以使用成员函数 `value` 或者转换函数 `qvariant_cast` 来获取存储的值。**实际上所有的 QVariant 对象都可以使用这样的方式来获取值**。
+
+演示：
+
+```c++
+#include <QDebug>
+#include <QColor>
+#include <QString>
+#include <QVariant>
+
+int main()
+{
+	QVariant v(123);
+	bool isInt = v.canConvert<int>();        // 能否转为 int
+	bool isString = v.canConvert<QString>(); // 能否转为 QString
+	int x = v.toInt();                       // 转换到 int
+	QString str = v.toString();              // 转换到 QString
+	QString type = v.typeName();             // v 的类型
+	qDebug() << "QVariant: " << v;
+	qDebug() << "isInt: " << isInt;
+	qDebug() << "isString: " << isString;
+	qDebug() << "toInt: " << x;
+	qDebug() << "toString: " << str;
+	qDebug() << "typeName: " << type;
+
+	QColor color = QColor(Qt::red);
+	v = color;
+	qDebug() << "QVariant: " << v;
+	qDebug() << "typeName: " << v.typeName();
+	qDebug() << "value: " << v.value<QColor>();
+	qDebug() << "value: " << qvariant_cast<QColor>(v);
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+QVariant:  QVariant(int, 123)
+isInt:  true
+isString:  true
+toInt:  123
+toString:  "123"
+typeName:  "int"
+QVariant:  QVariant(QColor, QColor(ARGB 1, 1, 0, 0))
+typeName:  QColor
+value:  QColor(ARGB 1, 1, 0, 0)
+value:  QColor(ARGB 1, 1, 0, 0)
+```
+
+<h2 id="qdate_qtime_and_qdatetime">日期时间</h2>
+
+熟悉 C 的兄弟们应该知道 `<time.h>` 是专门用来处理日期时间的，C++ 将该头文件放在命名空间 `std` 下，并重新构建了一个新的头文件 `<ctime>`，你可以使用该头文件来获取日期时间：
+
+```c++
+#include <ctime>
+#include <string>
+#include <iostream>
+
+int main()
+{
+	time_t t = time(0);   // get time now
+	struct tm * now = localtime(&t);
+
+	std::cout << "year: " << now->tm_year + 1900 << "\n"
+		<< "month: " << now->tm_mon + 1 << "\n"
+		<< "day: " << now->tm_mday << "\n"
+		<< "hour: " << now->tm_hour << "\n"
+		<< "minute: " << now->tm_min << "\n"
+		<< "second: " << now->tm_sec
+		<< std::endl;
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+year: 2017
+month: 8
+day: 31
+hour: 15
+minute: 8
+second: 21
+```
+
+在 C++11 中还有头文件 `<chrono>` 中的 `system_clock` 也可以获取当前时间，因为它提供了向 `time_t` 的类型转换函数 `to_time_t`，另外它还支持超**高精度的计时功能**，而使用 `time_t` 你只能获取到精确到秒的计时功能：
+
+```c++
+#include <ctime>
+#include <thread> // sleep_for
+#include <chrono>
+#include <iostream>
+
+int main()
+{
+	//auto now_steady = std::chrono::steady_clock::now();
+	auto now_system = std::chrono::system_clock::now();
+
+	time_t now = std::chrono::system_clock::to_time_t(now_system);
+	std::cout << ctime(&now) << std::endl;  // unsafe way
+
+	// safe way
+	/*char buffer[26];
+	ctime_s(buffer, 26, &now);
+	std::cout << buffer << std::endl;*/
+
+	// 计时
+	// https://chorior.github.io/2017/04/24/C++-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%9F%BA%E7%A1%80%E7%AF%87/#clock
+	auto time_start = std::chrono::high_resolution_clock::now();
+	std::this_thread::sleep_for(
+		std::chrono::duration<double, std::milli>(100.001));
+	auto time_stop = std::chrono::high_resolution_clock::now();
+	std::cout << "took "
+		<< std::chrono::duration<double, std::milli>(time_stop - time_start).count()
+		<< " ms\n";
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+Thu Aug 31 15:22:07 2017
+
+took 100.01 ms
+```
+
+**在 Qt 中，如果你想处理日期的话，你可以使用 QDate，如果你想处理时间的话，你可以使用 QTime，如果你想日期、时间一起处理的话，你可以使用 QDateTime**。
+
+<h3 id="qdate">QDate</h3>
+
+```c++
+#include <QDate>
+#include <QDebug>
+
+int main()
+{
+	// 访问
+	QDate d1 = QDate::currentDate();
+	qDebug() << "year: " << d1.year() << "\n"
+		<< "month: " << d1.month() << "\n"
+		<< "day: " << d1.day() << "\n"
+		<< "dayOfWeek: " << d1.dayOfWeek() << "\n"
+		<< "dayOfYear: " << d1.dayOfYear() << "\n"
+		<< "daysInMonth: " << d1.daysInMonth() << "\n"
+		<< "TextDate: " << d1.toString(Qt::TextDate) << "\n"
+		<< "ISODate: " << d1.toString(Qt::ISODate) << "\n"
+		<< "SystemLocaleShortDate: " << d1.toString(Qt::SystemLocaleShortDate) << "\n"
+		<< "SystemLocaleLongDate: " << d1.toString(Qt::SystemLocaleLongDate) << "\n"
+		<< "DefaultLocaleShortDate: " << d1.toString(Qt::DefaultLocaleShortDate) << "\n"
+		<< "DefaultLocaleLongDate: " << d1.toString(Qt::DefaultLocaleLongDate) << "\n"
+		<< "RFC2822Date: " << d1.toString(Qt::RFC2822Date);
+
+	// 字符串转 QDate
+	QString str("2017-08-31");
+	d1 = QDate::fromString(str, Qt::ISODate);
+	qDebug() << d1.toString(Qt::ISODate);
+
+	// 修改、比较
+	d1.setDate(2017, 8, 1);
+	qDebug() << d1.daysTo(QDate::currentDate()) << "\n"
+		<< d1.addDays(2).toString(Qt::ISODate) << "\n"
+		<< d1.addMonths(2).toString(Qt::ISODate) << "\n"
+		<< d1.addYears(2).toString(Qt::ISODate) << "\n"
+		<< d1.toString(Qt::ISODate) << " > "
+		<< QDate::currentDate().toString(Qt::ISODate)
+		<< " is " << static_cast<bool>(d1 > QDate::currentDate());
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+year:  2017
+month:  8
+day:  31
+dayOfWeek:  4
+dayOfYear:  243
+daysInMonth:  31
+TextDate:  "周四 八月 31 2017"
+ISODate:  "2017-08-31"
+SystemLocaleShortDate:  "2017/8/31"
+SystemLocaleLongDate:  "2017年8月31日"
+DefaultLocaleShortDate:  "2017/8/31"
+DefaultLocaleLongDate:  "2017年8月31日"
+RFC2822Date:  "31 Aug 2017"
+"2017-08-31"
+30
+"2017-08-03"
+"2017-10-01"
+"2019-08-01"
+"2017-08-01"  >  "2017-08-31"  is  false
+```
+
+**除了使用 QT 定义的格式进行输出和输入之外，你还可以自定义日期的格式**：
+
+Expression | Output
+------------ | ---------------------------------
+yy | 两位数年份(00~99)
+yyyy | 四位数年份
+M | 不带前置零的月份数(1 ~ 12)
+MM | 带有前置零的月份数(01 ~ 12)
+MMM | 短的本地化月份名(如 Jan ~ Dec)
+MMMM | 长的本地化月份名(如 January ~ December)
+d | 不带前置零的天数(1 ~ 31)
+dd | 带有前置零的天数(01 ~ 31)
+ddd | 短的本地化天名(如 Mon ~ Sun)
+dddd | 长的本地化天名(如 Monday ~ Sunday)
+
+```c++
+#include <QDate>
+#include <QDebug>
+
+int main()
+{
+	QDate cd = QDate::currentDate();
+
+	qDebug() << "Today is " << cd.toString("yyyy-MM-dd");
+	qDebug() << "Today is " << cd.toString("yy/M/dd");
+	qDebug() << "Today is " << cd.toString("d. M. yyyy");
+	qDebug() << "Today is " << cd.toString("d-MMMM-yyyy");
+
+	QString fmt("yyyy-MM-dd");
+	QString str("2017-08-31");
+	qDebug() << QDate::fromString(str, fmt).toString("yy/M/dd");
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+Today is  "2017-08-31"
+Today is  "17/8/31"
+Today is  "31. 8. 2017"
+Today is  "31-八月-2017"
+"17/8/31"
+```
+
+<h3 id="qtime">QTime</h3>
+
+```c++
+#include <QTime>
+#include <QDebug>
+
+int main()
+{
+	// 访问
+	QTime t1 = QTime::currentTime();
+	qDebug() << "hour: " << t1.hour() << "\n"
+		<< "minute: " << t1.minute() << "\n"
+		<< "second: " << t1.second() << "\n"
+		<< "msec: " << t1.msec() << "\n"
+		<< "TextDate: " << t1.toString(Qt::TextDate) << "\n"
+		<< "ISODate: " << t1.toString(Qt::ISODate) << "\n"
+		<< "SystemLocaleShortDate: " << t1.toString(Qt::SystemLocaleShortDate) << "\n"
+		<< "SystemLocaleLongDate: " << t1.toString(Qt::SystemLocaleLongDate) << "\n"
+		<< "DefaultLocaleShortDate: " << t1.toString(Qt::DefaultLocaleShortDate) << "\n"
+		<< "DefaultLocaleLongDate: " << t1.toString(Qt::DefaultLocaleLongDate) << "\n"
+		<< "RFC2822Date: " << t1.toString(Qt::RFC2822Date);
+
+	// 字符串转 QTime
+	QString str("20:02:20.22");
+	QTime t2 = QTime::fromString(str, Qt::ISODate);
+	qDebug() << t2.toString(Qt::ISODate);
+
+	// 修改、比较
+	t1.setHMS(20, 01, 00, 00);
+	qDebug() << t1.secsTo(t2) << "\n"
+		<< t1.msecsTo(t2) << "\n"
+		<< t1.addSecs(2).toString(Qt::ISODate) << "\n"
+		<< t1.addMSecs(1000).toString(Qt::ISODate) << "\n"
+		<< t1.toString(Qt::ISODate) << " > " << t2.toString(Qt::ISODate)
+		<< " is " << static_cast<bool>(t1 > t2);
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+hour:  16
+minute:  27
+second:  49
+msec:  351
+TextDate:  "16:27:49"
+ISODate:  "16:27:49"
+SystemLocaleShortDate:  "16:27"
+SystemLocaleLongDate:  "16:27:49"
+DefaultLocaleShortDate:  "16:27"
+DefaultLocaleLongDate:  "16:27:49"
+RFC2822Date:  "16:27:49"
+"20:02:20"
+80
+80220
+"20:01:02"
+"20:01:01"
+"20:01:00"  >  "20:02:20"  is  false
+```
+
+**除了使用 QT 定义的格式进行输出和输入之外，你还可以自定义时间的格式**：
+
+Expression | Output
+------------ | ---------------------------------
+AP <br> A | AM/PM
+ap <br> a | am/pm
+t | 时区
+h | 0 ~ 23 或 1 ~ 12
+hh | 00 ~ 23 或 01 ~ 12
+H | 0 ~ 23
+HH | 00 ~ 23
+m | 0 ~ 59
+mm | 00 ~ 59
+s | 0 ~ 59
+ss | 00 ~ 59
+z | 0 ~ 999
+zzz | 000 ~ 999
+
+```c++
+#include <QTime>
+#include <QDebug>
+
+int main()
+{
+	QTime cd = QTime::currentTime();
+
+	qDebug() << "current time is " << cd.toString("hh:mm:ss.zzz");
+	qDebug() << "current time is " << cd.toString("h:m:s a");
+	qDebug() << "current time is " << cd.toString("H:m:s A");
+	qDebug() << "current time is " << cd.toString("h:m AP");
+
+	QString fmt("hh:mm:ss.zzz");
+	QString str("20:20:20.200");
+	qDebug() << QTime::fromString(str, fmt).toString("h:m:s a");
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+current time is  "16:32:43.386"
+current time is  "4:32:43 下午"
+current time is  "16:32:43 下午"
+current time is  "4:32 下午"
+"8:20:20 下午"
+```
+
+我们知道时间的计量就是**计时**，当然你可以自己编写函数进行计时，就像上面的 `system_clock` 一样，相减就可以，但 QT 帮你实现了这个 API：
+
+```c++
+void QTime::start()
+{
+    *this = currentTime();
+}
+
+int QTime::restart()
+{
+    QTime t = currentTime();
+    int n = msecsTo(t);
+    if (n < 0)                                // passed midnight
+        n += 86400*1000;                      // 一天86400秒
+    *this = t;
+    return n;
+}
+
+int QTime::elapsed() const
+{
+    int n = msecsTo(currentTime());
+    if (n < 0)                                // passed midnight
+        n += 86400 * 1000;
+    return n;
+}
+```
+
+根据上面的源码，你应该很容易进行理解和测试：
+
+```c++
+#include <thread>  // sleep_for
+#include <chrono>
+
+#include <QTime>
+#include <QDebug>
+
+int main()
+{
+	QTime t;
+	t.start();
+	std::this_thread::sleep_for(
+		std::chrono::duration<double, std::milli>(100));
+	
+	qDebug() << "took " << t.restart() << " ms";
+	std::this_thread::sleep_for(
+		std::chrono::duration<double, std::milli>(200));
+	qDebug() << "took " << t.elapsed() << " ms";
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+took  100  ms
+took  206  ms
+```
+
+**可以看到，其精度只到达毫秒，远不如 `chrono` 的精度高**。
+
+<h3 id="qdatetime">QDateTime</h3>
+
+**你可以把 QDateTime 当做 QDate 和 QTime 的并集**，使用时可以使用成员函数`date()`和`time()`来获取对应的 QDate 和 QTime，修改之后再通过成员函数`setDate`和`setTime`将修改合并到原 QDateTime 实例中；剩余比较独立的函数是`toUTC`和`toTime_t`，其中UTC时间是世界标准时间，不随地区、季节的改变而改变，`time_t`是Unix时间。
+
+```c++
+#include <QDebug>
+#include <QDateTime>
+
+int main()
+{
+	QDate d = QDate::currentDate();
+	QTime t = QTime::currentTime();
+	QDateTime dt1(d, t);
+	QDateTime dt2 = QDateTime::currentDateTime();
+	QDateTime dt3 = QDateTime::currentDateTimeUtc();
+
+	qDebug() << dt1.toString(Qt::ISODate) << "\n"
+		<< dt2.toString(Qt::ISODate) << "\n"
+		<< dt3.toString(Qt::ISODate) << "\n"
+		<< dt2.date().toString(Qt::ISODate) << "\n"
+		<< dt2.time().toString(Qt::ISODate) << "\n"
+		<< dt1.toUTC().toString(Qt::ISODate) << "\n"
+		<< dt2.toTime_t();
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+"2017-08-31T16:50:22"
+"2017-08-31T16:50:22"
+"2017-08-31T08:50:22Z"
+"2017-08-31"
+"16:50:22"
+"2017-08-31T08:50:22Z"
+1504169422
+```
+
+<h2 id="qfile_qdir">文件输入输出</h2>
+
