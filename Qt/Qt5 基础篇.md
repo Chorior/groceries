@@ -22,6 +22,10 @@ tags:
 	*	[QTime](#qtime)
 	*	[QDateTime](#qdatetime)
 *	[文件输入输出](#qfile_qdir)
+	*	[QFile](#qfile)
+	*	[QFileInfo](#qfileinfo)
+	*	[QDir](#qdir)
+*	[XML 读写](#xml_io)	
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -866,3 +870,376 @@ $ e:\qt_practice>release\qt_practice.exe
 
 <h2 id="qfile_qdir">文件输入输出</h2>
 
+有些时候你可能需要对很多歌文件执行相同的操作，比如对几十张图片进行一些算法处理，你当然可以手动将这些文件的名字一一写死到程序里面，但是如果有一天需要换一批文件，你是否又需要一个一个去写呢？遇到这种问题，我一般都是将所有文件放在同一个目录下，让程序去一个个读文件，然后进行操作。**但 C++11 并没有读取目录的接口**，你可以在 [stackoverflow](https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c) 上找到如何在标准 C++ 里读取目录的方法。就我使用过的来说，[`dirent.h`](https://github.com/tronkko/dirent) 确实比较轻便又好用：
+
+```c++
+#include <iostream>
+
+#include "dirent.h"
+
+int main()
+{
+	DIR *dir;
+	struct dirent *ent;
+	if ((dir = opendir(".")) != NULL)
+	{
+		/* print all the files and directories within directory */
+		while ((ent = readdir(dir)) != NULL)
+		{
+			std::cout << ent->d_name;
+			switch (ent->d_type)
+			{
+			case DT_REG:
+				std::cout << ": DT_REG\n"; break;
+			case DT_DIR:
+				std::cout << ": DT_DIR\n"; break;
+			}
+		}
+		closedir(dir);
+	}
+	else {
+		/* could not open directory */
+		std::cerr << "open directory failed!\n";
+		exit(EXIT_FAILURE);
+	}
+}
+```
+
+由于新添加了一个头文件，所以需要在 `.pro` 文件中加上 `HEADERS += dirent.h`，然后重新生成 makefile并编译：
+
+```text
+$ e:\qt_practice>qmake
+$ e:\qt_practice>mingw32-make
+$ e:\qt_practice>release\qt_practice.exe
+.: DT_DIR
+..: DT_DIR
+.qmake.stash: DT_REG
+debug: DT_DIR
+dirent.h: DT_REG
+main.cpp: DT_REG
+Makefile: DT_REG
+Makefile.Debug: DT_REG
+Makefile.Release: DT_REG
+qt_practice.pro: DT_REG
+release: DT_DIR
+```
+
+从结果中可以看出，有两个特殊的文件夹 `.` 和 `..`，它们分别代表当前目录与上一级目录。
+
+**QT 提供了 QFile、QDir 和 QFileInfo 来专门处理文件和目录**，其中 QFile 用来读写文件，QDir 用来访问目录，QFileInfo 用来获取文件的相关信息(如路径、文件名、修改时间、权限等)。**它们一致使用正斜杠 `/` 来作为文件分隔符，不支持反斜杠，可以使用相对路径**。
+
+<h3 id="qfile">QFile</h3>
+
+我们首先在 `e:/qt_practice` 目录下创建一个 `test.txt`:
+
+```text
+line1 line1 line1
+line2 line2 line2
+line3 line3 line3
+line4 line4 line4
+```
+
+演示：
+
+```c++
+#include <QFile>
+#include <QDebug>
+#include <QString>
+#include <QTextStream>
+
+int main()
+{
+	QString filePath = "e:/qt_practice/test.txt";
+	Q_ASSERT(QFile::exists(filePath));  // 是否存在
+
+	QFile file(filePath);
+
+	// 打开文件
+	// http://doc.qt.io/qt-5/qiodevice.html#OpenModeFlag-enum
+	file.open(QIODevice::ReadWrite | QIODevice::Text);
+	if (!file.isOpen()) {
+		qDebug() << "open " << filePath << " failed.";
+	}
+
+	// 读取文件
+	qDebug() << "file.read(5): " << file.read(5);
+	qDebug() << "file.readLine(): " << file.readLine();
+	qDebug() << "file.readAll():\n" << file.readAll();
+	qDebug() << "file.isEnd(): " << file.atEnd();	
+	
+	// 写文件
+	file.write("\nline5");
+
+	// 位置变换
+	qDebug() << "file.pos(): " << file.pos();
+	qDebug() << "file.size(): " << file.size();
+	file.seek(0);  // 将位置变换到文件开始
+	qDebug() << "after seek(0):";
+	qDebug() << "file.pos(): " << file.pos();	
+
+	// 文件流
+	QTextStream stream(&file);
+	qDebug() << "stream.read(5): " << stream.read(5);
+	qDebug() << "stream.readLine(): " << stream.readLine();
+	qDebug() << "stream.readAll():\n" << stream.readAll();
+	qDebug() << "stream.isEnd(): " << stream.atEnd();
+	qDebug() << "stream.pos(): " << stream.pos();
+	stream.seek(0);  // 将位置变换到文件开始
+	qDebug() << "after seek(0):";
+	qDebug() << "stream.pos(): " << stream.pos();
+
+	stream << "\nline6";
+	
+	QString str;
+	stream >> str;
+	qDebug() << "str: " << str;	
+
+	// 关闭文件
+	file.close(); // QFile 对象销毁时会自动调用
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+file.read(5):  "line1"
+file.readLine():  " line1 line1\n"
+file.readAll():
+ "line2 line2 line2\nline3 line3 line3\nline4 line4 line4"
+file.isEnd():  true
+file.pos():  74
+file.size():  74
+after seek(0):
+file.pos():  0
+stream.read(5):  " line"
+stream.readLine():  "1 line1"
+stream.readAll():
+ "line2 line2 line2\nline3 line3 line3\nline4 line4 line4"
+stream.isEnd():  true
+stream.pos():  74
+after seek(0):
+stream.pos():  0
+str:  "line0"
+```
+
+test.txt:
+
+```text
+line0 line1 line1
+line2 line2 line2
+line3 line3 line3
+line4 line4 line4
+line5
+```
+
+可以看到，**这里的 `\n` 被当做了两个字符，由于是在 Windows 下，所以应该是 `\r\n`；QFile 的读写可能会影响流的读写，所以不能将它们混用；QFile 会读取换行符，而流不会**。
+
+<h3 id="qfileinfo">QFileInfo</h3>
+
+前面我们说过，QFileInfo 提供关于文件或文件夹的相关信息，它可以使用绝对路径，又可以使用相对路径，你可以使用成员函数 `isRelative` 进行确认，也可以使用成员函数`makeAbsolute`从一个相对路径得到一个绝对路径。
+
+查看其头文件，你会发现其实它能用的函数并不多：
+
+```c++
+QFileInfo(const QString &file);
+QFileInfo(const QFile &file);
+QFileInfo(const QDir &dir, const QString &file);
+void setFile(const QString &file);
+void setFile(const QFile &file);
+void setFile(const QDir &dir, const QString &file);
+bool exists() const;
+static bool exists(const QString &file);
+void refresh(); // 刷新文件信息
+QString fileName() const;
+QString filePath() const;
+QString absoluteFilePath() const;
+QString suffix() const; // 返回文件名最后一个.后所有字符
+QString completeSuffix() const; // 返回文件名第一个.后所有字符
+bool isReadable() const;
+bool isWritable() const;
+bool isExecutable() const;
+bool isHidden() const;
+bool isFile() const;
+bool isDir() const;
+bool isSymLink() const;
+QString readLink() const;
+qint64 size() const;
+QDateTime created() const;
+QDateTime lastModified() const;
+QDateTime lastRead() const;
+QString owner() const;
+QString group() const;
+bool permission(QFile::Permissions permissions) const;
+QFile::Permissions permissions() const;
+```
+
+其中`owner`、`group`、`permissions`在NTFS文件系统上的返回值是不准确的，因为NTFS系统默认禁用了所有权的权限的检查，要想启用它，你需要：
+
+```c++
+extern Q_CORE_EXPORT int qt_ntfs_permission_lookup;
+qt_ntfs_permission_lookup++; // turn checking on
+qt_ntfs_permission_lookup--; // turn it off again
+```
+
+查看 `QFile::Permissions`:
+
+```c++
+enum Permission {
+	ReadOwner = 0x4000, WriteOwner = 0x2000, ExeOwner = 0x1000,
+	ReadUser  = 0x0400, WriteUser  = 0x0200, ExeUser  = 0x0100,
+	ReadGroup = 0x0040, WriteGroup = 0x0020, ExeGroup = 0x0010,
+	ReadOther = 0x0004, WriteOther = 0x0002, ExeOther = 0x0001
+};
+```
+
+演示：
+
+```c++
+#include <QDebug>
+#include <QFileInfo>
+#include <QDateTime>
+
+extern Q_CORE_EXPORT int qt_ntfs_permission_lookup;
+
+int main(void)
+{
+	qt_ntfs_permission_lookup++; // turn checking on	
+
+	QFileInfo info("main.cpp");
+
+	qDebug() << "isRelative: " << info.isRelative();
+	qDebug() << "filePath: " << info.filePath();
+	qDebug() << "absoluteFilePath: " << info.absoluteFilePath();
+	qDebug() << "fileName: " << info.fileName();
+	qDebug() << "exists: " << info.exists();
+	qDebug() << "suffix: " << info.suffix();
+	qDebug() << "created: " << info.created().toString(Qt::ISODate);
+	qDebug() << "lastModified: " << info.lastModified().toString(Qt::ISODate);
+	qDebug() << "owner: " << info.owner();
+	qDebug() << "permissions: " << info.permissions();
+
+	return 0;
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+isRelative:  true
+filePath:  "main.cpp"
+absoluteFilePath:  "E:/qt_practice/main.cpp"
+fileName:  "main.cpp"
+exists:  true
+suffix:  "cpp"
+created:  "2017-08-28T09:32:21"
+lastModified:  "2017-09-01T17:13:44"
+owner:  "pengzhen"
+permissions:  QFlags(0x10|0x40|0x100|0x200|0x400|0x1000|0x2000|0x4000)
+```
+
+对照 `QFile::Permissions` 可以看到，该 `main.cpp` 的权限为其他人不可访问、组内可读可执行、用户或所有者可读可写可执行，即750。
+
+<h3 id="qdir">QDir</h3>
+
+QDir 也使用正斜杠 `/` 作为其目录分隔符，并且支持相对路径，你可以使用其成员函数 `isRelative()` 或 `isAbsolute()` 来判断使用的路径的是相对的还是绝对的，你甚至可以使用成员函数 `makeAbsolute` 从一个相对路径得到一个绝对路径。
+
+QDir 有一些相似shell命令行的函数，如`mkdir`、`rmdir`、`cd`。
+
+一些有用的静态成员函数：
+
+QDir | QString | 返回值
+--------------- | -------------- | ------------------------
+current() | currentPath() | 当前工作目录 <br>你可以使用`setCurrent`来手动设置当前工作目录
+home() | homePath() | 当前用户目录
+root() | rootPath() | 根目录
+temp() | tempPath() | 系统临时文件夹
+
+一些常用的非静态成员函数：
+
+*	`exists`；
+*	`isReadable`；
+*	`path`；
+*	`absolutePath`；
+*	`dirName`；
+*	`count`：目录下的文件夹和文件总数；
+*	`entryList`：目录下的文件夹和文件名列表；
+*	`entryInfoList`：目录下的文件夹和文件信息列表；
+*	`remove`：删除文件；
+*	`setFilter`：文件类型过滤器，影响`entryList`和`entryInfoList`；
+*	`setNameFilters`：文件名过滤器，影响`entryList`和`entryInfoList`；
+*	`setSorting`：设置文件排序顺序，如按大小排列、按修改时间排列等，影响`entryList`和`entryInfoList`；
+
+演示：
+
+```c++
+#include <QDir>
+#include <QDebug>
+
+int main(void)
+{
+	qDebug() << "currentPath: " << QDir::currentPath();
+	qDebug() << "homePath: " << QDir::homePath();
+	qDebug() << "rootPath: " << QDir::rootPath();
+	qDebug() << "tempPath: " << QDir::tempPath();
+
+	QDir dir(QDir::currentPath());
+	qDebug() << "path: " << dir.path();
+	qDebug() << "absolutePath: " << dir.absolutePath();
+	qDebug() << "dirName: " << dir.dirName();
+	qDebug() << "exists: " << dir.exists();
+	qDebug() << "count: " << dir.count();
+
+	qDebug() << "files: ";
+	dir.setFilter(QDir::Files);
+	dir.setSorting(QDir::Name | QDir::Reversed);
+	for (const QString& file : dir.entryList())
+	{
+		qDebug() << " " << file;
+	}
+
+	dir.mkdir("dir");
+	qDebug() << "after mkdir(dir): "
+		<< "dir exists?: " << QDir("dir").exists();
+	dir.cd("dir");
+	qDebug() << "after cd(dir): " << dir.absolutePath();
+	dir.cd("..");
+	qDebug() << "after cd(..): " << dir.absolutePath();
+	dir.rmdir("dir");
+	qDebug() << "after rmdir(dir): "
+		<< "dir exists?: " << QDir("dir").exists();
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+currentPath:  "E:/qt_practice"
+homePath:  "C:/Users/pengzhen"
+rootPath:  "C:/"
+tempPath:  "C:/Users/pengzhen/AppData/Local/Temp"
+path:  "E:/qt_practice"
+absolutePath:  "E:/qt_practice"
+dirName:  "qt_practice"
+exists:  true
+count:  12
+files:
+  "test.txt"
+  "qt_practice.pro"
+  "main.cpp"
+  "dirent.h"
+  "Makefile.Release"
+  "Makefile.Debug"
+  "Makefile"
+  ".qmake.stash"
+after mkdir(dir):  dir exists?:  true
+after cd(dir):  "E:/qt_practice/dir"
+after cd(..):  "E:/qt_practice"
+after rmdir(dir):  dir exists?:  false
+```
+
+为什么是12，因为包含了两个特殊文件夹 `.` 和 `..`。
+
+<h2 id="xml_io">XML 读写</h2>
