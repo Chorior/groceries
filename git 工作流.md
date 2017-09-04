@@ -9,7 +9,7 @@
 *	[管理类型](#gitignore)
 *	[基本流程](#basic_process)
 *	[基本操作](#basic_operation)
-*	[分支操作](#branch)
+*	[分支操作](#branch_operation)
 *	[远程仓库](#remote_repository)
 
 <h2 id="version_control">版本管理</h2>
@@ -152,7 +152,7 @@ $ git log                     # 查看提交历史
 *   第三行为提交时间；
 *   第四行缩进一个段落显示提交说明。
 
-<h2 id="branch">分支操作</h2>
+<h2 id="branch_operation">分支操作</h2>
 
 有时候一个功能可以使用多种方法进行实现，可能需要对各种方法进行性能评估，这时候就可以在当前版本的基础上建立多个分支，用以不同的实现方式。
 
