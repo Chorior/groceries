@@ -25,7 +25,9 @@ tags:
 	*	[QFile](#qfile)
 	*	[QFileInfo](#qfileinfo)
 	*	[QDir](#qdir)
-*	[XML 读写](#xml_io)	
+*	[Qt 特性](#qt_feature)
+	*	[信号和槽](#signals_and_slots)
+	*	[对象属性](#object_properties)	
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -1242,4 +1244,143 @@ after rmdir(dir):  dir exists?:  false
 
 为什么是12，因为包含了两个特殊文件夹 `.` 和 `..`。
 
-<h2 id="xml_io">XML 读写</h2>
+<h2 id="qt_feature">Qt 特性</h2>
+
+标准 C++ 对象模型为对象范式(object paradigm)提供了非常有效的运行时支持，但它的静态性质在某些问题领域是不灵活的。**图形用户界面编程不仅需要运行时的高效性，还需要高度的灵活性，Qt 通过将 C++ 的速度与 Qt 对象模型的灵活性相结合来提供这一点**。
+
+Qt 添加了这些功能到 C++ 中：
+
+*	[信号和槽](http://doc.qt.io/qt-5/signalsandslots.html): 一种强大的无缝对象通信机制；
+*	[对象属性](http://doc.qt.io/qt-5/properties.html): 提供可查询可设计的对象属性；
+*	[事件与事件过滤器](http://doc.qt.io/qt-5/eventsandfilters.html)；
+*	[国际化的字符串翻译机制](http://doc.qt.io/qt-5/internationalization.html)；
+*	[定时器](http://doc.qt.io/qt-5/timers.html)：可以在事件驱动的 GUI 中优化整合多个任务；
+*	[对象树](http://doc.qt.io/qt-5/objecttrees.html): 分层可查询，使用一种很自然的方式组织对象所有权；
+*	[保护指针 QPointer](http://doc.qt.io/qt-5/qpointer.html): 当引用的对象被销毁时，被保护的指针被自动设置为 0；
+*	[动态转换](http://doc.qt.io/qt-5/metaobjects.html#qobjectcast)；
+*	[自定义类型创建](http://doc.qt.io/qt-5/custom-types.html)。
+
+这些 Qt 特性大多都是继承自 QObject，然后使用标准 C++ 技术实现的。像信号槽和对象属性这样的特性还需要[元对象系统](http://doc.qt.io/qt-5/metaobjects.html)的支持。
+
+**元对象系统是一种 C++ 扩展，使得该语言更适合于真正的组件 GUI 编程**。
+
+<h3 id="signals_and_slots">信号和槽</h3>
+
+**信号和槽用于两个对象之间的通信，它是 Qt 的核心特征，也是区别于其它开发框架的突出特征**。
+
+在 GUI 编程中，当我们改变一个部件时，通常希望有另一个部件做出一些回应，举个简单的栗子，当你点击窗口的关闭按钮时，通常希望执行窗口的 `close` 函数来关闭窗口。一些工具包如 Android，使用回调机制(callback)来处理这样的通信，虽然回调机制很快，但却有两个很大的缺陷：**不直观、必须保证参数类型的正确性**；而 Qt 使用信号槽机制来处理这样的通信，当一个事件发生时，如上面的按钮被点击，便发射一个信号到一个槽，这个槽就是一个函数，接着便执行这个槽函数，即上面的 `close` 函数。
+
+*	信号槽机制是类型安全的：**信号的函数签名必须与关联的槽的函数签名相匹配，实际上槽的函数签名可以短于信号的函数签名，多余的参数会被忽略**；
+*	信号槽机制还是松散耦合的：**信号既不需要知道也不需要关心那个槽会接收这个信号**；
+*	**任何继承自 QObject 或其子类且声明了 [`Q_OBJECT`](http://doc.qt.io/qt-5/qobject.html#Q_OBJECT) 宏的类都能使用信号槽机制**；
+*	**信号不能被定义，也不能有返回值，即只能是 void 类型**；
+*	**槽函数可以被用来接收信号，但也可以被当做正常函数进行调用**；
+*	**你可以将多个信号关接到同一个槽，也可以将多个槽关联到同一个信号(槽执行的顺序与关联顺序一致)，你甚至可以将一个信号关联到另一个信号(这样当第一个信号被发射时，第二个信号也会被立即发射)**；
+*	**一个信号被关联多少次，当其被触发时，就会发射多少次，不管槽函数是否相同，除非你使用 [`Qt::UniqueConnection`](http://doc.qt.io/qt-5/qt.html#ConnectionType-enum)**；
+*	**当一个信号被发射时，其关联的槽默认会立即执行**，但是你也可以在关联时设置不同的[关联选项](http://doc.qt.io/qt-5/qt.html#ConnectionType-enum)来决定是否立即执行；
+*	当有多个信号关联到同一个槽时，可以使用 [`QObject::sender()` 或 QSignalMapper](http://doc.qt.io/qt-5/signalsandslots.html#advanced-signals-and-slots-usage) 来对不同的信号进行不同的处理；
+*	如果第三方库(如 boost)中有 `signals`、`slots`、`emit` 关键字的话，就会与 Qt 关键字重复，为了解决这个问题，你可以在 `.pro`文件中加上 `CONFIG += no_keywords` 来取消定义这三个关键字，转而使用 `Q_SIGNALS`、`Q_SLOTS` 和 `Q_EMIT` 宏，所以为了可扩展性，**建议一致使用这三个大写的宏**。
+
+有多种关联信号和槽的 [`connect`](http://doc.qt.io/qt-5/qobject.html#connect) 函数，其中最常用的有三种：
+
+*	[成员函数信号槽连接函数](http://doc.qt.io/qt-5/qobject.html#connect-3)；
+*	[与 `SIGNAL` 和 `SLOT` 宏结合使用的信号槽连接函数](http://doc.qt.io/qt-5/qobject.html#connect)；
+*	[与 C++11 lambda 表达式结合使用的信号槽连接函数](http://doc.qt.io/qt-5/qobject.html#connect-4)。
+
+另一种比较常用的信号槽连接方式是[自动连接](http://doc.qt.io/qt-5/designer-using-a-ui-file.html#automatic-connections)，只要你在构造时执行(该语句在 `setupUi` 中会自动执行)：
+
+```c++
+QMetaObject::connectSlotsByName(this);
+```
+
+然后按如下命名规则命名槽函数，那么该槽函数就会根据自己的名字自动关联到相应的信号：
+
+```c++
+void on_<object name>_<signal name>(<signal parameters>);
+```
+
+在没学习常见的 Qt 组件之前，这里只做一个简单的演示：
+
+```c++
+// Test.h
+#pragma once
+#include <QObject>
+
+class Test : public QObject
+{
+	Q_OBJECT
+
+public:
+	Test()
+		: m_value(0)
+	{}
+
+	int value() const;
+
+public Q_SLOTS:
+	void setValue(int);
+
+Q_SIGNALS:
+	void valueChanged(int);
+
+private:
+	int m_value;
+};
+
+inline int Test::value() const
+{
+	return m_value;
+}
+
+inline void Test::setValue(int value)
+{
+	if (value != m_value) {
+		m_value = value;
+		emit valueChanged(value);
+	}
+}
+```
+
+```c++
+// main.cpp
+#include <QDebug>
+
+#include "Test.h"
+
+int main(void)
+{
+	Test a, b;
+	QObject::connect(&a, &Test::valueChanged, &b, &Test::setValue);
+
+	qDebug() << "after init: ";
+	qDebug() << "a: " << a.value();
+	qDebug() << "b: " << b.value();
+
+	a.setValue(1);
+	qDebug() << "after a.setValue(1): ";
+	qDebug() << "a: " << a.value();
+	qDebug() << "b: " << b.value();
+
+	b.setValue(2);
+	qDebug() << "after b.setValue(2): ";
+	qDebug() << "a: " << a.value();
+	qDebug() << "b: " << b.value();
+}
+```
+
+结果：
+
+```text
+$ E:\qt_practice>release\qt_practice.exe
+after init:
+a:  0
+b:  0
+after a.setValue(1):
+a:  1
+b:  1
+after b.setValue(2):
+a:  1
+b:  2
+```
+
+<h3 id="object_properties">对象属性</h3>
