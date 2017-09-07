@@ -28,6 +28,7 @@ tags:
 *	[Qt 特性](#qt_feature)
 	*	[信号和槽](#signals_and_slots)
 	*	[对象属性](#object_properties)	
+	*	[事件系统](#event_system)	
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -1293,7 +1294,7 @@ Qt 添加了这些功能到 C++ 中：
 QMetaObject::connectSlotsByName(this);
 ```
 
-然后按如下命名规则命名槽函数，那么该槽函数就会根据自己的名字自动关联到相应的信号：
+然后按如下命名规则命名槽函数，那么该槽函数就会根据自己的名字自动关联到相应的信号(其中 `object name` 可以通过 `QObject::setObjectName` 进行设置)：
 
 ```c++
 void on_<object name>_<signal name>(<signal parameters>);
@@ -1384,3 +1385,209 @@ b:  2
 ```
 
 <h3 id="object_properties">对象属性</h3>
+
+Qt提供了类似于一些编译器供应商提供的复杂的属性系统，该属性系统基于[元对象系统](http://doc.qt.io/qt-5/metaobjects.html)，并且支持信号槽。
+
+要想声明一个属性，你只需在 QObject 的继承类中使用 [`Q_PROPERTY` 宏](http://doc.qt.io/qt-5/qobject.html#Q_PROPERTY)即可：
+
+```c++
+Q_PROPERTY(type name(type name
+           (READ getFunction (READ getFunction [WRITE setFunction] |
+            MEMBER memberName [(READ getFunction READ getFunction | WRITE setFunction))])
+           
+           [RESET resetFunction]
+           [NOTIFY notifySignal]
+           [REVISION int]
+           [DESIGNABLE boolbool]
+           [SCRIPTABLE boolbool]
+           [STORED boolbool]
+           [USER boolbool]
+           [CONSTANT]
+           [FINAL])
+```
+
+举两个简单的例子：
+
+```c++
+Q_PROPERTY(bool focus READ hasFocus)
+Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled)
+Q_PROPERTY(QCursor cursor READ cursor WRITE setCursor RESET unsetCursor)
+```
+
+```c++
+	Q_PROPERTY((QColor color MEMBER m_color NOTIFY colorChanged))
+    Q_PROPERTY((qreal spacing MEMBER m_spacing NOTIFY spacingChanged))
+    Q_PROPERTY(QString text MEMBER m_text NOTIFY textChanged)
+    ...
+signals:
+    void colorChanged();
+    void spacingChanged();
+    void textChanged(const QString &newText);
+
+private:
+    QColor  m_color;
+    qreal   m_spacing;
+    QString m_text;
+```
+
+乍一看，这个属性系统不就声明了一个成员变量嘛，看上去没什么软用，但其实声明的属性比常规的成员变量多了一些额外的访问特性：
+
+*	当没有指定 `MEMBER` 成员变量时，必须拥有一个 `READ` 访问函数，用来读取该属性；
+*	一个可选的 `WRITE` 函数，用来设置属性的值，该函数只能拥有一个参数、且返回值必须为空；
+*	当没有指定 `READ` 访问函数时，必须拥有一个关联 `MEMBER` 成员变量，这使得该成员变量变得可读可写(仅 QML)而不需要创建 `READ` 和 `WRITE` 函数；
+*	一个可选的 `RESET` 重置函数，用以将该属性设置回默认值；
+*	一个可选的 `NOTIFY` 信号，**该信号对于 `MEMBER` 成员变量来说只能拥有至多一个参数，且参数的类型必须与该成员变量一致，发射时该参数的值就是该属性的最新值**。当  `NOTIFY` 与 `MEMBER` 合并使用时，该信号在属性值发生变化时会自动发射；**单独使用时必须指定一个当属性变化时会发射、且存在的信号**；
+*	`FINAL` 代表该属性不能被继承类重载；
+*	其它选项可以参考[官方文档](http://doc.qt.io/qt-5/properties.html)。
+
+**`READ`、`WRITE`、`RESET` 函数可以被继承，也可以是虚的，但多继承时只能继承自第一个父类**。
+
+**`Q_PROPERTY` 声明的属性可以使用通用函数 [`QObject::property()`](http://doc.qt.io/qt-5/qobject.html#property) 和 [`QObject::setProperty()`](http://doc.qt.io/qt-5/qobject.html#setProperty) 进行读写，只需知道该属性的名字即可**：
+
+```c++
+// Test.h
+#pragma once
+#include <QSTring>
+#include <QObject>
+
+class Test : public QObject
+{
+	Q_OBJECT
+
+	Q_PROPERTY(int value READ value WRITE setValue NOTIFY valueChanged)
+	Q_PROPERTY(QString key READ key WRITE setKey NOTIFY keyChanged)
+public:
+	Test()
+		: m_value(0), m_key("")
+	{}
+
+	int value() const;
+	QString key() const;
+
+	public Q_SLOTS:
+	void setValue(int);
+	void setKey(const QString&);
+
+Q_SIGNALS:
+	void valueChanged(int);
+	void keyChanged(const QString&);
+
+private:
+	int m_value;
+	QString m_key;
+};
+
+inline int Test::value() const
+{
+	return m_value;
+}
+
+inline void Test::setValue(int value)
+{
+	if (value != m_value) {
+		m_value = value;
+		emit valueChanged(value);
+	}
+}
+
+inline QString Test::key() const
+{
+	return m_key;
+}
+
+inline void Test::setKey(const QString& key)
+{
+	if (key != m_key) {
+		m_key = key;
+		emit keyChanged(key);
+	}
+}
+```
+
+```c++
+// main.cpp
+#include <QDebug>
+#include <QMetaProperty>
+
+#include "Test.h"
+
+int main(void)
+{
+	Test t;
+	QObject::connect(&t, &Test::valueChanged,
+		[](int value) { qDebug() << "value changed: " << value; });
+	QObject::connect(&t, &Test::keyChanged,
+		[](const QString& str) { qDebug() << "key changed: " << str; });
+
+	qDebug() << "after init:";
+	qDebug() << " t.value: " << t.value();
+	qDebug() << " t.key: " << t.property("key").toString();
+
+	t.setValue(2);
+	t.setProperty("key", "pengzhen");
+
+	qDebug() << "after write:";
+	qDebug() << " t.value: " << t.property("value").toInt();
+	qDebug() << " t.key: " << t.key();
+
+	qDebug() << "print all properties of t:";
+	const QMetaObject *metaobject = t.metaObject();
+	int count = metaobject->propertyCount();
+	for (int i = 0; i<count; ++i) {
+		QMetaProperty metaproperty = metaobject->property(i);
+		const char *name = metaproperty.name();
+		QVariant value = t.property(name);
+		qDebug() << " " << name << ": " << value;
+	}
+}
+```
+
+结果：
+
+```text
+$ E:\qt_practice>release\qt_practice.exe
+after init:
+ t.value:  0
+ t.key:  ""
+value changed:  2
+key changed:  "pengzhen"
+after write:
+ t.value:  2
+ t.key:  "pengzhen"
+print all properties of t:
+  objectName :  QVariant(QString, "")
+  value :  QVariant(int, 2)
+  key :  QVariant(QString, "pengzhen")
+```
+
+可以看到，**QObject 对象自带一个名为 `objectName` 的属性**，该属性在自动信号槽连接时有用，可以通过 `QObject::setObjectName` 重新设置。
+
+另外，[`QObject::setProperty()`](http://doc.qt.io/qt-5/qobject.html#setProperty)还可以设置[动态属性](http://doc.qt.io/qt-5/properties.html#dynamic-properties)，即添加一个仅对当前对象有效的属性；**如果你的属性类型是自定义类型的话，还需要使用 [`Q_DECLARE_METATYPE` 宏](http://doc.qt.io/qt-5/qmetatype.html#Q_DECLARE_METATYPE)进行声明之后才能用于属性系统**。
+
+
+<h3 id="event_system">事件系统</h3>
+
+在 Qt 中，事件是一个对象，继承自抽象 QEvent 类，用以表示发生在应用程序内部的事情、或应用程序需要知道的外部活动的结果。**它们可以被任何 QObject 或其子类的对象进行接收和处理，通常被用于 Qt 组件**。
+
+常见的事件如鼠标事件，分为单击、双击、移动等事件类型；又比如键盘事件，分为按下、释放等事件类型。**这些事件类型都有在 [`QEvent::Type`](http://doc.qt.io/qt-5/qevent.html#Type-enum)被定义，你可以通过不同的事件类型来快速的判断该事件的动态类型**。
+
+```c++
+bool MyWidget::event(QEvent *event)
+{
+    if (event->type() == QEvent::KeyPress) {
+        QKeyEvent *ke = static_cast<QKeyEvent *>(event);
+        if (ke->key() == Qt::Key_Tab) {
+            // special tab handling here
+            return true;
+        }
+    } else if (event->type() == MyCustomEventType) {
+        MyCustomEvent *myEvent = static_cast<MyCustomEvent *>(event);
+        // custom event handling here
+        return true;
+    }
+
+    return QWidget::event(event);
+}
+```
+
+当一个事件发生后，Qt 构造一个合适的 QEvent 子类的对象来表示它，并通过调用该对象的 `event()` 函数来将其传递到一个特定的 QObject 或其子类的对象。
