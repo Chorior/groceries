@@ -28,7 +28,9 @@ tags:
 *	[Qt 特性](#qt_feature)
 	*	[信号和槽](#signals_and_slots)
 	*	[对象属性](#object_properties)	
-	*	[事件系统](#event_system)	
+	*	[事件系统](#event_system)
+	*	[国际化字符串](#international_string)
+	*	[定时器](#qtimer)
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -346,7 +348,7 @@ int main()
 	qDebug() << equal << " " << startsWith << " "
 		<< endsWith << " " << contains;
 
-	// 标记替换
+	// 动态字符串
 	QString s0 = "file name is %1, function name is %2.";
 	QString s1 = s0.arg(__FILE__);                  // 将s1的最小的标记%1替换为文件名
 	QString s2 = s1.arg(__func__);                  // 将s2的最小的标记%2替换为函数名
@@ -1447,7 +1449,7 @@ private:
 ```c++
 // Test.h
 #pragma once
-#include <QSTring>
+#include <QString>
 #include <QObject>
 
 class Test : public QObject
@@ -1590,4 +1592,240 @@ bool MyWidget::event(QEvent *event)
 }
 ```
 
-当一个事件发生后，Qt 构造一个合适的 QEvent 子类的对象来表示它，并通过调用该对象的 `event()` 函数来将其传递到一个特定的 QObject 或其子类的对象。
+当一个事件发生后，Qt 构造一个合适的 QEvent 子类的对象来表示它，然后将其传递到一个特定的 QObject 或其子类的对象。**要想使 Qt 程序进入事件循环，即使应用程序在运行时接收发生的各种事件，你必须调用 QCoreApplication 的 `exec()` 函数**。
+
+```c++
+int QApplication::exec()
+{
+    return QGuiApplication::exec();
+}
+
+int QGuiApplication::exec()
+{
+#ifndef QT_NO_ACCESSIBILITY
+    QAccessible::setRootObject(qApp);
+#endif
+    return QCoreApplication::exec();
+}
+```
+
+所有事件通过 [`QCoreApplication::notify`](http://doc.qt.io/qt-5/qcoreapplication.html#notify)函数进行发送，其返回值为接收对象处理该事件后的结果。**当接收对象所属类对该事件不感兴趣时(即返回值为 false)，该事件会被传递到其父类进行处理**。处理事件的方法有五种：
+
+*	重新实现 QWidget 的 `paintEvent`、`mousePressEvent` 等特定事件处理函数，**只对单个部件有效**；
+*	重新实现 [`QCoreApplication::notify`](http://doc.qt.io/qt-5/qcoreapplication.html#notify) 函数，这样能够对所有事件进行完全的控制，但**同一时间只能处理一个事件**；
+*	在 [qApp](#qapp) 上安装一个或多个事件过滤器，这样能够处理所有组件的所有事件，且**可以同时处理多个事件**，但**优先级比 notify 函数要低，且只能处理发生在主线程中的事件**；
+*	重新实现 [`QObject::event`](http://doc.qt.io/qt-5/qobject.html#event) 函数，该函数的优先级比特定事件处理函数的优先级高；
+*	在对象上安装事件过滤器，这样能够处理所有该对象的子对象事件。
+
+**实际编程中最常用的是第一种和第五种，因为方法二需要继承 QCoreApplication 且需要考虑诸多问题，方法三是实现的全局事件过滤器会减缓事件的处理**。
+
+下面先来演示方法一四：
+
+```c++
+// myWidget.h
+#pragma once
+#include <QDebug>
+#include <QEvent>
+#include <QWidget> // QWidget 继承自 QObject
+#include <QWheelEvent>
+#include <QMouseEvent>
+
+class myWidget : public QWidget
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QWidget(parent)
+	{}
+
+protected:
+	// QObject::event
+	bool event(QEvent*)	override;
+
+	// QWidget::wheelEvent
+	void wheelEvent(QWheelEvent*) override;
+
+	// QWidget::mousePressEvent
+	void mousePressEvent(QMouseEvent*) override;
+};
+
+inline bool myWidget::event(QEvent* e)
+{
+	if (e->type() == QEvent::Wheel) {
+		QWheelEvent *we = static_cast<QWheelEvent *>(e);
+		if (we->angleDelta().y() > 0) {
+			qDebug() << "forward";
+		}
+		else {
+			qDebug() << "backward";
+		}
+		return true; // 如果想让该事件继续被传递，返回 false
+	}
+
+	return QWidget::event(e); // QWidget::event 可能有些内部实现
+}
+
+inline void myWidget::wheelEvent(QWheelEvent* e)
+{
+	qDebug() << "wheelEvent called.";
+
+	QWidget::wheelEvent(e);
+}
+
+inline void myWidget::mousePressEvent(QMouseEvent* e)
+{
+	qDebug() << "mousePressEvent called.";
+
+	QWidget::mousePressEvent(e);
+}
+```
+
+```c++
+// main.cpp
+#include <QApplication>
+#include "myWidget.h"
+
+int main(int argc, char *argv[])
+{
+	// QApplication 对象必须在创建与用户界面相关的任何其他对象之前被创建
+	QApplication app(argc, argv);
+
+	myWidget window;
+
+	window.resize(250, 150);
+	window.move(300, 300);
+	window.setWindowTitle("event handlers");
+	window.show();
+
+	return app.exec();
+}
+```
+
+结果是一个名为 event handlers 的空白窗口：
+
+```bash
+$ qmake -project  # .pro 文件后手动加上 CONFIG += console 和 QT += widgets
+$ qmake
+$ mingw32-make
+$ release\qt_practice.exe
+backward
+forward
+mousePressEvent called.
+```
+
+可以看到，当前后滚动滚轮时，并没有打印 `wheelEvent called.`，说明 `QObject::event` 确实比特定事件处理函数更早获取事件。
+
+我们再来实现方法五：
+
+```c++
+// mainWindow.h
+#pragma once
+#include <QMainWindow>
+#include "myWidget.h"
+
+class mainWindow : public QMainWindow
+{
+public:
+	mainWindow(QWidget *parent = 0);
+
+protected:
+	bool eventFilter(QObject*, QEvent*) override;
+
+private:
+	myWidget *w;
+};
+
+mainWindow::mainWindow(QWidget *parent)
+	: QMainWindow(parent)
+{
+	w = new myWidget();
+	setCentralWidget(w); // 将 w 设在窗口中央
+
+	w->installEventFilter(this); // 为 w 安装事件过滤器
+}
+
+bool mainWindow::eventFilter(QObject *obj, QEvent *event)
+{
+	if (obj == w)
+	{
+		if (event->type() == QEvent::Wheel) {
+			qDebug() << "eventFilter: event is QWheelEvent.";
+		}
+		return false; // 继续传递该事件
+	}
+	else {
+		return QMainWindow::eventFilter(obj, event);
+	}
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+eventFilter: event is QWheelEvent.
+backward
+eventFilter: event is QWheelEvent.
+forward
+mousePressEvent called.
+```
+
+可以看到，**父对象的事件过滤器比子对象的事件过滤器更早获取到事件**。
+
+**如果你想代码发送一个事件的话，使用 [`QCoreApplication::sendEvent`](http://doc.qt.io/qt-5/qcoreapplication.html#sendEvent) 或 [`QCoreApplication::postEvent`](http://doc.qt.io/qt-5/qcoreapplication.html#postEvent)**，它们的两个主要区别是：
+
+*	`sendEvent` 立即发送事件而 `postEvent` 会将事件添加到事件队列中等待调度处理；
+*	`sendEvent` 的 事件指针在事件处理完毕之后不会自行调用 delete，而 `postEvent` 会。
+
+<h4 id="qapp">qApp</h4>
+
+查看 [qApp](http://doc.qt.io/qt-5/qapplication.html#qApp) 的说明文档，我们知道 qApp 是一个全局指针，指向当前 application 实例。
+
+```c++
+// QCoreApplication.h
+#define qApp QCoreApplication::instance()
+static QCoreApplication *instance() { return self; }
+static QCoreApplication *self;
+
+// QGUIApplication.h
+#if defined(qApp)
+#undef qApp
+#endif
+#define qApp (static_cast<QGuiApplication *>(QCoreApplication::instance()))
+
+// QApplication.h
+#if defined(qApp)
+#undef qApp
+#endif
+#define qApp (static_cast<QApplication *>(QCoreApplication::instance()))
+```
+
+<h3 id="international_string">国际化字符串</h3>
+
+**应用程序的国际化(internationalization)和本地化(localization)是应用程序适应不同语言、不同区域、和不同目标市场技术需求的过程**。其中国际化意是指应用程序不需要修改工程就能适应不同语言和区域；本地化是指将应用程序适应到一个特定的语言或区域。
+
+Qt 支持现在使用的大多数语言，包括所有东亚语言(汉语、日语、韩语)、所有西方语言(使用拉丁字母)、阿拉伯语言等，**所有 Qt 的输入部件和文本绘制方式都对这些语言提供了内置支持，Qt 内置的字体引擎可以在同一时间正确而精确的绘制不同的文本，这些文本可以包含来自众多不同书写系统的字符**。
+
+你可以很容易的使用 [Qt Linguist](http://doc.qt.io/qt-5/qtlinguist-index.html) 工具来完成应用程序的翻译工作：
+
+*	[编写可以翻译的源代码](http://doc.qt.io/qt-5/i18n-source-translation.html)；
+*	在 `.pro` 文件中指定生成的 `.ts` 文件，如 `TRANSLATIONS = zh_CN.ts`；
+*	Qt 命令行执行 `lupdate myproject.pro` 生成 `.ts` 文件；
+*	[使用 Qt Linguist](http://blog.csdn.net/liang19890820/article/details/50274409) 对生成的 `.ts` 文件进行翻译；
+*	Qt 命令行执行 `lrelease myproject.pro` 生成 `.qm` 文件；
+*	最后在创建部件之前使用该 `.qm` 文件即可：
+
+```c++
+#include <QTranslator>
+...
+QApplication app(argc, argv);
+QTranslator t;
+t.load("zh_CN.qm");
+qApp->installTranslator(&t);
+...
+```
+
+**其实一般使用的翻译函数就两个，`tr()` 和 `QCoreApplication::translate`**，另外你还可以使用 [QTextCodec](http://doc.qt.io/qt-5/qtextcodec.html#details) 来转换各种编码，另外如数字、日期、时间等的本地化还需使用 [QLocal 类](http://doc.qt.io/qt-5/qlocale.html#details)，更多内容可以查看 <http://doc.qt.io/qt-5/internationalization.html> 。
+
+<h3 id="qtimer">定时器</h3>
