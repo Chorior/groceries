@@ -31,6 +31,10 @@ tags:
 	*	[事件系统](#event_system)
 	*	[国际化字符串](#international_string)
 	*	[定时器](#qtimer)
+	*	[对象树](#object_tree)
+	*	[QPointer](#qpointer)
+	*	[元对象系统](#the_meta_object_system)
+*	[GUI 基础](#gui_basic)
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -1260,7 +1264,7 @@ Qt 添加了这些功能到 C++ 中：
 *	[定时器](http://doc.qt.io/qt-5/timers.html)：可以在事件驱动的 GUI 中优化整合多个任务；
 *	[对象树](http://doc.qt.io/qt-5/objecttrees.html): 分层可查询，使用一种很自然的方式组织对象所有权；
 *	[保护指针 QPointer](http://doc.qt.io/qt-5/qpointer.html): 当引用的对象被销毁时，被保护的指针被自动设置为 0；
-*	[动态转换](http://doc.qt.io/qt-5/metaobjects.html#qobjectcast)；
+*	[元对象系统](http://doc.qt.io/qt-5/metaobjects.html)；
 *	[自定义类型创建](http://doc.qt.io/qt-5/custom-types.html)。
 
 这些 Qt 特性大多都是继承自 QObject，然后使用标准 C++ 技术实现的。像信号槽和对象属性这样的特性还需要[元对象系统](http://doc.qt.io/qt-5/metaobjects.html)的支持。
@@ -1829,3 +1833,366 @@ qApp->installTranslator(&t);
 **其实一般使用的翻译函数就两个，`tr()` 和 `QCoreApplication::translate`**，另外你还可以使用 [QTextCodec](http://doc.qt.io/qt-5/qtextcodec.html#details) 来转换各种编码，另外如数字、日期、时间等的本地化还需使用 [QLocal 类](http://doc.qt.io/qt-5/qlocale.html#details)，更多内容可以查看 <http://doc.qt.io/qt-5/internationalization.html> 。
 
 <h3 id="qtimer">定时器</h3>
+
+如果你想周期性的执行某些任务时，在 C++11 里，代码很可能像下面这样：
+
+```c++
+#include <thread>
+...
+while (!done)
+{
+	std::this_thread::sleep_for(
+		std::chrono::duration<double, std::milli>(sleep_time)
+	);
+
+	task();
+}
+...
+```
+
+当然我一开始没有想到线程的问题，不过 [SOF](https://stackoverflow.com/questions/14650885/how-to-create-timer-events-using-c-11) 总会给你一些不一样的灵感。
+
+在 Qt 中，QObject 提供了基础的定时器支持，[QObject::startTimer](http://doc.qt.io/qt-5/qobject.html#startTimer) 开始一个定时器并返回该定时器 ID；每当一定时间过后，就会有一个定时器事件(就是时间到了)，然后就会调用 [QObject::timerEvent](http://doc.qt.io/qt-5/qobject.html#timerEvent) 虚函数，你可以重新实现该函数来完成相应任务；如果你想销毁这个定时器，调用 [QObject::killTimer](http://doc.qt.io/qt-5/qobject.html#killTimer)。
+
+```c++
+// Test.h
+#pragma once
+#include <QDebug>
+#include <QObject>
+#include <QTimerEvent>
+
+class Test : public QObject
+{
+	Q_OBJECT
+
+public:
+	Test(QObject *parent = 0);
+	~Test();
+
+protected:
+	void timerEvent(QTimerEvent*) override;
+
+private:
+	int id[3];
+};
+
+inline Test::Test(QObject *parent)
+	: QObject(parent)
+{
+	id[0] = startTimer(100); // 100 ms
+	id[1] = startTimer(200); // 200 ms
+	id[2] = startTimer(300); // 300 ms
+}
+
+inline Test::~Test()
+{
+	killTimer(id[0]);
+	killTimer(id[1]);
+	killTimer(id[2]);
+}
+
+inline void Test::timerEvent(QTimerEvent *e)
+{
+	int ID = e->timerId();
+	if (ID == id[0]){
+		qDebug() << "timer1: " << ID;
+	}else if (ID == id[1]){
+		qDebug() << "timer2: " << ID;
+	}
+	else {
+		qDebug() << "timer3: " << ID;
+	}
+}
+```
+
+由于需要传递 QTimerEvent，你必须先开始事件循环，即调用 `QCoreApplication::exec` 或 `QApplication::exec`：
+
+```c++
+// main.cpp
+#include <QCoreApplication>
+#include "Test.h"
+
+int main(int argc, char *argv[])
+{
+	QCoreApplication app(argc, argv);
+
+	Test t;
+	
+	return app.exec();
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+timer1:  1
+timer2:  2
+timer1:  1
+timer3:  3
+timer1:  1
+timer2:  2
+timer1:  1
+timer1:  1
+timer2:  2
+timer3:  3
+timer1:  1
+timer1:  1
+timer2:  2
+timer1:  1
+^C
+```
+
+对于多线程应用程序，你可以使用 [QTimer](http://doc.qt.io/qt-5/qtimer.html) 来创建一个定时器，只要该线程具有事件循环。对于 GUI 应用，调用 `QApplication::exec` 就能使所有线程开始事件循环了，但是**对于非 GUI 应用，你需要调用 [`QThread::exec`](http://doc.qt.io/qt-5/qthread.html#exec) 来使该线程进入事件循环**。
+
+**你并不能在另一个线程开始一个当前线程中的定时器**。
+
+QTimer 演示：
+
+```c++
+// Test.h
+#pragma once
+#include <QDebug>
+#include <QTimer>
+#include <QObject>
+
+class Test : public QObject
+{
+	Q_OBJECT
+
+public:
+	Test(QObject *parent = 0);
+
+public Q_SLOTS:
+	void update();
+
+private:	
+	QTimer *timer;
+};
+
+inline Test::Test(QObject *parent)
+	: QObject(parent)
+{
+	// 由于对象树特性，当 this 被销毁时，子对象也会被销毁
+	// QTimer 的析构函数自动调用 stop()
+	timer = new QTimer(this);
+	timer->setInterval(1000); // 1s
+
+	QObject::connect(timer, &QTimer::timeout, this, &Test::update);
+	timer->start();
+}
+
+inline void Test::update()
+{
+	qDebug() << __func__;
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+update
+update
+update
+update
+^C
+```
+
+可以看到，由于 QTimer 使用了信号槽机制，可能会更加方便。
+
+<h3 id="object_tree">对象树</h3>
+
+**Qt 使用对象树(object tree)来管理所有的 QObject 类及其子类的对象**，当你创建一个 QObject 对象时，如果使用了其它的 QObject 对象作为父对象(parent)，就像上面的 QTimer 一样，那么这个 QObject 对象就会被添加到父对象的 [`QObject::children()`](http://doc.qt.io/qt-5/qobject.html#children) 列表中，**这样当父对象被销毁时，这个 QObject 对象也会被销毁；你也可以手动销毁该子对象，之后该子对象会将自己从其父对象的对象树中移除**。
+
+不管你的 QObject 对象时创建在堆(heap)上还是栈(stack)上，对象树都能正常工作：
+
+```c++
+// Test.h
+#pragma once
+#include <QDebug>
+#include <QObject>
+
+class myObject : public QObject
+{
+	Q_OBJECT
+
+public:
+	myObject(QObject *parent = 0)
+		: QObject(parent)
+	{
+		static int i;
+		num = ++i;
+	}
+
+	~myObject()
+	{
+		qDebug() << "delete " << num;
+	}
+
+private:
+	int num;
+};
+
+class Test : public QObject
+{
+	Q_OBJECT
+
+public:
+	Test(QObject *parent = 0)
+		: QObject(parent)
+	{
+		obj[0] = new myObject(this);
+		obj[1] = new myObject(this);
+		obj[2] = new myObject(this);
+	}
+
+private:
+	myObject* obj[3];
+};
+```
+
+```c++
+// main.cpp
+#include "Test.h"
+
+int main()
+{
+	// object tree on stack
+	Test t;
+	qDebug() << t.children();
+
+	// object tree on heap
+	Test *pt = new Test();
+	qDebug() << pt->children();
+	delete pt;
+	
+	return 0;
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+(myObject(0x3c7858), myObject(0x3c78e0), myObject(0x3c7940))
+(myObject(0x3cbc38), myObject(0x3cbc68), myObject(0x3cbc80))
+delete  4
+delete  5
+delete  6
+delete  1
+delete  2
+delete  3
+```
+
+可以看到对象树在堆栈上都能很好的工作，但是为了方便，**一般子对象建立在堆上，顶层对象建立在栈上**。
+
+**由于对象树的销毁特性，也可能造成析构函数被多次调用的危险**：
+
+```c++
+#include "Test.h"
+
+int main()
+{
+	myObject obj0, obj1;
+	
+	obj0.setParent(&obj1);
+	
+	return 0;
+}
+```
+
+很显然 obj0 的析构函数被调用了两次：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+delete  2
+delete  1
+delete  1
+QObject: shared QObject was deleted directly. The program is malformed and may crash.
+```
+
+<h3 id="qpointer">QPointer</h3>
+
+QPointer 是一个模板，**用来存储一个 QObject 类或其子类的对象的指针**。
+
+**你可以像使用传统指针一样来使用 QPointer，只是当其存储的指针指向的对象被销毁后，该指针会被设为0**。
+
+QPointer 的另一个优点是：**它能自动转换为 `T*`，这意味着你可以直接将其传递给参数为 `T*` 的函数而无需任何操作**。
+
+**QPointer 在销毁时不会对指针指向的对象做任何操作**：
+
+```c++
+#include <QPointer>
+#include <QSharedPointer>
+#include "Test.h"
+
+int main()
+{
+	QPointer<myObject> obj0 = new myObject();
+	QSharedPointer<myObject> obj1(new myObject());
+	
+	return 0;
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+delete  2
+```
+
+QSharedPointer 与 `std::shared_ptr` 类似，在其生命周期结束且没有其它 QSharedPointer 对象引用其指针时，会自动销毁其存储的指针。**介于标准智能指针比较通用，建议一律使用[标准智能指针](https://chorior.github.io/2017/03/08/C++-%E9%87%8A%E7%96%91-%E4%BA%8C/#smart_pointer)**。
+
+**往后凡是普通 QObject 指针，建议使用 QPointer 来存储，这样就不会有使用悬挂指针的危险了**。
+
+<h3 id="the_meta_object_system">元对象系统</h3>
+
+查看 [The Meta-Object System](http://doc.qt.io/qt-5/metaobjects.html)，我们知道所谓元对象系统，就是提供了对象间通信的信号和槽机制、运行时类别信息和动态属性的系统。
+
+一个类要想获得元对象系统的优点，必须满足以下三个条件：
+
+*	必须继承自 QObject，间接的、直接的均可；
+*	必须在 private 部分声明 `Q_OBJECT` 宏；
+*	必须使用元对象编译器(moc)提供必要的实现元对象特性的代码，其结果一般是一个以 `moc` 开头的 cpp 文件，如 `E:\qt_practice\release\moc_Test.cpp`。
+
+```c++
+// main.cpp
+#include <QMetaObject>
+#include "Test.h"
+
+int main()
+{
+	myObject myobject;
+	QObject *qobject = &myobject;
+
+	qDebug() << "is inherits from QObject: "
+		<< myobject.inherits("QObject");              // 是否继承自 QObject
+
+	const QMetaObject *mobj = myobject.metaObject();  // 获取 obj 的元对象
+	qDebug() << "class name: " << mobj->className();  // 打印 obj 所属类的类名
+
+	// 动态类型转换，不需要 RTTI 的支持
+	// 比 std::dynamic_cast 快
+	if (qobject_cast<myObject *>(qobject)) {
+		qDebug() << "qobject is a myObject pointer.";
+	}
+
+	return 0;
+}
+```
+
+结果：
+
+```text
+$ e:\qt_practice>release\qt_practice.exe
+is inherits from QObject:  true
+class name:  myObject
+qobject is a myObject pointer.
+delete  1
+```
+
+可以看到，转换为 QMetaObject 对象后，就能方便的使用元对象系统的特性了，动态转换也是一个非常不错的工具。
+
+<h2 id="gui_basic">GUI 基础</h2>
