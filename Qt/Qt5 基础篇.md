@@ -35,6 +35,9 @@ tags:
 	*	[QPointer](#qpointer)
 	*	[元对象系统](#the_meta_object_system)
 *	[GUI 基础](#gui_basic)
+	*	[基础窗口部件 QWidget](#qwidget)
+	*	[启动界面 QSplashScreen](#qsplashscreen)
+	*	[对话框 QDialog](#qdialog)
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -2196,3 +2199,174 @@ delete  1
 可以看到，转换为 QMetaObject 对象后，就能方便的使用元对象系统的特性了，动态转换也是一个非常不错的工具。
 
 <h2 id="gui_basic">GUI 基础</h2>
+
+<h3 id="qapplication">QApplication</h3>
+
+QApplication 管理 GUI 应用的控制流和主要设置，它继承自 QGUIApplication，实现了一些基于 QWidget 的应用程序所需要的功能。**使用 Qt 的任何 GUI 应用，都需要一个 QApplication 对象，不管该应用有多少个窗口**；**对于非基于 QWidget 的 Qt 应用，可以使用 QGUIApplication 代替**，因为 QGUIApplication 不依赖于 [QtWidget 库](http://doc.qt.io/qt-5/qtwidgets-module.html)。
+
+一些 GUI 应用提供特殊的批处理模式，如根据提供的命令行参数执行相关任务而不能人工干预，在这种非 GUI 模式下，**只需要实例化一个简单的 QCoreApplication 就足够了**，这避免了不必要的图形用户界面所需资源的初始化，官方示例如下：
+
+```c++
+QCoreApplication* createApplication(int &argc, char *argv[])
+{
+	for (int i = 1; i < argc; ++i)
+		if (!qstrcmp(argv[i], "-no-gui"))
+			return new QCoreApplication(argc, argv);
+	return new QApplication(argc, argv);
+}
+
+int main(int argc, char* argv[])
+{
+	QScopedPointer<QCoreApplication> app(createApplication(argc, argv));
+
+	if (qobject_cast<QApplication *>(app.data())) {
+		// start GUI version...
+	}
+	else {
+		// start non-GUI version...
+	}
+
+	return app->exec();
+}
+```
+
+QApplication 的主要责任有：
+
+*	使用用户的桌面设置初始化应用；
+*	执行事件处理；
+*	解析常见的命令行参数，从而设置相应的内部状态；
+*	定义应用的外观和感觉；
+*	指定应用如何分配颜色；
+*	字符串的本地化；
+*	提供了一些神奇的实例，如 [`desktop()`](http://doc.qt.io/qt-5/qapplication.html#desktop) 和 [`clipboard()`](http://doc.qt.io/qt-5/qguiapplication.html#clipboard)；
+*	掌控所有窗口的部件位置；
+*	管理应用的鼠标光标处理；
+
+由于 QApplication 做了这么多初始化，所以**它必须在创建与用户界面相关的任何其他对象之前被创建**。
+
+<h3 id="qwidget">基础窗口部件 QWidget</h3>
+
+QWidget 是所有用户界面对象的基类，其继承自 QObject 和 [QPaintDevice](http://doc.qt.io/qt-5/qpaintdevice.html#details)，QDialog、QMainWindow、QLabel、QPushButton、QListWidget 等都是它的子类。
+
+查看其公有构造函数：
+
+```c++
+explicit QWidget(QWidget* parent = Q_NULLPTR, Qt::WindowFlags f = Qt::WindowFlags());
+```
+
+当不传入参数或传入的第一个参数为空时，表示该部件是一个窗口，也被称为顶层部件(top-level widget)，顶层部件可以使用成员函数 `setWindowTitle` 来设置标题栏、`setWindowIcon` 来设置窗口图标；当传入的第一个参数不为空时，表示该部件是传入参数的一个子部件，**由于对象树特性，当父部件被删除时，所有该父部件的子部件都将被删除。当你为一个可视部件添加一个子部件时，要想子部件变得可见，你必须显式调用其成员函数 `show()`**。
+
+第二个参数指定部件的各种窗口系统属性，其默认值已适应大多数部件，你可以查看[`Qt::WindowFlags`](http://doc.qt.io/qt-5/qt.html#WindowType-enum)了解各种标志的意义。
+
+查看 QMainWindow 和 QDialog 的公有构造函数：
+
+```c++
+QMainWindow::QMainWindow(QWidget *parent, Qt::WindowFlags flags)
+    : QWidget(*(new QMainWindowPrivate()), parent, flags | Qt::Window)
+{
+    d_func()->init();
+}
+
+QDialog::QDialog(QWidget *parent, Qt::WindowFlags f)
+    : QWidget(*new QDialogPrivate, parent,
+              f | ((f & Qt::WindowType_Mask) == 0 ? Qt::Dialog : Qt::WindowType(0)))
+{
+}
+```
+
+由于它们分别指定了 `Qt::Window` 和 `Qt::Dialog` 作为 `Qt::WindowFlags` 的默认值，并且分别在自己的窗口类型的基础上添加了相应的功能，所以 **QMainWindow 和 QDialog 的各种子类是 Qt 中最常用的顶层部件类型**。
+
+QWidget 包含[相当多的功能和属性](http://doc.qt.io/qt-5/qwidget.html#groups-of-functions-and-properties)，其中包含大量的事件处理虚函数，这意味着你可以重新实现它们以完成自定义功能：
+
+```c++
+protected:
+    // Event handlers
+    bool event(QEvent *event) Q_DECL_OVERRIDE;
+    virtual void mousePressEvent(QMouseEvent *event);
+    virtual void mouseReleaseEvent(QMouseEvent *event);
+    virtual void mouseDoubleClickEvent(QMouseEvent *event);
+    virtual void mouseMoveEvent(QMouseEvent *event);
+#if QT_CONFIG(wheelevent)
+    virtual void wheelEvent(QWheelEvent *event);
+#endif
+    virtual void keyPressEvent(QKeyEvent *event);
+    virtual void keyReleaseEvent(QKeyEvent *event);
+    virtual void focusInEvent(QFocusEvent *event);
+    virtual void focusOutEvent(QFocusEvent *event);
+    virtual void enterEvent(QEvent *event);
+    virtual void leaveEvent(QEvent *event);
+    virtual void paintEvent(QPaintEvent *event);
+    virtual void moveEvent(QMoveEvent *event);
+    virtual void resizeEvent(QResizeEvent *event);
+    virtual void closeEvent(QCloseEvent *event);
+#ifndef QT_NO_CONTEXTMENU
+    virtual void contextMenuEvent(QContextMenuEvent *event);
+#endif
+#if QT_CONFIG(tabletevent)
+    virtual void tabletEvent(QTabletEvent *event);
+#endif
+#ifndef QT_NO_ACTION
+    virtual void actionEvent(QActionEvent *event);
+#endif
+
+#ifndef QT_NO_DRAGANDDROP
+    virtual void dragEnterEvent(QDragEnterEvent *event);
+    virtual void dragMoveEvent(QDragMoveEvent *event);
+    virtual void dragLeaveEvent(QDragLeaveEvent *event);
+    virtual void dropEvent(QDropEvent *event);
+#endif
+
+    virtual void showEvent(QShowEvent *event);
+    virtual void hideEvent(QHideEvent *event);
+    virtual bool nativeEvent(const QByteArray &eventType, void *message, long *result);
+
+    // Misc. protected functions
+    virtual void changeEvent(QEvent *);
+```
+
+<h3 id="qsplashscreen">启动界面 QSplashScreen</h3>
+
+有时候你的 GUI 应用在启动时非常耗时，这时就需要一个启动界面来表示程序正在启动。很多图形界面都会有一个启动界面，比如你最常用的 Windows、Linux、Visual Studio、以及你正在学习的 Qt Creator。
+
+QSplashScreen 提供了启动界面的功能，它实现的启动界面位于屏幕中心：
+
+```c++
+#include <QMainWindow>
+#include <QApplication>
+#include <QSplashScreen>
+
+#include <thread>    // sleep_for
+
+int main(int argc, char *argv[])
+{
+	QApplication a(argc, argv);
+
+	QPixmap pixmap("welcome.jpg");
+	QSplashScreen splash(pixmap);
+	splash.show();
+
+	splash.showMessage("Loaded module 1"); // 显示一些字符串信息
+	std::this_thread::sleep_for(
+		std::chrono::duration<double, std::milli>(1000)  // 1s
+	);
+
+	splash.showMessage("Loaded module 2");
+	std::this_thread::sleep_for(
+		std::chrono::duration<double, std::milli>(1000)  // 1s
+	);
+
+	QMainWindow window;
+	window.resize(250, 150);
+	window.move(300, 300);
+	window.setWindowTitle("QMainWindow");
+	window.show();
+
+	splash.finish(&window); // 待 window 显示之后关闭 splash
+	return a.exec();
+}
+```
+
+**如果你想自定义启动界面的话，可以继承 QSplashScreen，然后重新实现 [drawContents 函数](http://doc.qt.io/qt-5/qsplashscreen.html#drawContents)**。
+
+<h3 id="qdialog">对话框 QDialog</h3>
+
