@@ -2370,3 +2370,246 @@ int main(int argc, char *argv[])
 
 <h3 id="qdialog">对话框 QDialog</h3>
 
+QDialog 是所有对话框窗口的基类，**所谓对话框窗口，就是一个经常用来完成一个短小任务、或与用户进行简单交互的顶层窗口**。
+
+按照运行对话框时是否会阻塞该应用程序的其它窗口，对话框被分为模态的(modal)和非模态的(modeless)。
+
+模态对话框会阻塞其所属应用程序的其它可见窗口(即只能与该对话框进行交互)。**模态对话框还被划分为应用模态(application modal)或窗口模态(window modal)两种类型**，其中应用模态是模态窗口的默认类型。所谓应用模态，即该对话框会阻塞其所属应用程序的所有其它窗口，窗口模态只阻塞与该对话框关联的窗口(即其父窗口)。
+
+实现模态对话框最简单的方式就是调用 [`QDialog::exec`](http://doc.qt.io/qt-5/qdialog.html#exec)，由于模态对话框经常被用于获取用户点击按钮的结果，所以 `exec` 会返回一个 [`QDialog::DialogCode`](http://doc.qt.io/qt-5/qdialog.html#DialogCode-enum) 结果，用以表明用户是点击了 OK 还是 Cancel。如果你想获取其它结果，你可以使用信号槽机制关联到 [`QDialog::accepted`](http://doc.qt.io/qt-5/qdialog.html#accept) 或 [`QDialog::rejected`](http://doc.qt.io/qt-5/qdialog.html#reject)，或者继承并自定义信号传递相关信息。
+
+另一个实现模态对话框的方式是使用 [`QWidget::setWindowModality`](http://doc.qt.io/qt-5/qwidget.html#windowModality-prop)，但是**只对不可见的窗口有效**。
+
+非模态对话框不会阻塞其它窗口，其实现方式只需要调用 [`QWidget::show`](http://doc.qt.io/qt-5/qwidget.html#show) 即可，**该函数立即返回控制权到调用者**。
+
+如果你在调用 `show` 之后移动了该对话框，然后你又隐藏了该对话框，当你再次调用 `show` 函数时，该对话框会显示在原来的位置，如果你想再次显示在移动后的位置，就需要在窗口关闭事件 [`QWidget::closeEvent`](http://doc.qt.io/qt-5/qwidget.html#closeEvent) 中保存移动后的位置，然后在调用 `show` 函数之前将窗口移动到该位置。
+
+QDialog 有两个默认的按键功能，Enter 键和 Esc 键。当你按下 Enter 键时，如果有默认按钮(使用 [`QPushButton::setDefault`](http://doc.qt.io/qt-5/qpushbutton.html#default-prop) 设置)，那么会触发该按钮；当你按下 Esc 键时，会触发 [`QDialog::rejected`](http://doc.qt.io/qt-5/qdialog.html#reject) 信号。
+
+**一般默认的按钮会有额外的框显示在按钮周围，这时你还可以按下空格键来触发点击事件**，这是 `QPushButton` 的父类 `QAbstractButton::keyPressEvent` 实现的。
+
+**我们常用的对话框一般是消息对话框、错误消息对话框、输入对话框、文件对话框、进度对话框、颜色对话框和向导对话框，它们在 Qt 中分别是 QMessageBox、QErrorMessage、QInputDialog、QFileDialog、QProcessDialog、QColorDialog 和 QWizard，它们全都继承自 QDialog**。
+
+#### 消息对话框 QMessageBox
+
+QMessageBox 提供一个模态对话框，用来通知用户一些消息、或者向用户提出一个问题并获取答案，你可以很快速的查看 [QMessageBox](http://doc.qt.io/qt-5/qmessagebox.html) 获取其使用方式：
+
+```c++
+#include <QDebug>
+#include <QMessageBox>
+#include <QApplication>
+
+int main(int argc, char *argv[])
+{
+	QApplication a(argc, argv);
+
+	QMessageBox msgBox;
+	msgBox.setIcon(QMessageBox::Information);                       // 设置图标
+	msgBox.setText("The document has been modified.");              // 消息文本
+	msgBox.setInformativeText("Do you want to save your changes?"); // 更多描述
+	msgBox.setDetailedText("\n\ndetail text\n\n");                  // 详细信息，提供一个 Show Details... 按钮
+	msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+	msgBox.setDefaultButton(QMessageBox::Save);                     // 设置默认按钮，按 Enter 键时触发
+	msgBox.setEscapeButton(QMessageBox::Cancel);                    // 设置退出按钮，按 Esc 键时触发
+	int ret = msgBox.exec();
+
+	switch (ret) {
+	case QMessageBox::Save:
+		qDebug() << "Save";
+		break;
+	case QMessageBox::Discard:
+		qDebug() << "Discard";
+		break;
+	case QMessageBox::Cancel:
+		qDebug() << "Cancel";
+		break;
+	default:
+		break;
+	}
+}
+```
+
+一般比较简单的使用方式就是使用其静态函数，这样比较快速，但是也失去了灵活性，一共有四种类型--information、question、warning 和 critical，它们的接口一样，只是图标不同：
+
+```c++
+int ret = QMessageBox::information(0, QMessageBox::tr("My Application"),     // 标题
+								QMessageBox::tr("The document has been modified.\n"
+									"Do you want to save your changes?"),    // 信息文本
+								QMessageBox::Save | QMessageBox::Discard
+								| QMessageBox::Cancel,                       // 按键
+								QMessageBox::Save);                          // 默认按键 
+```
+
+#### 错误消息对话框 QErrorMessage
+
+QErrorMessage 提供一个显示错误信息的非模态对话框，该对话框包含一个文本标签组件、一个复选框组件和一个 OK 按钮，其中文本标签组件用来显示错误信息、复选框组件用来控制是否显示相同的错误信息。
+
+```c++
+#include <QDebug>
+#include <QApplication>
+#include <QErrorMessage>
+
+int main(int argc, char *argv[])
+{
+	QApplication a(argc, argv);
+
+	QErrorMessage dialog;
+	dialog.setWindowTitle("QErrorMessage");
+	dialog.showMessage("error message");
+	
+	return a.exec();
+}
+```
+
+#### 输入对话框 QInputDialog
+
+QInputDialog 提供一个模态对话框，用来从用户那里获取一个单一的值，这个值可以是一个数字、一个字符串或者列表中的某个项目。
+
+你可以方便的使用其静态函数 `getText`、`getMultiLineText`、`getInt`、`getDouble` 和 `getItem` 来获取不同的值，它们的使用方式都一样：
+
+```c++
+#include <QDir>
+#include <QDebug>
+#include <QApplication>
+#include <QInputDialog>
+
+int main(int argc, char *argv[])
+{
+	QApplication a(argc, argv);
+
+	bool ok;
+    QString text = QInputDialog::getText(0,                                          // 父组件
+										QInputDialog::tr("QInputDialog::getText()"), // 标题
+										QInputDialog::tr("User name:"),              // 输入提示
+										QLineEdit::Normal,                           // 文本显示类型
+										QDir::home().dirName(),                      // 默认值
+										&ok);                                        // 用户是否确认
+    if (ok && !text.isEmpty())
+        qDebug() << text;
+}
+```
+
+#### 文件对话框 QFileDialog
+
+QFileDialog 提供一个模态对话框，用来让用户选择文件或目录，你可以使用其方便的静态函数来快速的得到一个或多个文件或目录的名字或路径：
+
+```c++
+static QString getOpenFileName(QWidget *parent = Q_NULLPTR,
+								const QString &caption = QString(),
+								const QString &dir = QString(),
+								const QString &filter = QString(),
+								QString *selectedFilter = Q_NULLPTR,
+								Options options = Options());
+
+static QUrl getOpenFileUrl(QWidget *parent = Q_NULLPTR,
+							const QString &caption = QString(),
+							const QUrl &dir = QUrl(),
+							const QString &filter = QString(),
+							QString *selectedFilter = Q_NULLPTR,
+							Options options = Options(),
+							const QStringList &supportedSchemes = QStringList());
+
+static QString getSaveFileName(QWidget *parent = Q_NULLPTR,
+								const QString &caption = QString(),
+								const QString &dir = QString(),
+								const QString &filter = QString(),
+								QString *selectedFilter = Q_NULLPTR,
+								Options options = Options());
+
+static QUrl getSaveFileUrl(QWidget *parent = Q_NULLPTR,
+							const QString &caption = QString(),
+							const QUrl &dir = QUrl(),
+							const QString &filter = QString(),
+							QString *selectedFilter = Q_NULLPTR,
+							Options options = Options(),
+							const QStringList &supportedSchemes = QStringList());
+
+static QString getExistingDirectory(QWidget *parent = Q_NULLPTR,
+									const QString &caption = QString(),
+									const QString &dir = QString(),
+									Options options = ShowDirsOnly);
+
+static QUrl getExistingDirectoryUrl(QWidget *parent = Q_NULLPTR,
+									const QString &caption = QString(),
+									const QUrl &dir = QUrl(),
+									Options options = ShowDirsOnly,
+									const QStringList &supportedSchemes = QStringList());
+
+static QStringList getOpenFileNames(QWidget *parent = Q_NULLPTR,
+									const QString &caption = QString(),
+									const QString &dir = QString(),
+									const QString &filter = QString(),
+									QString *selectedFilter = Q_NULLPTR,
+									Options options = Options());
+
+static QList<QUrl> getOpenFileUrls(QWidget *parent = Q_NULLPTR,
+									const QString &caption = QString(),
+									const QUrl &dir = QUrl(),
+									const QString &filter = QString(),
+									QString *selectedFilter = Q_NULLPTR,
+									Options options = Options(),
+									const QStringList &supportedSchemes = QStringList());
+```
+
+演示：
+
+```c++
+#include <QDir>
+#include <QDebug>
+#include <QString>
+#include <QFileDialog>
+#include <QApplication>
+
+int main(int argc, char *argv[])
+{
+	QApplication a(argc, argv);
+
+	QStringList filenames = QFileDialog::getOpenFileNames(0,                      // 父类
+								QFileDialog::tr("QFileDialog"),                   // 标题
+								QDir::currentPath(),                              // 默认打开目录
+								QFileDialog::tr("header (*.h);;source (*.cpp)")); // 文件名过滤器
+	
+	qDebug() << filenames;
+}
+```
+
+#### 进度对话框 QProcessDialog
+
+QProcessDialog 提供一个可选但一般设置为模态的对话框，用来显示一个耗时较长的操作进度：
+
+```c++
+#include <QDebug>
+#include <QApplication>
+#include <QProgressDialog>
+
+#include <thread>  // sleep_for
+
+int main(int argc, char *argv[])
+{
+	QApplication a(argc, argv);
+
+	int numFiles = 100;
+	QProgressDialog progress("Copying files...",   // 进度描述
+							"Cancel",              // 按钮名
+							0,                     // 进度条最小值
+							numFiles);             // 进度条最大值
+	progress.setWindowModality(Qt::WindowModal);
+	progress.show();
+
+	for (int i = 0; i < numFiles; i++) {
+		progress.setValue(i);
+		QApplication::processEvents();      // 由于还没有开始事件循环，所以需要周期性处理事件
+
+		if (progress.wasCanceled())
+			break;
+
+		std::this_thread::sleep_for(
+			std::chrono::duration<double, std::milli>(1000)); // 耗时操作
+	}
+	progress.setValue(numFiles);
+}
+```
+
+非模态进度对话框实现查看 [QProcessDialog](http://doc.qt.io/qt-5/qprogressdialog.html#details)。
+
+#### 颜色对话框 QColorDialog
