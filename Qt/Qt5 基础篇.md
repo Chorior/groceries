@@ -13,7 +13,7 @@ tags:
 #   本文结构
 
 *   [Qt 概述](#overview)
-*	[Hello QT](#hello_qt)
+*	[Hello Qt](#hello_qt)
 *	[命令行参数](#qcommandlineparser)
 *   [字符串](#qstring_qbytearray)
 *	[QVariant](#qvariant)
@@ -38,6 +38,7 @@ tags:
 	*	[基础窗口部件 QWidget](#qwidget)
 	*	[启动界面 QSplashScreen](#qsplashscreen)
 	*	[对话框 QDialog](#qdialog)
+	*	[主程序窗口 QMainWindow](#qmainwindow)
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -51,7 +52,7 @@ Qt开放源代码，你可以在[Qt github](https://github.com/qt)上获取；�
 *	GNU LGPL：可以被专属软件作为类库引用、发布和销售；
 *	GNU GPL：可以自由运行，学习，共享和修改。
 
-<h2 id="hello_qt">Hello QT</h2>
+<h2 id="hello_qt">Hello Qt</h2>
 
 到<http://download.qt.io/official_releases/qt/>下载开源QT，选择 mingw 安装完成后开始我们的第一个程序--Hello QT。
 
@@ -2388,7 +2389,7 @@ QDialog 有两个默认的按键功能，Enter 键和 Esc 键。当你按下 Ent
 
 **一般默认的按钮会有额外的框显示在按钮周围，这时你还可以按下空格键来触发点击事件**，这是 `QPushButton` 的父类 `QAbstractButton::keyPressEvent` 实现的。
 
-**我们常用的对话框一般是消息对话框、错误消息对话框、输入对话框、文件对话框、进度对话框、颜色对话框和向导对话框，它们在 Qt 中分别是 QMessageBox、QErrorMessage、QInputDialog、QFileDialog、QProcessDialog、QColorDialog 和 QWizard，它们全都继承自 QDialog**。
+**我们常用的对话框一般是消息对话框、错误消息对话框、输入对话框、文件对话框、进度对话框、颜色对话框、字体对话框和向导对话框，它们在 Qt 中分别是 QMessageBox、QErrorMessage、QInputDialog、QFileDialog、QProcessDialog、QColorDialog、QFontDialog 和 QWizard，它们全都继承自 QDialog**。
 
 #### 消息对话框 QMessageBox
 
@@ -2613,3 +2614,90 @@ int main(int argc, char *argv[])
 非模态进度对话框实现查看 [QProcessDialog](http://doc.qt.io/qt-5/qprogressdialog.html#details)。
 
 #### 颜色对话框 QColorDialog
+
+QColorDialog 提供一个模态对话框，用来获取一个指定的颜色。
+
+```c++
+#include <QDebug>
+#include <QApplication>
+#include <QColorDialog>
+
+int main(int argc, char *argv[])
+{
+	QApplication a(argc, argv);
+
+	QColor color = QColorDialog::getColor(Qt::red,  // 默认颜色
+		0,                                          // 父组件
+		QColorDialog::tr("QColorDialog"),           // 标题
+		QColorDialog::ShowAlphaChannel);            // 是否显示 alpha 选项
+
+	qDebug() << color;
+}
+```
+
+#### 字体对话框 QFontDialog
+
+QFontDialog 提供一个模态对话框，用来获取一个指定的字体。
+
+```c++
+#include <QDebug>
+#include <QMessageBox>
+#include <QFontDialog>
+#include <QApplication>
+
+int main(int argc, char *argv[])
+{
+	QApplication a(argc, argv);
+
+	bool ok; // 用户是否确认
+	QFont font = QFontDialog::getFont(&ok);
+
+	QMessageBox msgBox;
+	msgBox.setIcon(QMessageBox::Information);                       // 设置图标
+	msgBox.setText("The document has been modified.");              // 消息文本
+	msgBox.setInformativeText("Do you want to save your changes?"); // 更多描述
+	msgBox.setDetailedText("\n\ndetail text\n\n");                  // 详细信息，提供一个 Show Details... 按钮
+	msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+	msgBox.setDefaultButton(QMessageBox::Save);                     // 设置默认按钮，按 Enter 键时触发
+	msgBox.setEscapeButton(QMessageBox::Cancel);                    // 设置退出按钮，按 Esc 键时触发
+	if (ok) { msgBox.setFont(font); }
+	msgBox.exec();
+	// return a.exec();
+}
+```
+
+#### 向导对话框 QWizard
+
+QWizard 提供一个模态对话框，用以引导用户一步一步完成某个操作。
+
+你可以使用 QWizardPage 来创建一个向导页面，然后使用 `QWizard::addPage` 将其添加到 QWizard 对象中，你可以参考[官方文档](http://doc.qt.io/qt-5/qwizard.html#details)来设计向导页面。
+
+```c++
+#include <QDebug>
+#include <QWizard>
+#include <QWizardPage>
+#include <QApplication>
+
+int main(int argc, char *argv[])
+{
+	QApplication a(argc, argv);
+
+	QWizardPage *page1 = new QWizardPage();
+	QWizardPage *page2 = new QWizardPage();
+	QWizardPage *page3 = new QWizardPage();
+
+	page1->setTitle("page1");
+	page2->setTitle("page2");
+	page3->setTitle("page3");
+
+	QWizard wizard;
+	wizard.addPage(page1);
+	wizard.addPage(page2);
+	wizard.addPage(page3);
+
+	wizard.setWindowTitle("QWizard");
+	wizard.exec();
+}
+```
+
+<h3 id="qmainwindow">主程序窗口 QMainWindow</h3>
