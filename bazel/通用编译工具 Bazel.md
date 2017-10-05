@@ -12,13 +12,14 @@ tags:
 
 #   本文结构
 
-*   [Bazel 概述](#overview)
-*   [Bazel 安装](#bazel_install)
-*   [Bazel 配置](#bazel_config)
-*   [构建 Hello Wrold](#build_hello_world)
-*   [Bazel 概念及术语](#bazel_concepts_and_terminology)
+*   [概述](#overview)
+*   [安装](#install)
+*   [配置](#config)
+*   [Hello Wrold](#hello_world)
+*   [概念及术语](#concepts_and_terminology)
+*   [用户手册](#user_manual)
 
-<h2 id="overview">Bazel 概述</h2>
+<h2 id="overview">概述</h2>
 
 Bazel 是一个编译工具，用于构建和运行测试。通过其扩展语言，你可以编译**任何语言**写的源文件，并**提供对 java,c,c++,python 的本地支持**。
 
@@ -30,7 +31,7 @@ Bazel 还有一个方便的查询语言([Query Lauguage](https://docs.bazel.buil
 
 与 cmake 一样，**Bazel 只会编译修改后的文件**。
 
-<h2 id="bazel_install">Bazel 安装</h2>
+<h2 id="install">安装</h2>
 
 bazel 在 Windows 下的安装非常简单，只要下载一个 Windows 安装包管理器 [Chocolatey](https://chocolatey.org/)，安装完成后以管理员身份在 cmd.exe 下执行下面这句话，然后一直按y回车就行了：
 
@@ -40,7 +41,7 @@ $ choco install bazel
 
 其它系统下的安装，由于没有实际操作过，可以移步 [Installing Bazel](https://docs.bazel.build/versions/master/install.html)。
 
-<h2 id="bazel_config">Bazel 配置</h2>
+<h2 id="config">配置</h2>
 
 **所有的 Bazel 构建都发生在工作区--一个文件夹，该文件夹包含了你想编译的源文件、并且其顶层目录拥有一个名为 WORKSPACE 的文件**，这个 WORKSPACE 文件可以为空，也可以用来引用编译所需要的外部依赖库。
 
@@ -220,7 +221,7 @@ digraph mygraph {
 
 ![Graphviz](hello_world.png)
 
-<h2 id="bazel_concepts_and_terminology">Bazel 概念及术语</h2>
+<h2 id="concepts_and_terminology">概念及术语</h2>
 
 ### 工作区(WORKSPACE)
 
@@ -345,3 +346,187 @@ bazel
 例如 [Hello World](#build_hello_world) 中就有两个规则--`hello_world` 和 `hello`。
 
 每个规则都有一系列属性，这些属性要么是整数、要么是字符串或字符串集、要么是输出标签或输出标签集。
+
+### BUILD 文件
+
+BUID 文件的语法是 [Python](http://docs.python.org/reference/lexical_analysis.html) 的一个子集，但是少了很多东西，具体少了什么东西，你可以[自行查看](https://docs.bazel.build/versions/master/build-ref.html#core_build_language)。
+
+**BUILD 文件应该只用 ASCII 字符书写**。
+
+**BUILD 文件中变量的顺序是无关紧要的**。
+
+所以你可以使用 Python 的注释语法来为 BUILD 文件书写注释：
+
+```python
+'''
+author: pengzhen
+date: 2017/10/05
+'''
+
+# BUILD start
+```
+
+#### 规则类型
+
+**构建规则有三种类型，`*_binary`,`*_library`,`*_test`，分别代表二进制文件、库和测试**。根据不同语言，例如 C++ 就是 `cc_binary`、java 就是 `java_binary`。
+
+**测试的程序必须是成功返回0的程序**。
+
+#### 实际依赖关系与声明依赖关系
+
+有时候你声明的依赖关系可能与实际的依赖关系不一样，例如下面的目录结构：
+
+```text
+hello_world
+├── main
+│   ├── BUILD
+│   └── main.cpp
+├── hello_greet
+│   ├── BUILD
+│   └── hello_greet.h
+├── hello_time
+│   ├── BUILD
+│   └── hello_time.h
+└── WORKSPACE
+```
+
+```bazel
+// main/BUILD
+cc_binary(
+    name = "hello",
+    srcs = ["main.cpp"],
+    deps = [
+        "//hello_greet",
+    ],
+)
+```
+
+```bazel
+// hello_greet/BUILD
+cc_library(
+    name = "hello_greet",
+    hdrs = ["hello_greet.h"],
+    deps = [
+        "//hello_time",
+    ],
+    visibility = ["//main:__pkg__"],
+)
+```
+
+```bazel
+// hello_time/BUILD
+cc_library(
+    name = "hello_time",
+    hdrs = ["hello_time.h"],
+    visibility = [
+        "//main:__pkg__",
+        "//hello_greet:__pkg__"
+    ],
+)
+```
+
+```c++
+// hello_time.h
+#pragma once
+#include <ctime>
+#include <string>
+#include <iostream>
+
+void print_time() {
+	time_t t = time(0);   // get time now
+	struct tm * now = localtime(&t);
+
+	std::cout << now->tm_year + 1900 << "-"
+		<< now->tm_mon + 1 << "-"
+		<< now->tm_mday << " "
+		<< now->tm_hour << ":"
+		<< now->tm_min << ":"
+		<< now->tm_sec
+		<< std::endl;
+}
+```
+
+```c++
+// hello_greet.h
+#pragma once
+#include <string>
+#include <iostream>
+
+#include "hello_time/hello_time.h"
+
+void hello_world() {
+	std::cout << "Hello World.\n";
+    print_time();
+}
+```
+
+通过三个 BUILD 文件可以推导出声明的依赖关系：
+
+```text
+main -> hello_greet -> hello_time
+```
+
+如果主函数如下所示的话，那么实际依赖关系与声明依赖关系一致：
+
+```c++
+// main.cpp
+#include "hello_greet/hello_greet.h"
+
+int main(){
+    hello_world();
+}
+```
+
+但是如果主函数是下面这样的话，那么实际依赖关系与声明依赖关系就不太一样了：
+
+```c++
+// main.cpp
+#include "hello_time/hello_time.h"
+#include "hello_greet/hello_greet.h"
+
+int main(){
+    hello_world();
+}
+```
+
+实际依赖关系是这样的：
+
+```text
+main -> hello_greet -> hello_time
+  \________________________/|
+```
+
+虽然这对结果没有太大影响，但是如果某一天 `hello_greet` 不再引用 `hello_time` 的话，就会造成编译错误：
+
+```bazel
+// hello_greet/BUILD
+cc_library(
+    name = "hello_greet",
+    hdrs = ["hello_greet.h"],
+    visibility = ["//main:__pkg__"],
+)
+```
+
+```c++
+// hello_greet.h
+#pragma once
+#include <string>
+#include <iostream>
+
+void print_hello_world() {
+	std::cout << "Hello World." << std::endl;
+}
+```
+
+```c++
+// main.cpp
+#include "hello_time/hello_time.h"
+#include "hello_greet/hello_greet.h"
+
+int main(){
+    print_hello_world();
+    print_time();
+}
+```
+
+<h2 id="user_manual">用户手册</h2>
