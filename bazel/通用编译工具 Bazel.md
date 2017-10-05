@@ -18,6 +18,9 @@ tags:
 *   [Hello Wrold](#hello_world)
 *   [概念及术语](#concepts_and_terminology)
 *   [用户手册](#user_manual)
+    *   [帮助](#help)
+    *   [配置文件](#bazelrc)
+    *   [构建命令](#build_command)
 
 <h2 id="overview">概述</h2>
 
@@ -51,7 +54,7 @@ $ choco install bazel
 
 构建完成后的输出文件通常不在工作区，但**会在 WORKSPACE 文件所在目录生成多个符号链接目录，这些目录指向对应输出文件所在的目录**，具体可查看下面的 [Hello World](#build_hello_world)。
 
-<h2 id="build_hello_world">构建 Hello Wrold</h2>
+<h2 id="hello_world">Hello Wrold</h2>
 
 为了尽快入个门，我们首先构建一个 Hello World 练练手。
 
@@ -355,7 +358,7 @@ BUID 文件的语法是 [Python](http://docs.python.org/reference/lexical_analys
 
 **BUILD 文件中变量的顺序是无关紧要的**。
 
-所以你可以使用 Python 的注释语法来为 BUILD 文件书写注释：
+你可以使用 Python 的注释语法来为 BUILD 文件书写注释：
 
 ```python
 '''
@@ -530,3 +533,228 @@ int main(){
 ```
 
 <h2 id="user_manual">用户手册</h2>
+
+<h3 id="help">帮助</h3>
+
+bazel 提供了很多命令，最常用的就是 `bazel build`，查看帮助可以执行 `bazel help`：
+
+```bash
+$ bazel help
+                                                           [bazel release 0.5.4]
+Usage: bazel <command> <options> ...
+
+Available commands:
+  analyze-profile     Analyzes build profile data.
+  build               Builds the specified targets.
+  canonicalize-flags  Canonicalizes a list of bazel options.
+  clean               Removes output files and optionally stops the server.
+  coverage            Generates code coverage report for specified test targets.
+  dump                Dumps the internal state of the bazel server process.
+  fetch               Fetches external repositories that are prerequisites to the targets.
+  help                Prints help for commands, or the index.
+  info                Displays runtime info about the bazel server.
+  license             Prints the license of this software.
+  mobile-install      Installs targets to mobile devices.
+  query               Executes a dependency graph query.
+  run                 Runs the specified target.
+  shutdown            Stops the bazel server.
+  test                Builds and runs the specified test targets.
+  version             Prints version information for bazel.
+
+Getting more help:
+  bazel help <command>
+                   Prints help and options for <command>.
+  bazel help startup_options
+                   Options for the JVM hosting bazel.
+  bazel help target-syntax
+                   Explains the syntax for specifying targets.
+  bazel help info-keys
+                   Displays a list of keys used by the info command.
+```
+
+**当你运行 bazel 时，你实际上是在运行客户端(client)，客户端基于工作区路径和用户ID(userid)来寻找服务器**，所以**不同的工作区会有不同的服务器、同一个工作区的不同用户也会有不同的服务器，这意味着可以在同一个工作区并发构建**。
+
+<h3 id="bazelrc">配置文件</h3>
+
+bazel 提供了很多命令选项，如果你需要经常为某个命令提供相同的命令选项的话，**你可以通过 `bazel --bazelrc=file` 为 bazel 指定一个配置文件。如果没有指定这个选项，bazel 会在工作区根目录或 home 目录(windows 是 usr/usrname)下寻找一个名为 `.bazelrc` 的文件作为配置文件**，如果两个目录都没找到的话，那么就没有配置文件。
+
+**配置文件的文件名可以不在默认的目录下，甚至可以不为 `.bazelrc`，但是你必须在每个命令前加上 `--bazelrc=file` 来指定这个配置文件**，所以**建议在默认的目录下创建这个文件**。
+
+```bash
+$ bazel --bazelrc=rc run //main:hello
+```
+
+除了上面默认的配置文件 `.bazelrc` 外，**bazel 还会寻找一个主配置文件--工作区的 `tools/bazel.rc` 或 `/etc/bazel.bazelrc`(注意名字不是一样的)，你可以发现这两个文件是所有用户公用的，所以是共享配置文件**。
+
+那么**有这么多配置文件，要是它们都存在的话，bazel 会怎么选择呢，如果我一个配置文件也不用的话，该怎么做呢**？这些配置文件的优先级如下：
+
+```text
+命令行指定的选项 > 用户指定的配置文件 或 workspace/.bazelrc 或 home/.bazelrc > tools/bazel.rc 或 /etc/bazel.bazelrc
+```
+
+其中“或”的意思是两个文件只能读取一个，所有配置文件中相同命令的选项会联合在一起，如果选项的值不同的话，选择优先级高的。
+
+如果你一个配置文件也不想用的话，在 linux 下可以使用 `--bazelrc=/dev/null`。
+
+好了，现在知道了 bazel 选择配置文件的优先级，那么**怎么来书写这个配置文件**呢？
+
+*   配置文件以行为单位，每行的第一个字符串是 bazel 的命令，如 build，剩下的字符串是该命令的默认选项；
+*   如果多行有相同的命令的话，会将这些选项合并在一起，就像只有一行一样，相同的选项较后面的优先级更高；
+*   启动选项使用 `startup` 作为命令，具体可以执行 `bazel help startup_options` 进行查看；
+*   通用选项使用 `common` 作为命令；
+*   你可以使用 `import` 命令来导入另一个配置文件的内容，如果想导入工作区的配置文件，使用 `import %workspace%/path/to/bazelrc`；
+*   所有指定的选项，越靠后优先级越高， `import` 相当于插入，即导入文件的选项的优先级大于导入前的选项的优先级，小于导入后的选项的优先级。
+
+一个官方示例配置文件如下：
+
+```text
+    # Bob's Bazel option defaults
+
+    startup --batch --host_jvm_args=-XX:-UseParallelGC
+    import /home/bobs_project/bazelrc
+    build --show_timestamps --keep_going --jobs 600
+    build --color=yes
+    query --keep_going
+
+    build:memcheck --strip=never --test_timeout=3600
+```
+
+<h3 id="build_command">构建命令</h3>
+
+bazel 作为一个构建工具，最重要的当然就是构建命令啦！你只需要使用 `bazel build` 指定目标就能进行构建了，一个示例如下：
+
+```bash
+$ bazel build ///hello_greet
+..........
+____Loading package: hello_greet
+____Loading package: @bazel_tools//tools/cpp
+____Loading package: @local_config_xcode//
+____Loading package: @local_config_cc//
+____Loading package: @local_jdk//
+____Loading complete.  Analyzing...
+____Found 1 target...
+____Building...
+____[0 / 1] BazelWorkspaceStatusAction stable-status.txt
+Target //hello_greet:hello_greet up-to-date (nothing to build)
+____Elapsed time: 2.287s, Critical Path: 0.01s
+
+$ bazel build ///main:hello
+..........
+____Loading package: main
+____Loading package: @bazel_tools//tools/cpp
+____Loading package: @local_config_xcode//
+____Loading package: @local_jdk//
+____Loading package: @local_config_cc//
+____Loading complete.  Analyzing...
+____Loading package: hello_greet
+____Found 1 target...
+____Building...
+____[0 / 6] Writing file main/hello.exe-2.params
+Target //main:hello up-to-date:
+  C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/y-4byfcg/execroot/__main__/bazel-out/msvc_x64-fastbuild/bin/main/hello.exe
+____Elapsed time: 4.210s, Critical Path: 0.54s
+```
+
+当你再次运行这两个命令时：
+
+```bash
+$ bazel build ///hello_greet
+____Loading complete.  Analyzing...
+____Found 1 target...
+Target //hello_greet:hello_greet up-to-date (nothing to build)
+____Elapsed time: 0.350s, Critical Path: 0.00s
+
+$ bazel build ///main:hello
+____Loading complete.  Analyzing...
+____Found 1 target...
+Target //main:hello up-to-date:
+  C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/y-4byfcg/execroot/__main__/bazel-out/msvc_x64-fastbuild/bin/main/hello.exe
+____Elapsed time: 0.340s, Critical Path: 0.00s
+```
+
+你会发现，什么都没有构建，因为 bazel 与 cmake 一样，只有当关联的文件被修改或者 BUILD 文件被修改时才会重新进行构建，而且是“增量”构建，即只编译修改的或新的文件。
+
+你可以执行 `bazel help target-syntax` 来查看构建命名指定目标的语法：
+
+```bash
+$ bazel help target-syntax
+                                                           [bazel release 0.5.4]
+Target pattern syntax
+=====================
+
+The BUILD file label syntax is used to specify a single target. Target
+patterns generalize this syntax to sets of targets, and also support
+working-directory-relative forms, recursion, subtraction and filtering.
+Examples:
+
+Specifying a single target:
+
+  //foo/bar:wiz     The single target '//foo/bar:wiz'.
+  foo/bar/wiz       Equivalent to:
+                      '//foo/bar/wiz:wiz' if foo/bar/wiz is a package,
+                      '//foo/bar:wiz' if foo/bar is a package,
+                      '//foo:bar/wiz' otherwise.
+  //foo/bar         Equivalent to '//foo/bar:bar'.
+
+Specifying all rules in a package:
+
+  //foo/bar:all       Matches all rules in package 'foo/bar'.
+
+Specifying all rules recursively beneath a package:
+
+  //foo/...:all     Matches all rules in all packages beneath directory 'foo'.
+  //foo/...           (ditto)
+
+  By default, directory symlinks are followed when performing this recursive traversal, except
+  those that point to under the output base (for example, the convenience symlinks that are created
+  in the root directory of the workspace) But we understand that your workspace may intentionally
+  contain directories with weird symlink structures that you don't want consumed. As such, if a
+  directory has a file named
+  'DONT_FOLLOW_SYMLINKS_WHEN_TRAVERSING_THIS_DIRECTORY_VIA_A_RECURSIVE_TARGET_PATTERN'
+  then symlinks in that directory won't be followed when evaluating recursive
+  target patterns.
+
+Working-directory relative forms:  (assume cwd = 'workspace/foo')
+
+  Target patterns which do not begin with '//' are taken relative to
+  the working directory.  Patterns which begin with '//' are always
+  absolute.
+
+  ...:all           Equivalent to  '//foo/...:all'.
+  ...                 (ditto)
+
+  bar/...:all       Equivalent to  '//foo/bar/...:all'.
+  bar/...             (ditto)
+
+  bar:wiz           Equivalent to '//foo/bar:wiz'.
+  :foo              Equivalent to '//foo:foo'.
+
+  bar               Equivalent to '//foo/bar:bar'.
+  foo/bar           Equivalent to '//foo/foo/bar:bar'.
+
+  bar:all           Equivalent to '//foo/bar:all'.
+  :all              Equivalent to '//foo:all'.
+
+Summary of target wildcards:
+
+  :all,             Match all rules in the specified packages.
+  :*, :all-targets  Match all targets (rules and files) in the specified
+                      packages, including .par and _deploy.jar files.
+
+Subtractive patterns:
+
+  Target patterns may be preceded by '-', meaning they should be
+  subtracted from the set of targets accumulated by preceding
+  patterns. (Note that this means order matters.) For example:
+
+    % bazel build -- foo/... -foo/contrib/...
+
+  builds everything in 'foo', except 'contrib'.  In case a target not
+  under 'contrib' depends on something under 'contrib' though, in order to
+  build the former bazel has to build the latter too. As usual, the '--' is
+  required to prevent '-f' from being interpreted as an option.
+
+(Use 'help --long' for full details or --short to just enumerate options.)
+```
+
+**如果目标指定了 `tags=["manual"]`，那么所有的目标通配符都不会包含这个目标，你必须严格的指定它才能进行构建和测试**。
