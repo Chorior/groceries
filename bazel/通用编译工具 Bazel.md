@@ -21,6 +21,7 @@ tags:
     *   [帮助](#help)
     *   [配置文件](#bazelrc)
     *   [构建命令](#build_command)
+*   [C/C++ 规则](#c/c++_rules)
 
 <h2 id="overview">概述</h2>
 
@@ -758,3 +759,40 @@ Subtractive patterns:
 ```
 
 **如果目标指定了 `tags=["manual"]`，那么所有的目标通配符都不会包含这个目标，你必须严格的指定它才能进行构建和测试**。
+
+<h3 id="build_configuration_and_cross_compilation">构建配置与交叉编译</h3>
+
+构建配置分为两种类型：
+
+*   存储在 BUILD 文件中的固有信息--规则及其属性、依赖关系；
+*   用户或构建工具提供的外部或环境数据--目标架构、编译链接选项、其它工具链配置选项。
+
+有时候你工作的环境与需要的环境不一样，比如你工作在 windows 上，但是却需要能够在 Linux 上运行的程序，这就需要交叉编译(cross-compilation)。我们将用于工作环境的配置文件称为主配置(host configuration)，用于目标环境的配置文件称为目标配置(target configuration) 或 请求配置(request configuration)，其中**主配置用于构建构建时需要的工具，目标配置用于构建最终需要的二进制文件**。
+
+bazel 使用 `--distinct_host_configuration` 布尔选项来选择主配置：
+
+*   该选项默认为 true，主配置将按如下规则从目标配置派生：
+    *   使用与目标配置指定的相同版本的 Crosstool(`--crosstool_top`)，除非指定了 `--host_crosstool_top`；
+    *   对 `--cpu` (默认值：k8) 选项使用 `--host_cpu` 的值；
+    *   使用与目标配置指定的这些选项相同的值：`--compiler`,`--use_ijars`,`--java_toolchain`，如果使用了 `--host_crosstool_top`，则 `--host_cpu` 的值用于在Crosstool中为主配置查找一个 `default_toolchain`(忽略 `--compiler`)；
+    *   使用 c++ 的优化版本(`-c opt`)；
+    *   不生成调试信息(`--copt=-g0`)；
+    *   从可执行文件和共享库剥离调试信息(`--strip=always`)；
+    *   将所有派生文件放在特殊位置，与任何可能的目标配置使用的不同；
+    *   禁止使用构建数据打印二进制文件(`--embed_*` 选项)；
+    *   所有其他值保持默认值。
+*   当该选项为 fasle 时，主配置与目标配置相同，如果你经常修改目标配置，那么会导致大量的重建，**不建议使用该选项**。
+
+<h2 id="c/c++_rules">C/C++ 规则</h2>
+
+C/C++ 一共有五个规则，`cc_binary`,`cc_inc_library`,`cc_library`,`cc_proto_library`,`cc_test`。
+
+<h2 id="cc_binary">cc_binary</h2>
+
+`cc_binary` 的参数如下：
+
+```text
+cc_binary(name, deps, srcs, data, args, compatible_with, copts, defines, deprecation, distribs, features, includes, licenses, linkopts, linkshared, linkstatic, malloc, nocopts, output_licenses, restricted_to, stamp, tags, testonly, toolchains, visibility)
+```
+
+
