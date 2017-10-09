@@ -1,39 +1,40 @@
----
-title:      "通用编译工具 Bazel"
-subtitle:   "Hello Bazel"
-date:       2017-10-01 14:00:00 +0800
-header-img: "img/stock-photo-8.jpg"
-tags:
-    - C++
-    - Tool
----
+# 通用编译工具 Bazel
 
 最近 Google 开源了它的 C++ 常用库 [Abseil](https://abseil.io/docs/cpp/quickstart)，鉴于它的文档内容都是基于 [Bazel](https://docs.bazel.build/versions/master/bazel-overview.html) 编译的，所以需要掌握一些常用的 Bazel 知识。
 
-#   本文结构
+##   本文结构
 
 *   [概述](#overview)
 *   [安装](#install)
 *   [配置](#config)
-*   [Hello Wrold](#hello_world)
+*   [Hello World](#hello_world)
 *   [概念及术语](#concepts_and_terminology)
-*   [用户手册](#user_manual)
-    *   [帮助](#help)
-    *   [配置文件](#bazelrc)
-    *   [构建命令](#build_command)
-*   [C/C++ 规则](#c/c++_rules)
+    *   [WORKSPACE](#workspace)
+    *   [package](#package)
+    *   [target](#target)
+    *   [label](#label)
+    *   [rule](#rule)
+    *   [BUILD](#build)
+*   [帮助](#help)
+*   [配置文件](#bazelrc)
+*   [构建命令](#build_command)
+*   [C++ 与 Bazel](#c++_and_bazel)
 
 <h2 id="overview">概述</h2>
 
-Bazel 是一个编译工具，用于构建和运行测试。通过其扩展语言，你可以编译**任何语言**写的源文件，并**提供对 java,c,c++,python 的本地支持**。
+Bazel 是一个编译工具，用于构建和运行测试，它**提供了对 java,c,c++,python 的本地支持**，你还可以通过其扩展语言编译**任何语言**写的源文件。
 
-**Bazel 支持大多数主流的运行环境(Linux,Windows,MacOs)和编译器**，这意味着**只要你学会了 Bazel ，就能在大多数系统下编译和测试任意语言了**，是不是很酷？:smirk:
+**Bazel 支持大多数主流的运行环境(Linux,Windows,MacOs 等)和编译器**，这意味着**只要你学会了 Bazel ，就能在大多数系统下编译和测试任意语言了**，是不是很酷？:smirk:
 
 Bazel 是没有 GUI 的，这意味着你需要知道如何为自己的工程添加编译规则(rules)。如果你用过 makefile、CMakeLists.txt 或者 QT 的 .pro 文件的话，那么 Bazel 添加编译规则的方式跟它们差不多，**Bazel 使用一个名为 BUILD 的文件来描述如何编译你的工程**。
 
 Bazel 还有一个方便的查询语言([Query Lauguage](https://docs.bazel.build/versions/master/query.html))，通过与 [Graphviz](http://www.webgraphviz.com/) 配合使用，**可以立即构建出准确的关系依赖图**，这在管理工程时会节约不少时间。
 
 与 cmake 一样，**Bazel 只会编译修改后的文件**。
+
+cmake 有时会有时间戳问题、不能检测命令更改的问题、编译中断后再次编译输出文件不会重建的问题，虽然这些问题可以使用 touch 或 `make clean` 进行解决，但 Bazel 解决了这些问题，因此 **Bazel 比 cmake 拥有更加正确的增量构建**，你再也不必每次都执行 `make clean` 再编译了，这意味着已经编译好的文件可能不需要再次编译，这对大型工程来说，会节约相当多的时间。
+
+**当你需要执行 `bazel clean` 时，很可能是 Bazel 出现了问题**。
 
 <h2 id="install">安装</h2>
 
@@ -53,11 +54,11 @@ $ choco install bazel
 
 **不同工作区的文件默认是相互独立的**。
 
-构建完成后的输出文件通常不在工作区，但**会在 WORKSPACE 文件所在目录生成多个符号链接目录，这些目录指向对应输出文件所在的目录**，具体可查看下面的 [Hello World](#build_hello_world)。
+构建完成后的输出文件通常不在工作区，但**会在 WORKSPACE 文件所在目录生成多个符号链接目录，这些目录指向对应输出文件所在的目录**。
 
-<h2 id="hello_world">Hello Wrold</h2>
+<h2 id="hello_world">Hello World</h2>
 
-为了尽快入个门，我们首先构建一个 Hello World 练练手。
+我们构建一个 Hello World 来掌握一下 Bazel 的基础流程。
 
 首先，我们构造一个这样的目录结构：
 
@@ -140,7 +141,7 @@ cc_binary(                      # 构建二进制文件
 
 ```bash
 pengzhen@pengzhen-PC MINGW64 /r/bazel
-$ bazel build ///hello_world:hello
+$ bazel build ///hello_world:hello    # 应该是 bazel build //hello_world:hello，windows git command 需要添加一个斜杠
 .............
 ____Loading package: hello_world
 ____Loading package: @bazel_tools//tools/cpp
@@ -156,7 +157,7 @@ Target //hello_world:hello up-to-date:
 ____Elapsed time: 5.281s, Critical Path: 0.78s
 ```
 
-根据打印的 log 可以看到，生成的 EXE 文件在 temp 目录下，这意味着当你重启电脑后，这些文件将不复存在。
+根据打印的 log 可以看到，生成的 EXE 文件路径。
 
 现在我们来看看工作区发生了哪些变化：
 
@@ -227,7 +228,7 @@ digraph mygraph {
 
 <h2 id="concepts_and_terminology">概念及术语</h2>
 
-### 工作区(WORKSPACE)
+<h3 id="workspace">WORKSPACE</h3>
 
 前面我们说过，工作区是一个文件夹，这个文件夹包含了你想编译的源文件，并且构建后的输出文件夹也会以符号链接(symbolic link)的形式生成在工作区的根目录下。
 
@@ -240,13 +241,13 @@ workspace
 └── WORKSPACE
 ```
 
-### 包(package)
+<h3 id="package">package</h3>
 
-**工作区的基本单元是一个包**。一个包也是一个文件夹，这个文件夹在工作区一定是工作区目录的子目录，该文件夹包含了一系列关联的源文件，这些源文件可以以子目录的方式存在。
+**工作区的基本单元是一个包(package)**。一个包也是一个文件夹，这个文件夹一定是工作区目录的子目录(根目录也是子目录)，该文件夹包含了一系列关联的源文件，这些源文件可以以子目录的方式存在。
 
 作为包的标志以及如何编译这些源文件，**包目录必须包含一个名为 BUILD 的文件**，为了包间的独立性，如果一个包包含了另一个包，那么**子包的文件是不属于顶层包的**。
 
-一个简单的实例如下：
+一个简单的示例如下：
 
 ```text
 bazel
@@ -267,25 +268,25 @@ bazel
 
 **虽然你可以将工作区根目录作为一个包，但是建议用一些描述性的目录名来创建一个包**。
 
-### 目标(target)
+<h3 id="target">target</h3>
 
-**包里面的元素被称为 target**。
+**包里面的元素被称为目标(target)**。
 
 target 主要分为两类--文件(file)和规则(rule)，另一类不太常用的类型是 package group。
 
 文件(file)包含两种类型--源文件与生成文件，其中生成文件是某些规则(rule)生成的文件。
 
-规则(rule)指定了一系列输入文件与一系列输出文件间的关系、以及一步步从这些输入文件生成这些输出文件的方式。其中输入文件可以是源文件也可以是生成文件，但输出文件一定是生成文件，这意味着**你可以将一个规则的输出文件作为另一个规则的输入文件**。
+**规则(rule)指定了一系列输入文件与一系列输出文件间的关系、以及一步步从这些输入文件生成这些输出文件的方式**。其中输入文件可以是源文件也可以是生成文件，但输出文件一定是生成文件，这意味着**你可以将一个规则的输出文件作为另一个规则的输入文件**。
 
 一个规则可能包含另一个规则，**假设规则A包含规则B，那么在编译时B的头文件对于A是可用的、在链接时B的标志(symbol)对于A是可用的、在运行时B的运行时数据(runtime data)对于A是可用的**。
 
 package group 将一系列包合并为一个组，这样就能引用这个组内所有包的可见标志了。
 
-### 标签(label)
+<h3 id="label">label</h3>
 
-**目标(target)的名字就是一个标签**。
+**目标(target)的名字就是一个标签(label)**。
 
-每个标签包含两个部分--包名和目标名，例如我们在 [Hello World](#build_hello_world) 里面一个标签就是：
+每个标签包含两个部分--包名和目标名，例如我们在 [Hello World](#hello_world) 里面一个标签就是：
 
 ```text
 //hello_world:hello
@@ -338,20 +339,23 @@ bazel
 
 **包名必须由字母、数字、`/-._` 组成，但是不能以斜杠 `/` 开头和结尾**，所以不要在工作区创建中文包。
 
-`target_name` 分为文件(file)名和规则(rule)名，其中文件名是相对于包目录的路径名，如 `lib/hello_world.h`；规则名就是 BUILD 文件中某个规则的 name 参数的值，如我们 [Hello World](#build_hello_world) 中就有两个规则名--`hello_world` 和 `hello`。**规则名中最好不要使用斜杠 `/`，因为可能会造成误导**。
+`target_name` 分为文件(file)名和规则(rule)名，其中文件名是相对于包目录的路径名，如 `lib/hello_world.h`；规则名就是 BUILD 文件中某个规则的 name 参数的值，如我们 [Hello World](#hello_world) 中就有两个规则名--`hello_world` 和 `hello`。**规则名中最好不要使用斜杠 `/`，因为可能会造成误导**。
 
-**目标名必须有字母、数字、`_/.+-=,@~` 组成，但是不能以斜杠 `/` 开头和结尾，也不能以多个连续的斜杠 `/` 作为路径分隔符，如 `hello_world//lib`**。另外，**两个特殊的目录 `..` 和 `.` 也不能使用**。
+**目标名必须由字母、数字、`_/.+-=,@~` 组成，但是不能以斜杠 `/` 开头和结尾，也不能以多个连续的斜杠 `/` 作为路径分隔符，如 `hello_world//lib`**。另外，**两个特殊的目录 `..` 和 `.` 也不能使用**。
 
-
-### 规则(rule)
+<h3 id="rule">rule</h3>
 
 规则(rule)指定了一系列输入文件与一系列输出文件间的关系、以及一步步从这些输入文件生成这些输出文件的方式。
 
-例如 [Hello World](#build_hello_world) 中就有两个规则--`hello_world` 和 `hello`。
+例如 [Hello World](#hello_world) 中就有两个规则--`hello_world` 和 `hello`。
 
 每个规则都有一系列属性，这些属性要么是整数、要么是字符串或字符串集、要么是输出标签或输出标签集。
 
-### BUILD 文件
+**规则以语言名字分组**，如 `cc_binary`,`cc_library`,`cc_test` 分别用于构建 C++ 二进制文件、库和测试，`java_*` 用于构建相应 java 模块。
+
+**测试的程序必须是成功返回0的程序**。
+
+<h3 id="build">BUILD</h3>
 
 BUID 文件的语法是 [Python](http://docs.python.org/reference/lexical_analysis.html) 的一个子集，但是少了很多东西，具体少了什么东西，你可以[自行查看](https://docs.bazel.build/versions/master/build-ref.html#core_build_language)。
 
@@ -369,12 +373,6 @@ date: 2017/10/05
 
 # BUILD start
 ```
-
-#### 规则类型
-
-**构建规则有三种类型，`*_binary`,`*_library`,`*_test`，分别代表二进制文件、库和测试**。根据不同语言，例如 C++ 就是 `cc_binary`、java 就是 `java_binary`。
-
-**测试的程序必须是成功返回0的程序**。
 
 #### 实际依赖关系与声明依赖关系
 
@@ -533,11 +531,9 @@ int main(){
 }
 ```
 
-<h2 id="user_manual">用户手册</h2>
+<h2 id="help">帮助</h2>
 
-<h3 id="help">帮助</h3>
-
-bazel 提供了很多命令，最常用的就是 `bazel build`，查看帮助可以执行 `bazel help`：
+查看帮助可以执行 `bazel help`：
 
 ```bash
 $ bazel help
@@ -575,7 +571,7 @@ Getting more help:
 
 **当你运行 bazel 时，你实际上是在运行客户端(client)，客户端基于工作区路径和用户ID(userid)来寻找服务器**，所以**不同的工作区会有不同的服务器、同一个工作区的不同用户也会有不同的服务器，这意味着可以在同一个工作区并发构建**。
 
-<h3 id="bazelrc">配置文件</h3>
+<h2 id="bazelrc">配置文件</h2>
 
 bazel 提供了很多命令选项，如果你需要经常为某个命令提供相同的命令选项的话，**你可以通过 `bazel --bazelrc=file` 为 bazel 指定一个配置文件。如果没有指定这个选项，bazel 会在工作区根目录或 home 目录(windows 是 usr/usrname)下寻找一个名为 `.bazelrc` 的文件作为配置文件**，如果两个目录都没找到的话，那么就没有配置文件。
 
@@ -593,7 +589,7 @@ $ bazel --bazelrc=rc run //main:hello
 命令行指定的选项 > 用户指定的配置文件 或 workspace/.bazelrc 或 home/.bazelrc > tools/bazel.rc 或 /etc/bazel.bazelrc
 ```
 
-其中“或”的意思是两个文件只能读取一个，所有配置文件中相同命令的选项会联合在一起，如果选项的值不同的话，选择优先级高的。
+其中“或”的意思是只能读取一个文件，所有配置文件中相同命令的选项会联合在一起，如果选项的值不同的话，选择优先级高的。
 
 如果你一个配置文件也不想用的话，在 linux 下可以使用 `--bazelrc=/dev/null`。
 
@@ -673,7 +669,7 @@ Target //main:hello up-to-date:
 ____Elapsed time: 0.340s, Critical Path: 0.00s
 ```
 
-你会发现，什么都没有构建，因为 bazel 与 cmake 一样，只有当关联的文件被修改或者 BUILD 文件被修改时才会重新进行构建，而且是“增量”构建，即只编译修改的或新的文件。
+你会发现，什么都没有构建，因为 bazel 与 cmake 一样，只有当关联的文件被修改或编译命令更改时才会重新进行构建。
 
 你可以执行 `bazel help target-syntax` 来查看构建命名指定目标的语法：
 
@@ -759,40 +755,3 @@ Subtractive patterns:
 ```
 
 **如果目标指定了 `tags=["manual"]`，那么所有的目标通配符都不会包含这个目标，你必须严格的指定它才能进行构建和测试**。
-
-<h3 id="build_configuration_and_cross_compilation">构建配置与交叉编译</h3>
-
-构建配置分为两种类型：
-
-*   存储在 BUILD 文件中的固有信息--规则及其属性、依赖关系；
-*   用户或构建工具提供的外部或环境数据--目标架构、编译链接选项、其它工具链配置选项。
-
-有时候你工作的环境与需要的环境不一样，比如你工作在 windows 上，但是却需要能够在 Linux 上运行的程序，这就需要交叉编译(cross-compilation)。我们将用于工作环境的配置文件称为主配置(host configuration)，用于目标环境的配置文件称为目标配置(target configuration) 或 请求配置(request configuration)，其中**主配置用于构建构建时需要的工具，目标配置用于构建最终需要的二进制文件**。
-
-bazel 使用 `--distinct_host_configuration` 布尔选项来选择主配置：
-
-*   该选项默认为 true，主配置将按如下规则从目标配置派生：
-    *   使用与目标配置指定的相同版本的 Crosstool(`--crosstool_top`)，除非指定了 `--host_crosstool_top`；
-    *   对 `--cpu` (默认值：k8) 选项使用 `--host_cpu` 的值；
-    *   使用与目标配置指定的这些选项相同的值：`--compiler`,`--use_ijars`,`--java_toolchain`，如果使用了 `--host_crosstool_top`，则 `--host_cpu` 的值用于在Crosstool中为主配置查找一个 `default_toolchain`(忽略 `--compiler`)；
-    *   使用 c++ 的优化版本(`-c opt`)；
-    *   不生成调试信息(`--copt=-g0`)；
-    *   从可执行文件和共享库剥离调试信息(`--strip=always`)；
-    *   将所有派生文件放在特殊位置，与任何可能的目标配置使用的不同；
-    *   禁止使用构建数据打印二进制文件(`--embed_*` 选项)；
-    *   所有其他值保持默认值。
-*   当该选项为 fasle 时，主配置与目标配置相同，如果你经常修改目标配置，那么会导致大量的重建，**不建议使用该选项**。
-
-<h2 id="c/c++_rules">C/C++ 规则</h2>
-
-C/C++ 一共有五个规则，`cc_binary`,`cc_inc_library`,`cc_library`,`cc_proto_library`,`cc_test`。
-
-<h2 id="cc_binary">cc_binary</h2>
-
-`cc_binary` 的参数如下：
-
-```text
-cc_binary(name, deps, srcs, data, args, compatible_with, copts, defines, deprecation, distribs, features, includes, licenses, linkopts, linkshared, linkstatic, malloc, nocopts, output_licenses, restricted_to, stamp, tags, testonly, toolchains, visibility)
-```
-
-
