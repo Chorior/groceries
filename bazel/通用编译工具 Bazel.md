@@ -10,7 +10,7 @@
 *   [Hello World](#hello_world)
 *   [概念及术语](#concepts_and_terminology)
     *   [WORKSPACE](#workspace)
-    *   [package](#package)
+    *   [package](#package_terminology)
     *   [target](#target)
     *   [label](#label)
     *   [rule](#rule)
@@ -18,7 +18,7 @@
 *   [帮助](#help)
 *   [配置文件](#bazelrc)
 *   [构建命令](#build_command)
-*   [C++ 与 Bazel](#c++_and_bazel)
+*   [功能函数](#functions)
 
 <h2 id="overview">概述</h2>
 
@@ -32,9 +32,7 @@ Bazel 还有一个方便的查询语言([Query Lauguage](https://docs.bazel.buil
 
 与 cmake 一样，**Bazel 只会编译修改后的文件**。
 
-cmake 有时会有时间戳问题、不能检测命令更改的问题、编译中断后再次编译输出文件不会重建的问题，虽然这些问题可以使用 touch 或 `make clean` 进行解决，但 Bazel 解决了这些问题，因此 **Bazel 比 cmake 拥有更加正确的增量构建**，你再也不必每次都执行 `make clean` 再编译了，这意味着已经编译好的文件可能不需要再次编译，这对大型工程来说，会节约相当多的时间。
-
-**当你需要执行 `bazel clean` 时，很可能是 Bazel 出现了问题**。
+cmake 有时会有时间戳问题、不能检测命令更改的问题、编译中断后再次编译输出文件不会重建的问题，虽然这些问题可以使用 touch 或 `make clean` 进行解决，但 Bazel 解决了这些问题，因此 **Bazel 比 cmake 拥有更加正确的增量构建**，你再也不必每次都执行 `clean` 后再编译了，这意味着已经编译好的文件可能不需要再次编译，这对大型工程来说，会节约相当多的时间。
 
 <h2 id="install">安装</h2>
 
@@ -241,7 +239,7 @@ workspace
 └── WORKSPACE
 ```
 
-<h3 id="package">package</h3>
+<h3 id="package_terminology">package</h3>
 
 **工作区的基本单元是一个包(package)**。一个包也是一个文件夹，这个文件夹一定是工作区目录的子目录(根目录也是子目录)，该文件夹包含了一系列关联的源文件，这些源文件可以以子目录的方式存在。
 
@@ -347,9 +345,7 @@ bazel
 
 规则(rule)指定了一系列输入文件与一系列输出文件间的关系、以及一步步从这些输入文件生成这些输出文件的方式。
 
-例如 [Hello World](#hello_world) 中就有两个规则--`hello_world` 和 `hello`。
-
-每个规则都有一系列属性，这些属性要么是整数、要么是字符串或字符串集、要么是输出标签或输出标签集。
+例如 [Hello World](#hello_world) 中就有两个规则--`hello_world` 和 `hello`，你**可以使用 `bazel query '///hello_world:all' | sort` 列出所有的规则名**。
 
 **规则以语言名字分组**，如 `cc_binary`,`cc_library`,`cc_test` 分别用于构建 C++ 二进制文件、库和测试，`java_*` 用于构建相应 java 模块。
 
@@ -393,7 +389,7 @@ hello_world
 ```
 
 ```bazel
-// main/BUILD
+# main/BUILD
 cc_binary(
     name = "hello",
     srcs = ["main.cpp"],
@@ -404,7 +400,7 @@ cc_binary(
 ```
 
 ```bazel
-// hello_greet/BUILD
+# hello_greet/BUILD
 cc_library(
     name = "hello_greet",
     hdrs = ["hello_greet.h"],
@@ -416,7 +412,7 @@ cc_library(
 ```
 
 ```bazel
-// hello_time/BUILD
+# hello_time/BUILD
 cc_library(
     name = "hello_time",
     hdrs = ["hello_time.h"],
@@ -501,7 +497,7 @@ main -> hello_greet -> hello_time
 虽然这对结果没有太大影响，但是如果某一天 `hello_greet` 不再引用 `hello_time` 的话，就会造成编译错误：
 
 ```bazel
-// hello_greet/BUILD
+# hello_greet/BUILD
 cc_library(
     name = "hello_greet",
     hdrs = ["hello_greet.h"],
@@ -755,3 +751,341 @@ Subtractive patterns:
 ```
 
 **如果目标指定了 `tags=["manual"]`，那么所有的目标通配符都不会包含这个目标，你必须严格的指定它才能进行构建和测试**。
+
+<h2 id="functions">功能函数</h2>
+
+<h3 id="load">load</h3>
+
+```bazel
+load(label, symbols...)
+```
+
+**`load()` 导入 `.bzl` 文件定义的一个或多个标志(symbol)到本地环境中**，如：
+
+```bazel
+load("//tools/build_rules:build_test.bzl", "build_test")
+load("//tools/build_rules:build_defs.bzl", "COMPILER_FLAGS", "LINKER_FLAGS")
+```
+
+你可以为导入的标志进行重命名：
+
+```bazel
+load("//tools/build_rules:build_defs.bzl", BUILD_DEF_COMPILER_FLAGS="COMPILER_FLAGS", "LINKER_FLAGS")
+```
+
+**label 必须指向一个存在的 package**，如上面的示例就需要 `tools/build_rules/BUILD` 存在。
+
+下面做一个完整的简单演示：
+
+```text
+load
+├── hello_world
+│   ├── BUILD
+│   └── main.cpp
+├── lib
+|   ├── BUILD
+│   ├── hello_time.h
+│   ├── hello_greet.h
+|   └── symbols.bzl
+└── WORKSPACE
+```
+
+其中源文件可以在上面的 [BUILD](#build) 中查找，下面列出两个 BUILD 文件和 `symbols.bzl`：
+
+```bazel
+# main/BUILD
+load(
+    "//lib:symbols.bzl",
+    "GREET"
+)
+
+cc_binary(
+    name = "hello_world",
+    srcs = ["main.cpp"],
+    deps = GREET,
+)
+```
+
+```bazel
+# lib/symbols.bzl
+TIME = [ "//lib:hello_time" ]
+
+GREET = [ "//lib:hello_greet" ]
+```
+
+```bazel
+# lib/BUILD
+cc_library(
+    name = "hello_time",
+    hdrs = ["hello_time.h"],
+)
+
+cc_library(
+    name = "hello_greet",
+    hdrs = ["hello_greet.h"],
+    deps = ["hello_time"],
+    visibility = ["//hello_world:__pkg__"],
+)
+```
+
+<h3 id="package_function">package</h3>
+
+```bazel
+package(default_deprecation, default_testonly, default_visibility, features)
+```
+
+**该函数声明了后续所有规则的一些默认属性，它在 BUILD 文件中最多只能使用一次**。
+
+**由于其属性值对后续所有规则都有影响，所以最好将它放置在 [load](#load) 之后，所有其它规则之前**，例如上面演示的 `lib/BUILD` 可以写成这样：
+
+```bazel
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "hello_time",
+    hdrs = ["hello_time.h"],
+)
+
+cc_library(
+    name = "hello_greet",
+    hdrs = ["hello_greet.h"],
+    deps = [ "hello_time" ],
+)
+```
+
+这样 `hello_time` 和 `hello_greet` 就能被工作区的所有包使用了。
+
+<h3 id="package_group">package_group</h3>
+
+```bazel
+package_group(name, packages, includes)
+```
+
+**`package_group` 是被用在 visibility 控制上的**，该函数将一系列包组合在一起并为其命名，其中 includes 是用来包含其他 `package_group` 的。
+
+你可以在某个 rule 中使用 name 参数来为所有组内的包赋予 visibility。如上面 [load](#load) 演示的 `lib/BUILD` 还可以写成这样：
+
+```bazel
+package_group(
+    name = "hello",
+    packages = [
+        "//hello_world",
+    ]
+)
+
+cc_library(
+    name = "hello_time",
+    hdrs = ["hello_time.h"],
+)
+
+cc_library(
+    name = "hello_greet",
+    hdrs = ["hello_greet.h"],
+    deps = [ "hello_time" ],
+    visibility = ["hello"],
+)
+```
+
+includes 官方示例如下：
+
+```bazel
+package_group(
+    name = "fooapp",
+    includes = [
+        ":controller",
+        ":model",
+        ":view",
+    ],
+)
+
+package_group(
+    name = "model",
+    packages = ["//fooapp/database"],
+)
+
+package_group(
+    name = "view",
+    packages = [
+        "//fooapp/swingui",
+        "//fooapp/webui",
+    ],
+)
+
+package_group(
+    name = "controller",
+    packages = ["//fooapp/algorithm"],
+)
+```
+
+<h3 id="licenses">licenses</h3>
+
+```bazel
+licenses(license_types)
+```
+
+**`licenses()` 指定了 BUILD 文件中所有规则的协议类型**，其位置应该放置在开始位置，但遵从上面 [package](#package_function) 函数的提示，**将其放置在 package 函数的下面最为合适**。
+
+其 `license_types` 包含以下五种类型值：
+
+*   restricted：必须分享源代码；
+*   reciprocal：允许以未修改的形式自由使用软件，任何修改都必须开源；
+*   notice：必须注明版权；
+*   permissive：不用注明版权；
+*   unencumbered：随意使用。
+
+你可以参考 [choosealicense](http://choosealicense.online/) 选择一个合适的开源协议，一个示例如下：
+
+```bazel
+licenses(["notice"])  # Apache 2.0
+```
+
+<h3 id="exports_files">exports_files</h3>
+
+```bazel
+exports_files([label, ...], visibility, licenses)
+```
+
+**`exports_files()` 导出了本包中一系列文件，使得 visibility 指定的包能够使用这些文件，licenses 用以指定协议；当不指定 visibility 时，不管 [package](#package_function) 函数是否指定了默认可视属性，这些文件对所有包都是可见的**。
+
+上面 [load](#load) 演示的 BUILD 文件可以修改为下面这样：
+
+```bazel
+# lib/BUILD
+exports_files(
+    [
+        "hello_time.h",
+        "hello_greet.h"
+    ],
+    visibility = ["//hello_world:__pkg__"],
+)
+```
+
+```bazel
+# hello_world/BUILD
+cc_library(
+    name = "hello_time",
+    hdrs = ["//lib:hello_time.h"],
+)
+
+cc_library(
+    name = "hello_greet",
+    hdrs = ["//lib:hello_greet.h"],
+    deps = ["hello_time"],
+)
+
+cc_binary(
+    name = "hello_world",
+    srcs = ["main.cpp"],
+    deps = ["hello_greet"],
+)
+```
+
+<h3 id="glob">glob</h3>
+
+```bazel
+glob(include, exclude=[], exclude_directories=1)
+```
+
+**`glob()` 返回一个不匹配 exclude、且至少满足一个 include 规范的排序的源文件名列表**。
+
+```bazel
+cc_library(
+    name = "mylib",
+    hdrs = glob(["*.h"]),
+)
+```
+
+你可以使用通配符 `*` 来代表除目录分隔符 `/` 之外的任意字符；你还可以使用 `**` 来代表一个以零个或多个 `/` 分隔的字符串，如 `1/2/3`，但**它只能被当做一个路径段(path segment)**，你不能像 `"test**/testdata.xml"` 或 `"**.java"` 这样使用它，你只能像 `"**/*.java"` 这样使用。
+
+**你不能使用 `glob()` 访问到其它包的文件，但你能够匹配到本包的所有文件，包括隐藏文件**。
+
+**如果某个 rule 和 源文件重名了，rule 的优先级更高**。
+
+如果你想要获取生成文件的列表的话，参考如下官方示例：
+
+```bazel
+java_library(
+    name = "mylib",
+    srcs = glob(["*.java"]) + [":gen_java_srcs"],
+    deps = "...",
+)
+
+genrule(
+    name = "gen_java_srcs",
+    outs = [
+        "Foo.java",
+        "Bar.java",
+    ],
+    ...
+)
+```
+
+一个扩展的 `glob()` 官方示例如下:
+
+```bazel
+# Conveniently, the build language supports list comprehensions.
+[genrule(
+    name = "count_lines_" + f[:-3],  # strip ".cc"
+    srcs = [f],
+    outs = ["%s-linecount.txt" % f[:-3]],
+    cmd = "wc -l $< >$@",
+ ) for f in glob(["*_test.cc"])]
+```
+
+```bash
+$ ls foo/
+a_test.cc  b_test.cc  BUILD  c_test.cc
+
+$  bazel query '///foo:all' | sort
+//foo:count_lines_a_test
+//foo:count_lines_b_test
+//foo:count_lines_c_test
+```
+
+```bash
+$ ls bazel-genfiles/foo/
+a_test-linecount.txt  b_test-linecount.txt  c_test-linecount.txt
+
+$ cat bazel-genfiles/foo/a_test-linecount.txt
+0 foo/a_test.cc
+```
+
+<h3 id="select">select</h3>
+
+```bazel
+select(
+    {conditionA: valuesA, conditionB: valuesB, ...},
+    no_match_error = "custom message"
+)
+```
+
+**`select()` 用于为非 `nonconfigurable` 属性设置一些根据命令行参数改变而改变的属性值，`no_match_error` 参数用于显示无匹配时显示的错误信息**。
+
+```bazel
+config_setting(
+    name = "localize",
+    values = {
+        "define": "greet=local",
+    },
+)
+
+cc_library(
+    name = "hello_time",
+    hdrs = ["//lib:hello_time.h"],
+)
+
+cc_library(
+    name = "hello_greet",
+    hdrs = select({
+        ":localize": ["hello_greet.h"],
+        "//conditions:default": ["//lib:hello_greet.h"]
+    }),
+    deps = ["hello_time"],
+)
+
+cc_binary(
+    name = "hello_world",
+    srcs = ["main.cpp"],
+    deps = ["hello_greet"],
+)
+```
