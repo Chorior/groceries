@@ -9,7 +9,7 @@
 *   [配置](#config)
 *   [Hello World](#hello_world)
 *   [概念及术语](#concepts_and_terminology)
-    *   [WORKSPACE](#workspace)
+    *   [WORKSPACE](#workspace_terminology)
     *   [package](#package_terminology)
     *   [target](#target)
     *   [label](#label)
@@ -19,6 +19,14 @@
 *   [配置文件](#bazelrc)
 *   [构建命令](#build_command)
 *   [功能函数](#functions)
+    *   [load](#load)
+    *   [package](#package_function)
+    *   [package_group](#package_group)
+    *   [licenses](#licenses)
+    *   [exports_files](#exports_files)
+    *   [glob](#glob)
+    *   [select](#select)
+    *   [workspace](#workspace_function)
 
 <h2 id="overview">概述</h2>
 
@@ -226,7 +234,7 @@ digraph mygraph {
 
 <h2 id="concepts_and_terminology">概念及术语</h2>
 
-<h3 id="workspace">WORKSPACE</h3>
+<h3 id="workspace_terminology">WORKSPACE</h3>
 
 前面我们说过，工作区是一个文件夹，这个文件夹包含了你想编译的源文件，并且构建后的输出文件夹也会以符号链接(symbolic link)的形式生成在工作区的根目录下。
 
@@ -790,7 +798,7 @@ load
 └── WORKSPACE
 ```
 
-其中源文件可以在上面的 [BUILD](#build) 中查找，下面列出两个 BUILD 文件和 `symbols.bzl`：
+其中源文件可以在上面的 [BUILD](#build) 中查找，稍作更改即可，下面列出两个 BUILD 文件和 `symbols.bzl`：
 
 ```bazel
 # main/BUILD
@@ -1059,9 +1067,26 @@ select(
 )
 ```
 
-**`select()` 用于为非 `nonconfigurable` 属性设置一些根据命令行参数改变而改变的属性值，`no_match_error` 参数用于显示无匹配时显示的错误信息**。
+**`select()` 用于为没有标记为 `nonconfigurable` 的属性设置一些根据命令行参数改变而改变的属性值，`no_match_error` 参数用于显示无匹配时显示的错误信息**。
+
+下面做一个简单的演示：
+
+```text
+select
+├── hello_world
+│   ├── BUILD
+│   ├── main.cpp
+│   └── hello_greet.cpp
+├── lib
+|   ├── BUILD
+│   ├── hello_time.h
+│   ├── hello_greet.h
+|   └── hello_greet.cpp
+└── WORKSPACE
+```
 
 ```bazel
+# hello_world/BUILD
 config_setting(
     name = "localize",
     values = {
@@ -1076,9 +1101,10 @@ cc_library(
 
 cc_library(
     name = "hello_greet",
-    hdrs = select({
-        ":localize": ["hello_greet.h"],
-        "//conditions:default": ["//lib:hello_greet.h"]
+    hdrs = ["//lib:hello_greet.h"],
+    srcs = select({
+        ":localize": ["hello_greet.cpp"],
+        "//conditions:default": ["//lib:hello_greet.cpp"]
     }),
     deps = ["hello_time"],
 )
@@ -1089,3 +1115,80 @@ cc_binary(
     deps = ["hello_greet"],
 )
 ```
+
+```bazel
+# lib/BUILD
+exports_files(
+    [
+        "hello_time.h",
+        "hello_greet.h",
+        "hello_greet.cpp",
+    ],
+    visibility = ["//hello_world:__pkg__"],
+)
+```
+
+```bash
+$ bazel build ///hello_world
+____Loading complete.  Analyzing...
+WARNING: R:/bazel/load/hello_world/BUILD:16:12: in srcs attribute of cc_library rule //hello_world:hello_greet: please do not import '//lib:hello_greet.cpp' directly. You should either move the file to this package or depend on an appropriate rule there.
+____Found 1 target...
+Target //hello_world:hello_world up-to-date:
+  C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/xfyfngfq/execroot/__main__/bazel-out/msvc_x64-fastbuild/bin/hello_world/hello_world.exe
+____Elapsed time: 0.921s, Critical Path: 0.58s
+
+$ bazel-bin/hello_world/hello_world.exe
+Hello World.
+2017-10-9 22:30:44
+
+$ bazel build ///hello_world --define=greet=local
+____Loading package: hello_world
+____Loading package: @bazel_tools//tools/cpp
+____Loading package: @local_config_cc//
+____Loading package: @local_jdk//
+____Loading complete.  Analyzing...
+____Found 1 target...
+____Building...
+Target //hello_world:hello_world up-to-date:
+  C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/xfyfngfq/execroot/__main__/bazel-out/msvc_x64-fastbuild/bin/hello_world/hello_world.exe
+____Elapsed time: 1.224s, Critical Path: 0.56s
+
+$ bazel-bin/hello_world/hello_world.exe
+Hello World.
+
+$ bazel query --nohost_deps --noimplicit_deps 'deps(//hello_world)' --output graph
+digraph mygraph {
+  node [shape=box];
+"//hello_world:hello_world"
+"//hello_world:hello_world" -> "//hello_world:hello_greet"
+"//hello_world:hello_world" -> "//hello_world:main.cpp"
+"//hello_world:main.cpp"
+"//hello_world:hello_greet"
+"//hello_world:hello_greet" -> "//hello_world:hello_time"
+"//hello_world:hello_greet" -> "//lib:hello_greet.cpp\n//hello_world:localize\n//hello_world:hello_greet.cpp\n//lib:hello_greet.h"
+"//lib:hello_greet.cpp\n//hello_world:localize\n//hello_world:hello_greet.cpp\n//lib:hello_greet.h"
+"//hello_world:hello_time"
+"//hello_world:hello_time" -> "//lib:hello_time.h"
+"//lib:hello_time.h"
+}
+```
+
+![select](select.png)
+
+**`select()` 一次只能有一个值被选择**。如果有多个条件同时满足，选择最符合条件的(例如条件A是条件B的超集，选择条件B)；如果两个条件谁都不是对方的超集(例如条件A是C或D，条件B是C或E，此时C满足条件A和B，但A和B谁都不是最优选择)，Bazel 会报错。
+
+**`//conditions:default` 是当没有条件满足时选择的默认值**。
+
+**`select()` 可以嵌套**，如 `srcs = ["common.sh"] + select({ ":conditionA": ["myrule_a.sh"], ...})`, `srcs = select({ ":conditionA": ["a.sh"]}) + select({ ":conditionB": ["b.sh"]})`。
+
+<h3 id="workspace_function">workspace</h3>
+
+```bazel
+workspace(name = "com_example_project")
+```
+
+**`workspace()` 被用来设置工程名，所以它只能被用在 WORKSPACE 文件中**。
+
+**工程名由数字、字母和下划线组成，但是必须以字母开头**。
+
+**每个 WORKSPACE 都应该有一个 `workspace()` 函数**。
