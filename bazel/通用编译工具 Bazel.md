@@ -9,7 +9,7 @@
 *   [配置](#config)
 *   [Hello World](#hello_world)
 *   [概念及术语](#concepts_and_terminology)
-    *   [WORKSPACE](#workspace_terminology)
+    *   [workspace](#workspace_terminology)
     *   [package](#package_terminology)
     *   [target](#target)
     *   [label](#label)
@@ -27,6 +27,14 @@
     *   [glob](#glob)
     *   [select](#select)
     *   [workspace](#workspace_function)
+*   [规则通用属性](#common_rule_attributes)
+    *   [data](#data)
+    *   [visibility](#visibility)
+*   [通用规则](#common_rule)
+    *   [filegroup](#filegroup)
+    *   [config_setting](#config_setting)
+    *   [genrule](#genrule)
+*   [总结](#summary)
 
 <h2 id="overview">概述</h2>
 
@@ -38,9 +46,11 @@ Bazel 是没有 GUI 的，这意味着你需要知道如何为自己的工程添
 
 Bazel 还有一个方便的查询语言([Query Lauguage](https://docs.bazel.build/versions/master/query.html))，通过与 [Graphviz](http://www.webgraphviz.com/) 配合使用，**可以立即构建出准确的关系依赖图**，这在管理工程时会节约不少时间。
 
-与 cmake 一样，**Bazel 只会编译修改后的文件**。
+与 cmake 一样，**如果源文件没有发生改变，Bazel 不会重新编译**。
 
-cmake 有时会有时间戳问题、不能检测命令更改的问题、编译中断后再次编译输出文件不会重建的问题，虽然这些问题可以使用 touch 或 `make clean` 进行解决，但 Bazel 解决了这些问题，因此 **Bazel 比 cmake 拥有更加正确的增量构建**，你再也不必每次都执行 `clean` 后再编译了，这意味着已经编译好的文件可能不需要再次编译，这对大型工程来说，会节约相当多的时间。
+cmake 有时会有时间戳问题、不能检测编译命令更改的问题、编译中断后再次编译输出文件不会重建的问题，虽然这些问题可以使用 touch 或 `make clean` 进行解决，但 Bazel 解决了这些问题，因此 **Bazel 比 cmake 拥有更加正确的增量构建**，你再也不必每次都执行 `clean` 后再编译了，这意味着已经编译好的文件可能不需要再次编译，这对大型工程来说，会节约相当多的时间。
+
+**当你运行 Bazel 时，你实际上是在运行客户端(client)，客户端基于工作区路径和用户ID(userid)来寻找服务器**，所以**不同的工作区会有不同的服务器、同一个工作区的不同用户也会有不同的服务器，这意味着可以在同一个工作区并发构建**。
 
 <h2 id="install">安装</h2>
 
@@ -54,7 +64,7 @@ $ choco install bazel
 
 <h2 id="config">配置</h2>
 
-**所有的 Bazel 构建都发生在工作区--一个文件夹，该文件夹包含了你想编译的源文件、并且其顶层目录拥有一个名为 WORKSPACE 的文件**，这个 WORKSPACE 文件可以为空，也可以用来引用编译所需要的外部依赖库。
+**所有的 Bazel 构建都发生在工作区--一个文件夹，该文件夹包含了你想编译的所有源文件和所需要的库、并且其顶层目录拥有一个名为 WORKSPACE 的文件**，这个 WORKSPACE 文件可以为空，也可以用来[引用编译所需要的外部依赖库](https://docs.bazel.build/versions/master/be/workspace.html)。
 
 **工作区只是一个声明般的存在，真正创建编译规则的是 BUILD 文件，工作区内包含一个 BUILD 文件的文件夹被称为一个包(package)**。
 
@@ -138,7 +148,7 @@ cc_binary(                      # 构建二进制文件
     name = "hello",             # 目标名
     srcs = ["main.cpp"],        # 源文件
     deps = [                    # 依赖项
-        ":hello_world",         # 当前目录下的 hello_world 库
+        ":hello_world",         # 当前包下的 hello_world 库
     ],
 )
 ```
@@ -163,7 +173,7 @@ Target //hello_world:hello up-to-date:
 ____Elapsed time: 5.281s, Critical Path: 0.78s
 ```
 
-根据打印的 log 可以看到，生成的 EXE 文件路径。
+根据打印的 log 可以看到生成的 EXE 文件路径。
 
 现在我们来看看工作区发生了哪些变化：
 
@@ -228,15 +238,15 @@ digraph mygraph {
 }
 ```
 
-把上面生成的打印文本复制到 [Graphviz](http://www.webgraphviz.com/)，即可看到生成的依赖关系图了：
+把上面生成的打印文本复制到 [Graphviz](http://www.webgraphviz.com/)，可以看到生成的依赖关系图：
 
 ![Graphviz](hello_world.png)
 
 <h2 id="concepts_and_terminology">概念及术语</h2>
 
-<h3 id="workspace_terminology">WORKSPACE</h3>
+<h3 id="workspace_terminology">workspace</h3>
 
-前面我们说过，工作区是一个文件夹，这个文件夹包含了你想编译的源文件，并且构建后的输出文件夹也会以符号链接(symbolic link)的形式生成在工作区的根目录下。
+前面我们说过，工作区(workspace)是一个文件夹，这个文件夹包含了你想编译的所有源文件和需要的库，并且构建后的输出文件夹也会以符号链接(symbolic link)的形式生成在工作区的根目录下。
 
 作为工作区的标志，就是**工作区根目录下必须包含一个名为 WORKSPACE 的文件**，这个 WORKSPACE 文件可以为空，也可以被用来引用外部依赖库。
 
@@ -270,7 +280,7 @@ bazel
 └── WORKSPACE
 ```
 
-这里 bazel 目录是工作区，`hello_world` 目录是一个包，`hello_world/test` 也是一个包，所以 test 目录不属于 `hello_world` 包，但是 `hello_world/lib` 不是一个包，所以它属于 `hello_world` 包。
+这里 bazel 目录是工作区，`hello_world` 是一个包，`hello_world/test` 也是一个包，所以 test 目录不属于 `hello_world` 包，但是 `hello_world/lib` 不是一个包，所以它属于 `hello_world` 包。
 
 **虽然你可以将工作区根目录作为一个包，但是建议用一些描述性的目录名来创建一个包**。
 
@@ -278,15 +288,13 @@ bazel
 
 **包里面的元素被称为目标(target)**。
 
-target 主要分为两类--文件(file)和规则(rule)，另一类不太常用的类型是 package group。
+target 主要分为两类--文件(file)和规则(rule)，另一类不太常用的类型是 [package_group](#package_group)。
 
 文件(file)包含两种类型--源文件与生成文件，其中生成文件是某些规则(rule)生成的文件。
 
 **规则(rule)指定了一系列输入文件与一系列输出文件间的关系、以及一步步从这些输入文件生成这些输出文件的方式**。其中输入文件可以是源文件也可以是生成文件，但输出文件一定是生成文件，这意味着**你可以将一个规则的输出文件作为另一个规则的输入文件**。
 
 一个规则可能包含另一个规则，**假设规则A包含规则B，那么在编译时B的头文件对于A是可用的、在链接时B的标志(symbol)对于A是可用的、在运行时B的运行时数据(runtime data)对于A是可用的**。
-
-package group 将一系列包合并为一个组，这样就能引用这个组内所有包的可见标志了。
 
 <h3 id="label">label</h3>
 
@@ -316,7 +324,7 @@ package group 将一系列包合并为一个组，这样就能引用这个组内
 world
 ```
 
-但是引用其他包的文件的话就不能省略包名，例如对于下面的目录结构中的 `//hello_world:BUILD` 文件，如果要引用 `hello_world/test` 的 `test.h` 文件，就必须使用 `//hello_world/test:test.h` 而不能使用 `test:test.h`，不过所幸如果你使用了错误的方式，编译时会报出错误信息：
+但是引用其他包的文件的话就不能省略包名，例如对于下面的目录结构中的 `//hello_world:BUILD` 文件，如果要引用 `hello_world/test` 的 `test.h` 文件，就必须使用 `//hello_world/test:test.h` 而不能使用 `test:test.h`，不过所幸如果你使用了错误的方式，编译时会报出错误信息。
 
 ```text
 bazel
@@ -341,7 +349,7 @@ bazel
 //package_name:target_name
 ```
 
-其中 `package_name` 就是相对于根目录的包含 BUILD 文件的路径名，如 `hello_world/test`；当根目录是一个包时，`package_name` 为空，如 `//:hello`。
+其中 `package_name` 就是相对于根目录的包含 BUILD 文件的目录路径名，如 `hello_world/test`；当根目录是一个包时，`package_name` 为空，如 `//:hello`。
 
 **包名必须由字母、数字、`/-._` 组成，但是不能以斜杠 `/` 开头和结尾**，所以不要在工作区创建中文包。
 
@@ -573,11 +581,9 @@ Getting more help:
                    Displays a list of keys used by the info command.
 ```
 
-**当你运行 bazel 时，你实际上是在运行客户端(client)，客户端基于工作区路径和用户ID(userid)来寻找服务器**，所以**不同的工作区会有不同的服务器、同一个工作区的不同用户也会有不同的服务器，这意味着可以在同一个工作区并发构建**。
-
 <h2 id="bazelrc">配置文件</h2>
 
-bazel 提供了很多命令选项，如果你需要经常为某个命令提供相同的命令选项的话，**你可以通过 `bazel --bazelrc=file` 为 bazel 指定一个配置文件。如果没有指定这个选项，bazel 会在工作区根目录或 home 目录(windows 是 usr/usrname)下寻找一个名为 `.bazelrc` 的文件作为配置文件**，如果两个目录都没找到的话，那么就没有配置文件。
+Bazel 提供了很多命令选项，如果你需要经常为某个命令提供相同的命令选项的话，**你可以通过 `bazel --bazelrc=file` 为 Bazel 指定一个配置文件。如果没有指定这个选项，bazel 会在工作区根目录或 home 目录(windows 是 usr/usrname)下寻找一个名为 `.bazelrc` 的文件作为配置文件**，如果两个目录都没找到的话，那么就没有配置文件。
 
 **配置文件的文件名可以不在默认的目录下，甚至可以不为 `.bazelrc`，但是你必须在每个命令前加上 `--bazelrc=file` 来指定这个配置文件**，所以**建议在默认的目录下创建这个文件**。
 
@@ -585,7 +591,7 @@ bazel 提供了很多命令选项，如果你需要经常为某个命令提供�
 $ bazel --bazelrc=rc run //main:hello
 ```
 
-除了上面默认的配置文件 `.bazelrc` 外，**bazel 还会寻找一个主配置文件--工作区的 `tools/bazel.rc` 或 `/etc/bazel.bazelrc`(注意名字不是一样的)，你可以发现这两个文件是所有用户公用的，所以是共享配置文件**。
+除了上面默认的配置文件 `.bazelrc` 外，**Bazel 还会寻找一个主配置文件--工作区的 `tools/bazel.rc` 或 `/etc/bazel.bazelrc`(注意名字不是一样的)，你可以发现这两个文件是所有用户公用的，所以是共享配置文件**。
 
 那么**有这么多配置文件，要是它们都存在的话，bazel 会怎么选择呢，如果我一个配置文件也不用的话，该怎么做呢**？这些配置文件的优先级如下：
 
@@ -597,9 +603,9 @@ $ bazel --bazelrc=rc run //main:hello
 
 如果你一个配置文件也不想用的话，在 linux 下可以使用 `--bazelrc=/dev/null`。
 
-好了，现在知道了 bazel 选择配置文件的优先级，那么**怎么来书写这个配置文件**呢？
+好了，现在知道了 Bazel 选择配置文件的优先级，那么**怎么来书写这个配置文件**呢？
 
-*   配置文件以行为单位，每行的第一个字符串是 bazel 的命令，如 build，剩下的字符串是该命令的默认选项；
+*   配置文件以行为单位，每行的第一个字符串是 Bazel 的命令，如 build，剩下的字符串是该命令的默认选项；
 *   如果多行有相同的命令的话，会将这些选项合并在一起，就像只有一行一样，相同的选项较后面的优先级更高；
 *   启动选项使用 `startup` 作为命令，具体可以执行 `bazel help startup_options` 进行查看；
 *   通用选项使用 `common` 作为命令；
@@ -622,7 +628,7 @@ $ bazel --bazelrc=rc run //main:hello
 
 <h3 id="build_command">构建命令</h3>
 
-bazel 作为一个构建工具，最重要的当然就是构建命令啦！你只需要使用 `bazel build` 指定目标就能进行构建了，一个示例如下：
+Bazel 作为一个构建工具，最重要的当然就是构建命令啦！你只需要使用 `bazel build` 指定目标就能进行构建了，一个示例如下：
 
 ```bash
 $ bazel build ///hello_greet
@@ -673,9 +679,9 @@ Target //main:hello up-to-date:
 ____Elapsed time: 0.340s, Critical Path: 0.00s
 ```
 
-你会发现，什么都没有构建，因为 bazel 与 cmake 一样，只有当关联的文件被修改或编译命令更改时才会重新进行构建。
+你会发现，什么都没有构建，因为 **Bazel 只有当关联的文件被修改或编译命令发生更改时才会重新进行构建**。
 
-你可以执行 `bazel help target-syntax` 来查看构建命名指定目标的语法：
+你可以执行 `bazel help target-syntax` 来查看构建命令指定目标的语法：
 
 ```bash
 $ bazel help target-syntax
@@ -791,14 +797,14 @@ load
 │   ├── BUILD
 │   └── main.cpp
 ├── lib
-|   ├── BUILD
+│   ├── BUILD
 │   ├── hello_time.h
 │   ├── hello_greet.h
-|   └── symbols.bzl
+│   └── symbols.bzl
 └── WORKSPACE
 ```
 
-其中源文件可以在上面的 [BUILD](#build) 中查找，稍作更改即可，下面列出两个 BUILD 文件和 `symbols.bzl`：
+其中源文件可以在[上面](#build)查找，稍作更改即可，下面列出两个 BUILD 文件和 `symbols.bzl`：
 
 ```bazel
 # main/BUILD
@@ -931,7 +937,7 @@ package_group(
 licenses(license_types)
 ```
 
-**`licenses()` 指定了 BUILD 文件中所有规则的协议类型**，其位置应该放置在开始位置，但遵从上面 [package](#package_function) 函数的提示，**将其放置在 package 函数的下面最为合适**。
+**`licenses()` 指定了 BUILD 文件中所有规则的协议类型**，其位置应该放置在开始位置，但遵从上面 [package](#package_function) 函数的指示，**将其放置在 package 函数的下面最为合适**。
 
 其 `license_types` 包含以下五种类型值：
 
@@ -1030,7 +1036,18 @@ genrule(
 
 一个扩展的 `glob()` 官方示例如下:
 
+```text
+glob
+├── foo
+|   ├── BUILD
+│   ├── a_test.cc
+│   ├── b_test.cc
+|   └── c_test.cc
+└── WORKSPACE
+```
+
 ```bazel
+# foo/BUILD
 # Conveniently, the build language supports list comprehensions.
 [genrule(
     name = "count_lines_" + f[:-3],  # strip ".cc"
@@ -1041,9 +1058,6 @@ genrule(
 ```
 
 ```bash
-$ ls foo/
-a_test.cc  b_test.cc  BUILD  c_test.cc
-
 $  bazel query '///foo:all' | sort
 //foo:count_lines_a_test
 //foo:count_lines_b_test
@@ -1175,7 +1189,7 @@ digraph mygraph {
 
 ![select](select.png)
 
-**`select()` 一次只能有一个值被选择**。如果有多个条件同时满足，选择最符合条件的(例如条件A是条件B的超集，选择条件B)；如果两个条件谁都不是对方的超集(例如条件A是C或D，条件B是C或E，此时C满足条件A和B，但A和B谁都不是最优选择)，Bazel 会报错。
+**`select()` 一次只能有一个值被选择**。如果有多个条件同时满足，选择最符合条件的(例如条件A是条件B的超集，选择条件B)；如果两个条件谁都不是对方的超集(例如条件A是C或D，条件B是C或E，此时C满足条件A和B，但A和B谁都不是最优选择)，那么 Bazel 会报错。
 
 **`//conditions:default` 是当没有条件满足时选择的默认值**。
 
@@ -1192,3 +1206,221 @@ workspace(name = "com_example_project")
 **工程名由数字、字母和下划线组成，但是必须以字母开头**。
 
 **每个 WORKSPACE 都应该有一个 `workspace()` 函数**。
+
+<h2 id="common_rule_attributes">规则通用属性</h2>
+
+所有规则通用的属性共有11种，它们分别是 `features`,`licenses`,`data`,`visibility`,`compatible_with`,`distribs`,`deps`,`deprecation`,`restricted_to`,`tags` 和 `testonly`。这里只列出两个简单的属性，如果你要了解其它属性的话，移步 [Attributes common to all build rules](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes)。
+
+<h3 id="data">data</h3>
+
+**data 属性列出了该 rule 在运行时需要的文件列表**，这些文件并不是源代码，因为它们不影响目标的构建，它们只在目标运行时才有用。
+
+```bazel
+# I need a config file from a directory named env:
+java_binary(
+    name = "setenv",
+    ...
+    data = [":env/default_env.txt"],
+)
+
+# I need test data from another directory
+sh_test(
+    name = "regtest",
+    srcs = ["regtest.sh"],
+    data = [
+        "//data:file1.txt",
+        "//data:file2.txt",
+        ...
+    ],
+)
+```
+
+<h3 id="visibility">visibility</h3>
+
+**visibility 属性控制了该 rule 是否在其它包中可见，其默认值是 [package](#package_function) 函数 `default_visibility` 参数值，如果没有指定的话，默认是不可见的**。
+
+**其值有五种形式：**
+
+*   `["//visibility:public"]`: 所有包可见；
+*   `["//visibility:private"]`: 其他包不可见；
+*   `["//some/package:__pkg__", "//other/package:__pkg__"]`: 指定的包可见，`__pkg__` 代表所有的规则；
+*   `["//project:__subpackages__", "//other:__subpackages__"]`: 指定的包及其子包可见；
+*   `["//some/package:my_package_group"]`: [package_group](#package_group) 包含的包可见。
+
+这五种形式除了第一种和第二种不能合并之外，其它都能进行合并。
+
+**本包中所有规则都是可见的**。
+
+<h2 id="common_rule">通用规则</h2>
+
+**所谓通用规则，就是与语言无关的的规则，即任意语言都能使用的规则**。
+
+<h3 id="filegroup">filegroup</h3>
+
+```bazel
+filegroup(name, srcs, data, compatible_with, deprecation, distribs, features, licenses, output_group, output_licenses, path, restricted_to, tags, testonly, visibility)
+```
+
+**`filegroup()` 类似于 [package_group](#package_group)，只不过对象换成了 target 而已**。如果某个规则与文件重名了，规则的优先级更高。
+
+```bazel
+filegroup(
+    name = "mygroup",
+    srcs = [
+        "a_file.txt",
+        "some/subdirectory/another_file.txt",
+    ],
+)
+
+filegroup(
+    name = "exported_testdata",
+    srcs = glob([
+        "testdata/*.dat",
+        "testdata/logs/**/*.log",
+    ]),
+)
+
+cc_library(
+    name = "my_library",
+    srcs = ["foo.cc"],
+    data = [
+        "//my_package:exported_testdata",
+        ":mygroup",
+    ],
+)
+```
+
+<h3 id="config_setting">config_setting</h3>
+
+```bazel
+config_setting(name, define_values, deprecation, distribs, features, licenses, tags, testonly, values, visibility)
+```
+
+**`config_setting()` 通常与 [select](#select) 合并使用，用以根据不同的 Bazel 标志为一些可配置属性(configurable attributes)选择不同的值**。
+
+以下示例匹配 `bazel [command] --compilation_mode=opt ...` 或 `bazel [command] -c opt ...`，其中选项可以在 [配置文件](#bazelrc) 中隐式指定：
+
+```bazel
+config_setting(
+    name = "simple",
+    values = {"compilation_mode": "opt"} #选项必须完整
+)
+```
+
+以下示例匹配 `bazel [command] --cpu=armeabi --define FOO=bar ...`:
+
+```bazel
+config_setting(
+    name = "two_conditions",
+    values = {
+        "cpu": "armeabi",
+        "define": "FOO=bar"
+    }
+)
+```
+
+以下示例匹配 `bazel [command] --define a=1 --define b=2 ...`:
+
+```bazel
+config_setting(
+    name = "a_and_b",
+    define_values = {
+        "a": "1",
+        "b": "2",
+    }
+)
+```
+
+<h3 id="genrule">genrule</h3>
+
+```bazel
+genrule(name, srcs, outs, cmd, compatible_with, deprecation, distribs, executable, features, licenses, local, message, output_licenses, output_to_bindir, restricted_to, tags, testonly, tools, visibility)
+```
+
+**`genrule()` 使用指定的 bash cmd 生成一个或多个文件**。由于该规则是在**构建时执行**的，所以**不能用于测试**，如果你一定要测试的话，使用 `sh_test` 规则。
+
+```bazel
+genrule(
+    name = "foo",
+    srcs = [],
+    outs = ["foo.h"],
+    cmd = "./$(location create_foo.pl) > \"$@\"",
+    tools = ["create_foo.pl"],
+)
+
+genrule(
+    name = "concat_all_files",
+    srcs = [
+        "//some:files",  # a filegroup with multiple files in it ==> $(locations)
+        "//other:gen",   # a genrule with a single output ==> $(location)
+    ],
+    outs = ["concatenated.txt"],
+    cmd = "cat $(locations //some:files) $(location //other:gen) > $@",
+)
+```
+
+其中 `$(location(s) label)` 代表 label 所指文件路径或规则的输出文件路径，如果文件是单一的就使用 `$(location label)`，否则使用 `$(locations label)`。
+
+genrule 的 cmd 属性还需要使用 `"Make" Variables` 变量，这些变量通过 `$(var)` 的形式来指代变量对应的值，你可以通过 `bazel info --show_make_env` 来查看常用的 `"Make" Variables` 变量：
+
+```bash
+$ bazel info --show_make_env
+ABI: local
+ABI_GLIBC_VERSION: local
+ANDROID_CPU: armeabi
+AR: C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/bin/amd64/lib.exe
+BINDIR: bazel-out/msvc_x64-fastbuild/bin
+CC: C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/bin/amd64/cl.exe
+CC_FLAGS:
+COMPILATION_MODE: fastbuild
+CROSSTOOLTOP: external/local_config_cc
+C_COMPILER: cl
+GENDIR: bazel-out/msvc_x64-fastbuild/genfiles
+GLIBC_VERSION: msvcrt140
+JAVA: external/local_jdk/bin/java.exe
+JAVABASE: external/local_jdk
+JAVA_TRANSLATIONS: 0
+NM: external/local_config_cc/wrapper/bin/msvc_nop.bat
+OBJCOPY: external/local_config_cc/wrapper/bin/msvc_nop.bat
+STACK_FRAME_UNLIMITED:
+STRIP: external/local_config_cc/wrapper/bin/msvc_nop.bat
+TARGET_CPU: x64_windows
+bazel-bin: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/kpqpsovz/execroot/__main__/bazel-out/msvc_x64-fastbuild/bin
+bazel-genfiles: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/kpqpsovz/execroot/__main__/bazel-out/msvc_x64-fastbuild/genfiles
+bazel-testlogs: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/kpqpsovz/execroot/__main__/bazel-out/msvc_x64-fastbuild/testlogs
+character-encoding: file.encoding = ISO-8859-1, defaultCharset = ISO-8859-1
+command_log: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/kpqpsovz/command.log
+committed-heap-size: 103MB
+execution_root: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/kpqpsovz/execroot/__main__
+gc-count: 29
+gc-time: 986ms
+install_base: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/install/f8e4afb1dfae5304ee3ab8d76fb7ecaf
+java-home: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/install/f8e4afb1dfae5304ee3ab8d76fb7ecaf/_embedded_binaries/embedded_tools/jdk/jre
+java-runtime: OpenJDK Runtime Environment (build 1.8.0_131-b11) by Azul Systems, Inc.
+java-vm: OpenJDK 64-Bit Server VM (build 25.131-b11, mixed mode) by Azul Systems, Inc.
+max-heap-size: 935MB
+message_log: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/kpqpsovz/message.log
+output_base: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/kpqpsovz
+output_path: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/kpqpsovz/execroot/load/bazel-out
+package_path: %workspace%
+release: release 0.5.4
+server_pid: 3368
+used-heap-size: 34MB
+workspace: E:/zy/learningmaterials/load
+```
+
+如果你想要使用单个 `$`，使用 `$$`。
+
+genrule 的 cmd 属性还支持以下变量：
+
+*   `OUTS`: outs 列表，如果列表中只有一个文件，可以使用 `@`代替；
+*   `SRCS`: srcs 列表，如果列表中只有一个文件，可以使用 `<`代替；
+*   `@D`: 输出文件夹。
+
+**cmd 不要使用 stdout 或 stderr，这会干扰到 Bazel 的输出**；
+
+**cmd 不支持绝对路径，如果执行结束返回的不是0将被认为执行失败**。
+
+<h2 id="summary">总结</h2>
+
+看完这篇文章后，你应该能够使用 Bazel 编译简单的工程，更多知识可以移步 [docs.bazel](https://docs.bazel.build/versions/master/user-manual.html) 自行学习。
