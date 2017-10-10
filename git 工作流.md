@@ -48,10 +48,10 @@ git config --global user.email pengzhen@example.com
 
 ### 配置文本编辑器（可选）
 
-git 在需要你输入一些信息的时候,会调用一个文本编译器，如果不设置的话，可能默认调用 nano 编辑器(linux)，一般使用 vi 或者 vim 会比较方便，所以将配置编辑器为 vi：
+git 在需要你输入一些信息的时候,会调用一个文本编译器，如果不设置的话，可能默认调用 nano 编辑器(linux)，一般使用 vi 或者 vim 会比较方便，所以配置编辑器为 vim：
 
 ```bash
-git config --global core.editor vi
+git config --global core.editor vim
 ```
 
 ### 查看配置信息
@@ -79,7 +79,7 @@ $ cd dir
 $ git init
 ```
 
-*	从远程 git 仓库克隆一个新的镜像仓库到本地仓库 mygit：
+*	克隆 github 上 git 组织开源的 git 仓库到本地仓库 mygit：
 
 ```bash
 $ git clone git://github.com/git/git.git mygit
