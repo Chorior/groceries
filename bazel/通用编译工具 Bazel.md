@@ -1385,28 +1385,28 @@ OBJCOPY: external/local_config_cc/wrapper/bin/msvc_nop.bat
 STACK_FRAME_UNLIMITED:
 STRIP: external/local_config_cc/wrapper/bin/msvc_nop.bat
 TARGET_CPU: x64_windows
-bazel-bin: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/kpqpsovz/execroot/__main__/bazel-out/msvc_x64-fastbuild/bin
-bazel-genfiles: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/kpqpsovz/execroot/__main__/bazel-out/msvc_x64-fastbuild/genfiles
-bazel-testlogs: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/kpqpsovz/execroot/__main__/bazel-out/msvc_x64-fastbuild/testlogs
+bazel-bin: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/xfyfngfq/execroot/__main__/bazel-out/msvc_x64-fastbuild/bin
+bazel-genfiles: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/xfyfngfq/execroot/__main__/bazel-out/msvc_x64-fastbuild/genfiles
+bazel-testlogs: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/xfyfngfq/execroot/__main__/bazel-out/msvc_x64-fastbuild/testlogs
 character-encoding: file.encoding = ISO-8859-1, defaultCharset = ISO-8859-1
-command_log: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/kpqpsovz/command.log
-committed-heap-size: 103MB
-execution_root: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/kpqpsovz/execroot/__main__
-gc-count: 29
-gc-time: 986ms
+command_log: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/xfyfngfq/command.log
+committed-heap-size: 257MB
+execution_root: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/xfyfngfq/execroot/__main__
+gc-count: 5
+gc-time: 76ms
 install_base: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/install/f8e4afb1dfae5304ee3ab8d76fb7ecaf
 java-home: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/install/f8e4afb1dfae5304ee3ab8d76fb7ecaf/_embedded_binaries/embedded_tools/jdk/jre
 java-runtime: OpenJDK Runtime Environment (build 1.8.0_131-b11) by Azul Systems, Inc.
 java-vm: OpenJDK 64-Bit Server VM (build 25.131-b11, mixed mode) by Azul Systems, Inc.
-max-heap-size: 935MB
-message_log: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/kpqpsovz/message.log
-output_base: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/kpqpsovz
-output_path: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/kpqpsovz/execroot/load/bazel-out
+max-heap-size: 3804MB
+message_log: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/xfyfngfq/message.log
+output_base: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/xfyfngfq
+output_path: C:/users/pengzhen/appdata/local/temp/_bazel_pengzhen/xfyfngfq/execroot/load/bazel-out
 package_path: %workspace%
 release: release 0.5.4
-server_pid: 3368
-used-heap-size: 34MB
-workspace: E:/zy/learningmaterials/load
+server_pid: 10396
+used-heap-size: 63MB
+workspace: R:/bazel/load
 ```
 
 如果你想要使用单个 `$`，使用 `$$`。
