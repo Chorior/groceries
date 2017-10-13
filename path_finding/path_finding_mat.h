@@ -8,6 +8,7 @@
 #include <cassert>
 #include <algorithm>
 #include <functional>
+#include <unordered_set>
 #include <unordered_map>
 #include <opencv2\opencv.hpp>
 
@@ -21,7 +22,7 @@ namespace std {
 		size_t operator()(const cv::Point& n) const;
 	};
 
-	size_t hash<cv::Point>::operator()(const cv::Point& n) const
+	inline size_t hash<cv::Point>::operator()(const cv::Point& n) const
 	{
 		return hash<int>()(n.x) ^ hash<int>()(n.y);
 	}
@@ -38,7 +39,7 @@ namespace path_finding_mat_
 
 		// get id's neighbors
 		std::vector<cv::Point>
-			neighbors(cv::Point &id, bool free = true, const unsigned stairs = 1) const
+			neighbors(const cv::Point &id, bool free = true, const unsigned stairs = 1) const
 		{
 			std::vector<cv::Point> ret;
 
@@ -328,7 +329,7 @@ namespace path_finding_mat_
 	public:
 		path_finding_mat(const std::shared_ptr<cv::Mat> &map_,			
 			const int &goal_deviation_,
-			const float safe_radius_ = 5)
+			const float safe_radius_ = 5.0f)
 			: m_map(nullptr), m_goal_deviation(goal_deviation_),
 			m_safe_radius(safe_radius_)
 		{
@@ -337,7 +338,7 @@ namespace path_finding_mat_
 
 		path_finding_mat(const cv::Mat &map_,
 			const int &goal_deviation_,
-			const float safe_radius_ = 5)
+			const float safe_radius_ = 5.0f)
 			: m_map(nullptr), m_goal_deviation(goal_deviation_),
 			m_safe_radius(safe_radius_)
 		{
@@ -358,6 +359,12 @@ namespace path_finding_mat_
 			assert(!map_.empty() && map_.type() == CV_8UC1);
 			m_map = std::make_shared<cv::Mat>(map_);
 			cv::distanceTransform(*m_map, m_dist_map, CV_DIST_C, 3);
+		}
+
+		inline cv::Mat
+			get_dist_map() const
+		{
+			return m_dist_map;
 		}
 
 		inline void
@@ -567,4 +574,138 @@ namespace path_finding_mat_
 		// get path
 		return get_path(came_from);
 	}
+
+	class temp_goal
+	{
+		std::shared_ptr<cv::Mat> m_map;
+		cv::Mat m_dist_map;
+		std::unordered_set<cv::Point> m_history;
+
+		void transform()
+		{
+			cv::distanceTransform(*m_map, m_dist_map, CV_DIST_C, 3);
+		}
+
+		std::pair<bool, cv::Point>
+			neareast_temp_goal(const cv::Point &current, const cv::Point &goal)
+		{	
+			m_history.emplace(current);
+			const GridWithWeight graph(m_map);
+			std::priority_queue< std::pair<float, cv::Point>, std::vector<std::pair<float, cv::Point> >,
+				std::greater<std::pair<float, cv::Point> > > options;
+
+			auto neighbors = graph.neighbors(current);
+			std::for_each(neighbors.begin(), neighbors.end(),
+				[&](const cv::Point& p)
+			{
+				if (m_history.end() == m_history.find(p)) {
+					auto min_dist2obs = m_dist_map.at<float>(p);
+					auto cost = graph.distance(p, goal) + 1.0f / min_dist2obs * 100.0f;
+					options.emplace(cost, p);
+				}
+			});
+
+			// get result
+			std::pair<bool, cv::Point> ret;
+			ret.first = !options.empty();
+			if (ret.first) {
+				ret.second = options.top().second;
+			}
+
+			return ret;
+		}
+	protected:
+		// not defined
+		temp_goal();
+		temp_goal(const temp_goal&);
+		temp_goal& operator=(const temp_goal&);
+	public:
+		explicit temp_goal(const std::shared_ptr<cv::Mat> &map_)
+			: m_map(nullptr)
+		{
+			set_map(map_);
+		}
+
+		explicit temp_goal(const cv::Mat &map_)
+			: m_map(nullptr)
+		{
+			set_map(map_);
+		}
+
+		temp_goal(const std::shared_ptr<cv::Mat> &map_, 
+			const cv::Mat &dist_map_)
+			: m_map(nullptr), m_dist_map(dist_map_)
+		{
+			set_map(map_, 0);
+		}
+
+		temp_goal(const cv::Mat &map_,
+			const cv::Mat &dist_map_)
+			: m_map(nullptr), m_dist_map(dist_map_)
+		{
+			set_map(map_, 0);
+		}
+
+		inline void
+			set_map(const std::shared_ptr<cv::Mat> &map_, bool trans = 1)
+		{
+			assert(map_ && map_->type() == CV_8UC1);
+			m_map = map_;
+
+			if (trans) {
+				transform();
+			}
+		}
+
+		inline void
+			set_map(const cv::Mat &map_, bool trans = 1)
+		{
+			assert(!map_.empty() && map_.type() == CV_8UC1);
+			m_map = std::make_shared<cv::Mat>(map_);
+			
+			if (trans) {
+				transform();
+			}
+		}
+
+		std::pair<bool, cv::Point>
+			operator()(const cv::Point &current, const cv::Point &goal, float valid_dist)
+		{
+			if (valid_dist < 0.0f) {
+				return std::pair<bool, cv::Point>(false, cv::Point());
+			}
+
+			std::pair<bool, cv::Point> ret;			
+			auto m_time_start = std::chrono::high_resolution_clock::now();
+
+			const GridWithWeight graph(m_map);
+			cv::Point temp_goal = current;
+			float distance = 0.0f;
+			while(distance < valid_dist)
+			{
+				auto neighbor_goal = neareast_temp_goal(temp_goal, goal);
+				if (neighbor_goal.first)
+				{
+					temp_goal = neighbor_goal.second;
+
+					distance = graph.distance(current, temp_goal);
+				}
+				else {					
+					ret.first = false;
+					return ret;
+				}					
+			}
+
+			// print took times
+			auto m_time_stop = std::chrono::high_resolution_clock::now();
+			std::cout << "took "
+				<< std::chrono::duration<double, std::milli>(
+					m_time_stop - m_time_start).count() << " ms\n";
+
+			// return result
+			ret.first = true;
+			ret.second = temp_goal;
+			return ret;
+		}
+	};
 }
