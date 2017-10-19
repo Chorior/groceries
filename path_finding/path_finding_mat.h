@@ -5,6 +5,7 @@
 #include <chrono>
 #include <vector>
 #include <memory>
+#include <climits>
 #include <cassert>
 #include <algorithm>
 #include <functional>
@@ -30,7 +31,17 @@ namespace std {
 
 namespace path_finding_mat_
 {
-	struct myGrid
+	struct noncopyable
+	{
+	protected:
+		noncopyable() {};
+		virtual ~noncopyable() {};
+
+		noncopyable(const noncopyable&);
+		noncopyable& operator=(const noncopyable&);
+	};
+
+	struct myGrid: noncopyable
 	{
 		// constructor
 		explicit myGrid(std::shared_ptr<cv::Mat> map_)
@@ -39,12 +50,17 @@ namespace path_finding_mat_
 
 		// get id's neighbors
 		std::vector<cv::Point>
-			neighbors(const cv::Point &id, bool free = true, const unsigned stairs = 1) const
+			neighbors(const cv::Point &id, bool free = true, const unsigned level = 1) const
 		{
 			std::vector<cv::Point> ret;
 
-			get_hv_neighbors(id, ret, free, stairs);
-			get_slope_neighbors(id, ret, free, stairs);
+			if (level) {
+				get_hv_neighbors(id, ret, free, level);
+				get_slope_neighbors(id, ret, free, level);
+			}
+			else {
+				ret.push_back(id);
+			}
 
 			return ret;
 		}
@@ -55,7 +71,8 @@ namespace path_finding_mat_
 		{
 			cv::Point p1(id.x - radius, id.y - radius);
 			cv::Point p2(id.x + radius, id.y + radius);
-			if (4 * radius * radius == cv::countNonZero((*m_map)(cv::Rect(p1, p2))))
+			if (static_cast<int>(4 * radius * radius) == 
+				cv::countNonZero((*m_map)(cv::Rect(p1, p2))))
 			{
 				return radius;
 			}
@@ -71,11 +88,6 @@ namespace path_finding_mat_
 		}
 	protected:
 		std::shared_ptr<cv::Mat> m_map;
-
-		// not defined
-		myGrid();
-		myGrid(const myGrid&);
-		myGrid& operator=(const myGrid&);
 
 		inline bool
 			valid(const cv::Point &id) const
@@ -126,17 +138,17 @@ namespace path_finding_mat_
 			get_hv_neighbors(const cv::Point &id,
 				std::vector<cv::Point> &ret,
 				bool free,
-				const unsigned stairs) const
+				const unsigned level) const
 		{			
 			cv::Point neighbor1(id);
 			cv::Point neighbor2(id);
 			cv::Point neighbor3(id);
 			cv::Point neighbor4(id);
 			
-			neighbor1.x += stairs;
-			neighbor2.x -= stairs;
-			neighbor3.y += stairs;
-			neighbor4.y -= stairs;
+			neighbor1.x += level;
+			neighbor2.x -= level;
+			neighbor3.y += level;
+			neighbor4.y -= level;
 			add_element(neighbor1, ret, free);
 			add_element(neighbor2, ret, free);
 			add_element(neighbor3, ret, free);
@@ -147,29 +159,29 @@ namespace path_finding_mat_
 			get_slope_neighbors(const cv::Point &id,
 				std::vector<cv::Point> &ret,
 				bool free,
-				const unsigned stairs) const
+				const unsigned level) const
 		{			
-			for (unsigned k = 1; k < stairs; ++k)
+			for (unsigned k = 1; k < level; ++k)
 			{
-				add_element(id, k, stairs, ret, free);
-				add_element(id, stairs, k, ret, free);
+				add_element(id, k, level, ret, free);
+				add_element(id, level, k, ret, free);
 			}
-			add_element(id, stairs, stairs, ret, free);
+			add_element(id, level, level, ret, free);
 		}
 
 		inline bool
 			no_hv_obstacle(const cv::Point &id,
-				const unsigned stairs) const
+				const unsigned level) const
 		{			
 			cv::Point neighbor1(id);
 			cv::Point neighbor2(id);
 			cv::Point neighbor3(id);
 			cv::Point neighbor4(id);
 
-			neighbor1.x += stairs;
-			neighbor2.x -= stairs;
-			neighbor3.y += stairs;
-			neighbor4.y -= stairs;
+			neighbor1.x += level;
+			neighbor2.x -= level;
+			neighbor3.y += level;
+			neighbor4.y -= level;
 
 			return is_free(neighbor1) && is_free(neighbor2)
 				&& is_free(neighbor3) && is_free(neighbor4);
@@ -195,24 +207,24 @@ namespace path_finding_mat_
 
 		inline bool
 			no_slope_obstacle(const cv::Point &id,
-				const unsigned stairs) const
+				const unsigned level) const
 		{			
-			for (unsigned k = 1; k < stairs; ++k)
+			for (unsigned k = 1; k < level; ++k)
 			{
-				if (!no_slope_obstacle(id, k, stairs) ||
-					!no_slope_obstacle(id, stairs, k))
+				if (!no_slope_obstacle(id, k, level) ||
+					!no_slope_obstacle(id, level, k))
 				{
 					return false;
 				}
 			}
-			return no_slope_obstacle(id, stairs, stairs);
+			return no_slope_obstacle(id, level, level);
 		}
 
 		inline bool
 			no_obstacle(const cv::Point &id,
-				const unsigned stairs) const
+				const unsigned level) const
 		{
-			return no_hv_obstacle(id, stairs) && no_slope_obstacle(id, stairs);
+			return no_hv_obstacle(id, level) && no_slope_obstacle(id, level);
 		}
 	};
 
@@ -231,32 +243,32 @@ namespace path_finding_mat_
 				cv::Point tmp(to - from);
 				
 				int total = abs(tmp.x) + abs(tmp.y);
-				if (0 == abs(total)) { return 0.0f; }
-				else if (1 == abs(total)) { return 1.0f; }
-				else if (2 == abs(total)) { return 1.414f; }
+				if (0 == total) { return 0.0f; }
+				else if (1 == total) { return 1.0f; }
+				else if (2 == total) { return 1.414f; }
 			}
-			return 100.0f;
+			return std::numeric_limits<float>::infinity();
 		}
 
 		inline float
 			distance(const cv::Point &from, const cv::Point &to) const
 		{
-			int diff_x = to.x - from.x;
-			int diff_y = to.y - from.y;
-			return static_cast<float>(sqrt(diff_x * diff_x + diff_y * diff_y));
+			int diff_x = abs(to.x - from.x);
+			int diff_y = abs(to.y - from.y);
+
+			int minus = std::min(diff_x, diff_y);
+			return static_cast<float>(abs(diff_x - diff_y) + 1.414f * minus);
 		}
 	};
 
-	class path_finding_mat
+	struct path_finding_base : noncopyable
 	{
-	private:
+	protected:
 		std::shared_ptr<cv::Mat> m_map;
 		cv::Mat m_dist_map;
 		cv::Point m_start;
 		cv::Point m_goal;
-		cv::Point m_valid_goal;
-		int m_goal_deviation;
-		float m_safe_radius;
+
 		std::chrono::time_point<std::chrono::high_resolution_clock> m_time_start;
 		std::chrono::time_point<std::chrono::high_resolution_clock> m_time_stop;
 
@@ -274,6 +286,54 @@ namespace path_finding_mat_
 			m_goal = g;
 		}
 
+		// print took times
+		inline void
+			print_took_times()
+		{
+			m_time_stop = std::chrono::high_resolution_clock::now();
+			std::cout << "took " << std::chrono::duration<double, std::milli>(
+					m_time_stop - m_time_start).count() << " ms\n";
+		}
+
+		explicit path_finding_base(const std::shared_ptr<cv::Mat> &map_)
+		{
+			set_map(map_);
+		}
+
+		explicit path_finding_base(const cv::Mat &map_)
+		{
+			set_map(map_);
+		}
+
+	public:
+		inline void
+			set_map(const std::shared_ptr<cv::Mat> &map_)
+		{
+#ifdef DEBUG
+			assert(map_ && map_->type() == CV_8UC1);
+#endif
+			m_map = map_;
+			cv::distanceTransform(*m_map, m_dist_map, CV_DIST_C, 3);
+		}
+
+		inline void
+			set_map(const cv::Mat &map_)
+		{
+#ifdef DEBUG
+			assert(!map_.empty() && map_.type() == CV_8UC1);
+#endif
+			m_map = std::make_shared<cv::Mat>(map_);
+			cv::distanceTransform(*m_map, m_dist_map, CV_DIST_C, 3);
+		}
+	};
+
+	class path_finding_mat : path_finding_base
+	{
+	private:
+		cv::Point m_valid_goal;
+		int m_goal_deviation;
+		float m_safe_radius;
+
 		// check equality with deviation
 		inline bool
 			equal_with_deviation(const cv::Point &a, const cv::Point &b)
@@ -281,16 +341,6 @@ namespace path_finding_mat_
 			cv::Point tmp(a - b);
 			return abs(tmp.x) <= m_goal_deviation &&
 				abs(tmp.y) <= m_goal_deviation;
-		}
-
-		// print took times
-		inline void
-			print_took_times()
-		{
-			m_time_stop = std::chrono::high_resolution_clock::now();
-			std::cout << "took "
-				<< std::chrono::duration<double, std::milli>(
-					m_time_stop - m_time_start).count() << " ms\n";
 		}
 
 		// get path from map
@@ -308,7 +358,7 @@ namespace path_finding_mat_
 			{
 				path.push_back(m_valid_goal);
 				auto current = m_valid_goal;
-				while (!(current == m_start))
+				while (current != m_start)
 				{
 					current = came_from.find(current)->second;
 					path.emplace_back(current);
@@ -320,46 +370,20 @@ namespace path_finding_mat_
 			return path;
 		}
 
-	protected:
-		// not defined
-		path_finding_mat();
-		path_finding_mat(const path_finding_mat&);
-		path_finding_mat& operator=(const path_finding_mat&);
-
 	public:
 		path_finding_mat(const std::shared_ptr<cv::Mat> &map_,			
 			const int &goal_deviation_,
 			const float safe_radius_ = 5.0f)
-			: m_map(nullptr), m_goal_deviation(goal_deviation_),
+			: path_finding_base(map_), m_goal_deviation(goal_deviation_),
 			m_safe_radius(safe_radius_)
-		{
-			set_map(map_);
-		}
+		{}
 
 		path_finding_mat(const cv::Mat &map_,
 			const int &goal_deviation_,
 			const float safe_radius_ = 5.0f)
-			: m_map(nullptr), m_goal_deviation(goal_deviation_),
+			: path_finding_base(map_), m_goal_deviation(goal_deviation_),
 			m_safe_radius(safe_radius_)
-		{
-			set_map(map_);
-		}
-
-		inline void
-			set_map(const std::shared_ptr<cv::Mat> &map_)
-		{			
-			assert(map_ && map_->type() == CV_8UC1);
-			m_map = map_;
-			cv::distanceTransform(*m_map, m_dist_map, CV_DIST_C, 3);
-		}
-
-		inline void
-			set_map(const cv::Mat &map_)
-		{
-			assert(!map_.empty() && map_.type() == CV_8UC1);
-			m_map = std::make_shared<cv::Mat>(map_);
-			cv::distanceTransform(*m_map, m_dist_map, CV_DIST_C, 3);
-		}
+		{}
 
 		inline cv::Mat
 			get_dist_map() const
@@ -396,7 +420,7 @@ namespace path_finding_mat_
 		std::queue<cv::Point> frontiers;
 		std::unordered_map<cv::Point, cv::Point> came_from;
 
-		came_from.emplace(m_start, m_start);
+		//came_from.emplace(m_start, m_start);
 		frontiers.push(m_start);
 		m_valid_goal = m_goal;
 
@@ -442,7 +466,7 @@ namespace path_finding_mat_
 		std::unordered_map<cv::Point, cv::Point> came_from;
 		std::unordered_map<cv::Point, float> cost_so_far;
 
-		came_from.emplace(m_start, m_start);
+		//came_from.emplace(m_start, m_start);
 		cost_so_far.emplace(m_start, 0.0f);
 		frontiers.emplace(0.0f, m_start);
 		m_valid_goal = m_goal;
@@ -462,12 +486,14 @@ namespace path_finding_mat_
 			auto neighbors = graph.neighbors(current);
 			for (const auto &next : neighbors)
 			{
+				if (cost_so_far.cend() != cost_so_far.find(next)) {
+					continue;
+				}
 				auto min_dist2obs = m_dist_map.at<float>(next);
 				auto new_cost = cost_so_far[current] + graph.cost(current, next);
-				if (m_safe_radius <= min_dist2obs &&
-					(cost_so_far.cend() == cost_so_far.find(next) || new_cost < cost_so_far[next]))
+				if (m_safe_radius <= min_dist2obs)
 				{
-					frontiers.emplace(new_cost + 1.0f / min_dist2obs * 100.0f, next);
+					frontiers.emplace(new_cost, next);
 					came_from[next] = current;
 					cost_so_far[next] = new_cost;
 				}
@@ -490,7 +516,7 @@ namespace path_finding_mat_
 			std::greater<std::pair<float, cv::Point> > > frontiers;
 		std::unordered_map<cv::Point, cv::Point> came_from;
 
-		came_from.emplace(m_start, m_start);
+		//came_from.emplace(m_start, m_start);
 		frontiers.emplace(0.0f, m_start);
 		m_valid_goal = m_goal;
 
@@ -513,7 +539,7 @@ namespace path_finding_mat_
 				if (m_safe_radius <= min_dist2obs &&
 					came_from.cend() == came_from.find(next))
 				{
-					float distance = graph.distance(next, m_goal) * 1.5f + 1.0f / min_dist2obs * 100.0f;
+					float distance = graph.distance(next, m_goal);
 					frontiers.emplace(distance, next);
 					came_from.emplace(next, current);
 				}
@@ -537,7 +563,7 @@ namespace path_finding_mat_
 		std::unordered_map<cv::Point, cv::Point> came_from;
 		std::unordered_map<cv::Point, float> cost_so_far;
 
-		came_from.emplace(m_start, m_start);
+		//came_from.emplace(m_start, m_start);
 		cost_so_far.emplace(m_start, 0.0f);
 		frontiers.emplace(0.0f, m_start);
 		m_valid_goal = m_goal;
@@ -557,13 +583,15 @@ namespace path_finding_mat_
 			auto neighbors = graph.neighbors(current);
 			for (const auto &next : neighbors)
 			{
+				if (cost_so_far.cend() != cost_so_far.find(next)) {
+					continue;
+				}
 				auto min_dist2obs = m_dist_map.at<float>(next);
 				auto new_cost = cost_so_far[current] + graph.cost(current, next);
-				if (m_safe_radius <= min_dist2obs &&
-					(came_from.cend() == came_from.find(next) || new_cost < cost_so_far[next]))
+				if (m_safe_radius <= min_dist2obs)
 				{
 					frontiers.emplace(
-						new_cost + graph.distance(next, m_goal) * 1.5f + 1.0f / min_dist2obs * 100.0f,
+						new_cost + graph.distance(next, m_goal),
 						next);
 					came_from[next] = current;
 					cost_so_far[next] = new_cost;
@@ -575,7 +603,7 @@ namespace path_finding_mat_
 		return get_path(came_from);
 	}
 
-	class temp_goal
+	class temp_goal : noncopyable
 	{
 		std::shared_ptr<cv::Mat> m_map;
 		cv::Mat m_dist_map;
@@ -614,11 +642,7 @@ namespace path_finding_mat_
 
 			return ret;
 		}
-	protected:
-		// not defined
-		temp_goal();
-		temp_goal(const temp_goal&);
-		temp_goal& operator=(const temp_goal&);
+
 	public:
 		explicit temp_goal(const std::shared_ptr<cv::Mat> &map_)
 			: m_map(nullptr)
@@ -649,7 +673,9 @@ namespace path_finding_mat_
 		inline void
 			set_map(const std::shared_ptr<cv::Mat> &map_, bool trans = 1)
 		{
+#ifdef DEBUG
 			assert(map_ && map_->type() == CV_8UC1);
+#endif
 			m_map = map_;
 
 			if (trans) {
@@ -660,7 +686,9 @@ namespace path_finding_mat_
 		inline void
 			set_map(const cv::Mat &map_, bool trans = 1)
 		{
+#ifdef DEBUG
 			assert(!map_.empty() && map_.type() == CV_8UC1);
+#endif
 			m_map = std::make_shared<cv::Mat>(map_);
 			
 			if (trans) {
