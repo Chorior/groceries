@@ -50,7 +50,7 @@ namespace path_finding_
 	{
 		// constructor
 		explicit myGrid(std::shared_ptr<OcTree> p, unsigned s = 5)
-			: ptree(p), state(s) {}
+			: state(s), ptree(p) {}
 
 		// get id's neighbors
 		std::vector<point3d>
