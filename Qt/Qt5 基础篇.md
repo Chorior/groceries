@@ -2701,3 +2701,17 @@ int main(int argc, char *argv[])
 ```
 
 <h3 id="qmainwindow">主程序窗口 QMainWindow</h3>
+
+QMainWindow 包含菜单栏(QMenuBar)、工具栏(QToolBar)、Dock 部件(QDockWidget)、中心部件(Central Widget)和状态栏(QStatusBar)五个组件：
+
+![mainwindowlayout](http://doc.qt.io/qt-5/images/mainwindowlayout.png)
+
+其中中心部件是应用程序的主要功能实现区域，**一个 QMainWindow 实例只能拥有一个中心部件**，你可以使用 [setCentralWidget](http://doc.qt.io/qt-5/qmainwindow.html#setCentralWidget) 来设置这个中心部件。
+
+#### QMenuBar
+
+**Qt 使用 QMenu 来实现单个菜单，然后使用 QMenuBar 来将这些菜单联合起来**。
+
+**一个菜单包含一个操作选项(action item)列表，该列表垂直排列，每个操作选项可以拥有一个文本标签、位于左侧的图标和一个快捷键，它可以是位于菜单栏的下拉菜单、也可以是点击右键或某个特定按钮出现的独立上下文菜单**。QMenu 还支持撕下菜单(tear-off menu)，撕下菜单是一个顶层窗口，用户可以把它“撕下”放在其他位置。
+
+操作列表(action item)包含四种类型：分割线(separator)、子菜单(QMenu)、部件(QWidgetAction)或触发某个命令的操作(QAction)。
