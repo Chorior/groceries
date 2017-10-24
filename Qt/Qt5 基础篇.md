@@ -41,6 +41,8 @@ tags:
 	*	[主程序窗口 QMainWindow](#qmainwindow)
 	*	[常用小部件](#qt_common_widgets)
 	*	[进度条 QProgressBar](#progressbar)
+*	[布局管理](#layout)
+*	[资源管理](#resource)
 
 <h2 id="overview">Qt 概述</h2>
 
@@ -1431,7 +1433,7 @@ Q_PROPERTY(QCursor cursor READ cursor WRITE setCursor RESET unsetCursor)
     Q_PROPERTY((qreal spacing MEMBER m_spacing NOTIFY spacingChanged))
     Q_PROPERTY(QString text MEMBER m_text NOTIFY textChanged)
     ...
-signals:
+Q_SIGNALS:
     void colorChanged();
     void spacingChanged();
     void textChanged(const QString &newText);
@@ -1476,7 +1478,7 @@ public:
 	int value() const;
 	QString key() const;
 
-	public Q_SLOTS:
+Q_SLOTS:
 	void setValue(int);
 	void setKey(const QString&);
 
@@ -2718,7 +2720,7 @@ QMainWindow 包含菜单栏(QMenuBar)、工具栏(QToolBar)、Dock 部件(QDockW
 
 QMenuBar 会自动将自己放置在其父对象的最上方，并随着父对象 size 的变化而变化。
 
-**一个菜单包含一个操作选项(action item)列表，该列表垂直排列，每个操作选项可以拥有一个文本标签、位于左侧的图标和一个快捷键，它可以是位于菜单栏的下拉菜单、也可以是点击右键或某个特定按钮出现的独立上下文菜单**。QMenu 还支持撕下菜单(tear-off menu)，撕下菜单是一个顶层窗口，它是对应菜单的一个拷贝，如果对这种菜单有所需求的话，一般将其实现为 [QToolBar](#QToolBar)。
+**一个菜单包含一个操作选项(action item)列表，该列表垂直排列，每个操作选项可以拥有一个文本标签、位于左侧的图标和一个快捷键，它可以是位于菜单栏的下拉菜单、也可以是点击右键或某个特定按钮出现的独立上下文菜单**。QMenu 还支持撕下菜单(tear-off menu)，撕下菜单是一个顶层窗口，它是对应菜单的一个拷贝，如果对这种菜单有所需求的话，一般将其实现为 [QToolBar](#qtoolbar)。
 
 **操作列表(action item)包含四种类型：分割线(separator)、子菜单(QMenu)、部件(QWidgetAction)或触发某个命令的操作(QAction)**。其中 QWidgetAction 继承自 QAction，你可以继承并重新实现 `QWidgetAction::createWidget` 或使用 `QWidgetAction::setDefaultWidget(QWidget*)`，然后再使用 `QMenu::addAction(QAction*)` 添加一个自定义组件到某个菜单；QAction 包含图标(QIcon)、菜单文本(menu text)、快捷键(shortcut)、状态栏文本(status text)、"What's this" 文本和工具提示文本(tooltip)，这些内容都可以使用如下函数进行设置：
 
@@ -3170,3 +3172,196 @@ inline void myWidget::showPlainTextEdit()
 ```
 
 <h3 id="progressbar">进度条 QProgressBar</h3>
+
+QProgressBar 是Qt中用来显示进度的组件，其使用非常简单，只要设置好最小最大值，然后再设置当前值即可。一个简单的示例如下：
+
+```c++
+#include <QProgressBar>
+#include <QApplication>
+
+int main(int argc, char *argv[]) {
+
+	QApplication app(argc, argv);
+
+	QProgressBar bar;
+	bar.setRange(0, 100);
+	bar.setValue(50);
+	bar.show();
+
+	return app.exec();
+}
+```
+
+优秀的gui应用都是立即响应的，这意味着当用户做完某个操作时，可以立即做下一个操作。如果某个操作特别耗时，应用就会卡住，所以一般耗时的操作都是交给另一个线程去做的，主线程只需要显示操作的进度即可。
+
+Qt中的线程类是 QThread，你可以参照[官网](http://doc.qt.io/qt-5/qthread.html#details)进行简单的使用:
+
+```c++
+class WorkerThread : public QThread
+{
+	Q_OBJECT
+		void run() Q_DECL_OVERRIDE {
+		QString result;
+		/* ... here is the expensive or blocking operation ... */
+		emit resultReady(result);
+	}
+signals:
+	void resultReady(const QString &s);
+};
+
+void MyObject::startWorkInAThread()
+{
+	WorkerThread *workerThread = new WorkerThread(this);
+	connect(workerThread, &WorkerThread::resultReady, this, &MyObject::handleResults);
+	connect(workerThread, &WorkerThread::finished, workerThread, &QObject::deleteLater);
+	workerThread->start();
+}
+```
+
+由于 QThread 的实例是在主线程，run 函数是在新线程，我们的进度条也是在主线程，所以 QProgressBar 实例应该在主线程创建，run 函数要想改变进度值，只能使用指针来实现，所以工作线程大体应该长这样：
+
+```c++
+#pragma once
+#include <thread> // slepp_for
+#include <QThread>
+#include <QPointer>
+#include <QProgressBar>
+
+class WorkerThread :public QThread
+{
+	Q_OBJECT
+
+private:
+	QPointer<QProgressBar> mProgressBar;
+
+	void run() override
+	{
+		if (mProgressBar) {
+			emit begin();
+			std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(2000));
+			mProgressBar->setValue(10);
+			std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(5000));
+			mProgressBar->setValue(70);
+			std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(3000));
+			mProgressBar->setValue(100);
+			std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(500));
+			emit end();
+		}
+	}
+
+public:
+	WorkerThread(QProgressBar* const w, QObject *parent = Q_NULLPTR)
+		:QThread(parent), mProgressBar(w)
+	{}
+
+Q_SIGNALS:
+	void begin();
+	void end();
+};
+```
+
+我们来测试一下：
+
+```c++
+#include <QApplication>
+#include "WorkerThread.h"
+
+int main(int argc, char *argv[]) {
+
+	QApplication app(argc, argv);
+
+	QProgressBar window;
+
+	window.resize(250, 20);
+	window.move(300, 300);
+	window.setWindowTitle("QProgressBar");
+	window.show();
+
+	WorkerThread *pro = new WorkerThread(&window);
+	QObject::connect(pro, &WorkerThread::end, &window, &QProgressBar::close);
+	QObject::connect(pro, &QThread::finished, pro, &QObject::deleteLater);
+	pro->start();
+
+	return app.exec();
+}
+```
+
+结果：
+
+```cmd
+$ release\qt_practice.exe
+QObject::setParent: Cannot set parent, new parent is in a different thread
+QObject::setParent: Cannot set parent, new parent is in a different thread
+```
+
+可以看到输出 warning，这是因为**你不能在一个线程中绘制另一个线程中的组件**，显然调用 `setValue` 会重新绘制 QProgressBar，所以必须想办法让绘制这个操作在主线程中进行。能不能用事件系统来达到这个目的呢？
+
+由于 QThread 只有两个信号--`started` 和 `finished`，所以我们再添加一个信号 `update`，并添加一个 value 信息，用于传递进度值:
+
+```c++
+#pragma once
+#include <thread> // slepp_for
+#include <QThread>
+
+class WorkerThread :public QThread
+{
+	Q_OBJECT
+
+private:
+	void run() override
+	{
+		emit begin();
+		std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(2000));
+		update(10);
+		std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(5000));
+		update(70);
+		std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(3000));
+		update(100);
+		std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(500));
+		emit end();
+	}
+
+Q_SIGNALS:
+	void begin();
+	void update(int value);
+	void end();
+};
+```
+
+修改 main.cpp:
+
+```c++
+#include <QProgressBar>
+#include <QApplication>
+
+#include "WorkerThread.h"
+
+int main(int argc, char *argv[]) {
+
+	QApplication app(argc, argv);
+
+	QProgressBar window;
+	window.resize(250, 20);
+	window.move(300, 300);
+	window.setWindowTitle("QProgressBar");
+	window.show();
+
+	WorkerThread *pro = new WorkerThread();
+	QObject::connect(pro, &WorkerThread::update, &window, &QProgressBar::setValue);
+	QObject::connect(pro, &WorkerThread::end, &window, &QProgressBar::close);
+	QObject::connect(pro, &QThread::finished, pro, &QObject::deleteLater);
+	pro->start();
+
+	return app.exec();
+}
+```
+
+结果没有任何问题，同时工作线程也显得特别干净，这正是我们想要的。
+
+<h2 id="layout">布局管理</h2>
+
+如果要将多个部件整合到一起，就需要学会布局管理。
+
+布局管理分为 layout 布局、容器布局、模型/视图布局三种，依照不同需求进行使用。
+
+<h3 id="window_geometry">窗口几何布局</h3>
