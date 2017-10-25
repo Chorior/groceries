@@ -41,7 +41,10 @@ tags:
 	*	[主程序窗口 QMainWindow](#qmainwindow)
 	*	[常用小部件](#qt_common_widgets)
 	*	[进度条 QProgressBar](#progressbar)
-*	[布局管理](#layout)
+*	[部件管理](#widget_management)
+	*	[窗口几何布局](#window_geometry)
+	*	[布局管理](#layout)
+	*	[部件容器](#widget_containers)
 *	[资源管理](#resource)
 
 <h2 id="overview">Qt 概述</h2>
@@ -105,7 +108,7 @@ $ mingw32-make   # 编译
 这里默认执行的是 `mingw32-make -f Makefile.Release`，你也可以手动执行 `mingw32-make -f Makefile.Debug`，然后你会在相应文件夹下看到可运行的exe:
 
 ```bash
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 Hello QT.
 
 ```
@@ -216,7 +219,7 @@ void initInputParser(QCommandLineParser &parser)
 编译完成之后，首先查看 help:
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe -h
+$ release\qt_practice.exe -h
 Usage: release\qt_practice.exe [options] source destination
 Test helper
 
@@ -237,10 +240,10 @@ Arguments:
 这样就对上面的代码有了更深的了解了，接下来我们只需要按照 help 显示的那样进行测试即可：
 
 ```cmd
-$ e:\qt_practice>release\qt_practice.exe -v
+$ release\qt_practice.exe -v
 my-copy-program 1.0
 
-$ e:\qt_practice>release\qt_practice.exe -pf -t target -d default src dst undef
+$ release\qt_practice.exe -pf -t target -d default src dst undef
 -p:  true
 -f:  true
 -t, --target-directory:  true
@@ -252,7 +255,7 @@ positionalArguments:
   "dst"
   "undef"
 
-$ e:\qt_practice>release\qt_practice.exe src dst -t=dir undef
+$ release\qt_practice.exe src dst -t=dir undef
 -p:  false
 -f:  false
 -t, --target-directory:  true
@@ -264,13 +267,13 @@ positionalArguments:
   "dst"
   "undef"
 
-$ e:\qt_practice>release\qt_practice.exe -a
+$ release\qt_practice.exe -a
 Unknown option 'a'.
 
-$ e:\qt_practice>release\qt_practice.exe -t
+$ release\qt_practice.exe -t
 Missing value after '-t'.
 
-$ e:\qt_practice>release\qt_practice.exe -default name
+$ release\qt_practice.exe -default name
 -p:  false
 -f:  false
 -t, --target-directory:  false
@@ -280,7 +283,7 @@ default name:  "efault"
 positionalArguments:
   "name"
 
-$ e:\qt_practice>release\qt_practice.exe --default name
+$ release\qt_practice.exe --default name
 -p:  false
 -f:  false
 -t, --target-directory:  false
@@ -408,7 +411,7 @@ int main()
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 "H"   "Hello"   "World"
 "E"  size:  1
 "Hello" .at(1):  'e'
@@ -473,7 +476,7 @@ int main()
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 QVariant:  QVariant(int, 123)
 isInt:  true
 isString:  true
@@ -513,7 +516,7 @@ int main()
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 year: 2017
 month: 8
 day: 31
@@ -558,7 +561,7 @@ int main()
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 Thu Aug 31 15:22:07 2017
 
 took 100.01 ms
@@ -610,7 +613,7 @@ int main()
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 year:  2017
 month:  8
 day:  31
@@ -669,7 +672,7 @@ int main()
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 Today is  "2017-08-31"
 Today is  "17/8/31"
 Today is  "31. 8. 2017"
@@ -718,7 +721,7 @@ int main()
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 hour:  16
 minute:  27
 second:  49
@@ -778,7 +781,7 @@ int main()
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 current time is  "16:32:43.386"
 current time is  "4:32:43 下午"
 current time is  "16:32:43 下午"
@@ -839,7 +842,7 @@ int main()
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 took  100  ms
 took  206  ms
 ```
@@ -875,7 +878,7 @@ int main()
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 "2017-08-31T16:50:22"
 "2017-08-31T16:50:22"
 "2017-08-31T08:50:22Z"
@@ -925,9 +928,9 @@ int main()
 由于新添加了一个头文件，所以需要在 `.pro` 文件中加上 `HEADERS += dirent.h`，然后重新生成 makefile并编译：
 
 ```text
-$ e:\qt_practice>qmake
-$ e:\qt_practice>mingw32-make
-$ e:\qt_practice>release\qt_practice.exe
+$ qmake
+$ mingw32-make
+$ release\qt_practice.exe
 .: DT_DIR
 ..: DT_DIR
 .qmake.stash: DT_REG
@@ -1019,7 +1022,7 @@ int main()
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 file.read(5):  "line1"
 file.readLine():  " line1 line1\n"
 file.readAll():
@@ -1143,7 +1146,7 @@ int main(void)
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 isRelative:  true
 filePath:  "main.cpp"
 absoluteFilePath:  "E:/qt_practice/main.cpp"
@@ -1232,7 +1235,7 @@ int main(void)
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 currentPath:  "E:/qt_practice"
 homePath:  "C:/Users/pengzhen"
 rootPath:  "C:/"
@@ -1386,7 +1389,7 @@ int main(void)
 结果：
 
 ```text
-$ E:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 after init:
 a:  0
 b:  0
@@ -1559,7 +1562,7 @@ int main(void)
 结果：
 
 ```text
-$ E:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 after init:
  t.value:  0
  t.key:  ""
@@ -1775,7 +1778,7 @@ bool mainWindow::eventFilter(QObject *obj, QEvent *event)
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 eventFilter: event is QWheelEvent.
 backward
 eventFilter: event is QWheelEvent.
@@ -1933,7 +1936,7 @@ int main(int argc, char *argv[])
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 timer1:  1
 timer2:  2
 timer1:  1
@@ -1999,7 +2002,7 @@ inline void Test::update()
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 update
 update
 update
@@ -2082,7 +2085,7 @@ int main()
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 (myObject(0x3c7858), myObject(0x3c78e0), myObject(0x3c7940))
 (myObject(0x3cbc38), myObject(0x3cbc68), myObject(0x3cbc80))
 delete  4
@@ -2113,7 +2116,7 @@ int main()
 很显然 obj0 的析构函数被调用了两次：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 delete  2
 delete  1
 delete  1
@@ -2147,7 +2150,7 @@ int main()
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 delete  2
 ```
 
@@ -2194,7 +2197,7 @@ int main()
 结果：
 
 ```text
-$ e:\qt_practice>release\qt_practice.exe
+$ release\qt_practice.exe
 is inherits from QObject:  true
 class name:  myObject
 qobject is a myObject pointer.
@@ -3358,10 +3361,300 @@ int main(int argc, char *argv[]) {
 
 结果没有任何问题，同时工作线程也显得特别干净，这正是我们想要的。
 
-<h2 id="layout">布局管理</h2>
+<h2 id="widget_management">部件管理</h2>
 
-如果要将多个部件整合到一起，就需要学会布局管理。
+如果要将多个部件整合到一起，就需要学会部件管理。
 
-布局管理分为 layout 布局、容器布局、模型/视图布局三种，依照不同需求进行使用。
+部件管理分为布局管理、部件容器、模型/视图(model/view)架构三种，依照不同需求进行使用。
 
 <h3 id="window_geometry">窗口几何布局</h3>
+
+QWidget 是所有用户界面对象的基类，其提供如下函数用于处理窗口的集合布局：
+
+*	包含框架：`x()`、`y()`、`frameGeometry()`、`pos()`、`move()`；
+*	不含框架：`geometry()`、`width()`、`height()`、`rect()`、`size()`。
+
+![geometry](http://doc.qt.io/qt-5/images/geometry.png)
+
+**对于子组件来说，其没有框架**。
+
+```c++
+// mainWindow.h
+#pragma once
+#include <QDebug>
+#include <QMainWindow>
+
+class mainWindow : public QMainWindow
+{
+	void moveEvent(QMoveEvent*) override
+	{
+		qDebug() << "pos: " << pos();
+		qDebug() << "rect: " << rect();
+		qDebug() << "geometry: " << geometry();
+		qDebug() << "frameGeometry: " << frameGeometry();
+		qDebug() << "x: " << x() << "y: " << y();
+		qDebug() << "width: " << width() << "height: " << height();
+	}
+};
+```
+
+```c++
+// main.cpp
+#include "mainWindow.h"
+#include <QApplication>
+
+int main(int argc, char *argv[]) {
+
+	QApplication app(argc, argv);
+
+	mainWindow window;
+	window.resize(250, 200);
+	window.move(300, 300);
+	window.setWindowTitle("geometry");
+	window.show();
+
+	return app.exec();
+}
+```
+
+结果：
+
+```text
+$ release\qt_practice.exe
+pos:  QPoint(300,300)
+rect:  QRect(0,0 250x200)
+geometry:  QRect(300,300 250x200)
+frameGeometry:  QRect(292,270 266x238)
+x:  292 y:  270
+width:  250 height:  200
+```
+
+<h3 id="layout">布局管理</h3>
+
+**所谓布局管理，就是管理部件的位置和大小**。
+
+**Qt 提供了五种布局方式：垂直布局(QVBoxLayout)、水平布局(QHBoxLayout)、网格布局(QGridLayout)、表单布局(QFormLayout)和堆栈布局(QStackedLayout)**。其中表单布局由输入型控件和关联的标签组成，其布局就像你注册账号时的表单差不多，左边一列标签，右边一列输入；堆栈布局即只能显示其中一个部件的布局。
+
+#### 垂直水平布局
+
+QVBoxLayout 和 QHBoxLayout 都是 QBoxLayout 的子类，它们只是分别在构造时强制了项目排列的方向，QVBoxLayout 是 TopToBottom、QHBoxLayout 是 LeftToRight，所以如果你想布置一个水平或者垂直的布局，你也可以直接使用 QBoxLayout，其支持的排列方向包括：
+
+```c++
+enum Direction { LeftToRight, RightToLeft, TopToBottom, BottomToTop, 
+				Down = TopToBottom, Up = BottomToTop };
+```
+
+QBoxLayout 可以添加四种项目：
+
+*	`addWidget`,`insertWidget`：添加一个部件，可以指定拉伸因子和摆放位置，注意这个摆放位置与排列方向有很大关系；
+*	`addSpacing`,`insertSpacing`：添加一个不可拉伸的空间；
+*	`addStretch`,`insertStretch`：添加一个可拉伸的空项目；
+*	`addLayout`,`insertLayout`：添加一个子布局。
+
+如果你想要移除布局中某个部件，你可以使用成员函数 `removeWidget`，或者你也可以调用 `QWidget::hide()` 来隐藏(且不占用绘制空间)这个插件直到 `QWidget::show()` 被调用。
+
+```c++
+#pragma once
+#include <QLabel>
+#include <QWidget>
+#include <QLineEdit>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+
+// 做一个表单，注意不能继承QMainWindow
+// https://stackoverflow.com/questions/18947375/qt-compiler-complains-when-invoking-setlayout-on-my-mainwindow
+class myWidget :public QWidget
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QWidget(parent)
+	{
+		QVBoxLayout *vbox = new QVBoxLayout();
+
+		QHBoxLayout *hbox1 = new QHBoxLayout();
+		QHBoxLayout *hbox2 = new QHBoxLayout();
+		QHBoxLayout *hbox3 = new QHBoxLayout();
+
+		QLabel *label1 = new QLabel(tr("label1"));
+		QLabel *label2 = new QLabel(tr("label2"));
+		QLabel *label3 = new QLabel(tr("label3"));
+
+		QLineEdit *lineEdit1 = new QLineEdit(tr("lineEdit1"));
+		QLineEdit *lineEdit2 = new QLineEdit(tr("lineEdit2"));
+		QLineEdit *lineEdit3 = new QLineEdit(tr("lineEdit3"));
+
+		hbox1->addWidget(label1);
+		hbox1->addWidget(lineEdit1);
+		hbox2->addWidget(label2);
+		hbox2->addWidget(lineEdit2);
+		hbox3->addWidget(label3);
+		hbox3->addWidget(lineEdit3);
+
+		vbox->addLayout(hbox1);
+		vbox->addLayout(hbox2);
+		vbox->addLayout(hbox3);
+
+		setLayout(vbox);
+		
+		label3->hide();
+	}
+};
+```
+
+#### 网格布局
+
+QGridLayout 与 QBoxLayout 类似，你可以使用 `addWidget`、`addLayout` 或 `addItem` 来添加部件或子布局并指定行列位置和行列大小，你还可以使用 `removeWidget` 彻底删除某个部件或使用 `QWidget::hide()` 来隐藏(但不占用绘制空间)某个部件。
+
+```c++
+#pragma once
+#include <QLabel>
+#include <QWidget>
+#include <QString>
+#include <QTextEdit>
+#include <QLineEdit>
+#include <QCheckBox>
+#include <QGridLayout>
+
+class myWidget :public QWidget
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QWidget(parent)
+	{
+		QGridLayout *gl = new QGridLayout();
+
+		for (int i = 0; i < 3; ++i)
+		{
+			QCheckBox *checkBox = new QCheckBox();
+			QLabel *label = new QLabel();
+			QLineEdit *lineEdit = new QLineEdit();
+
+			QString num = QString::number(i);
+			checkBox->setCheckState(Qt::Unchecked);
+			checkBox->setText(tr("checkBox") + num);
+			label->setText(tr("label") + num);
+			lineEdit->setText(tr("lineEdit") + num);
+
+			gl->addWidget(checkBox, i, 0);
+			gl->addWidget(label, i, 1);
+			gl->addWidget(lineEdit, i, 2);
+		}
+
+		// 在(3,0)位置添加一个4行3列的textEdit
+		QTextEdit *textEdit = new QTextEdit(tr("QTextEdit"));
+		gl->addWidget(textEdit, 3, 0, 4, 3);
+
+		setLayout(gl);
+	}
+};
+```
+
+#### 表单布局
+
+QFormLayout 只有两列，它最初被设计出来就是为了写表单用的，**其表单与 QGridLayout 设计出来的表单相比，其左右两列具有一一对应的关系，如果你在标签列设置了快捷键，那么快捷键会使光标跳到对应的右侧组件上**，另外使用 QFormLayout 会比使用 QGridLayout 制作表单更为方便(代码量更小)。
+
+你可已使用如下函数对 QFormLayout 进行操作：
+
+```c++
+void addRow(QWidget *label, QWidget *field);
+void addRow(QWidget *label, QLayout *field);
+void addRow(const QString &labelText, QWidget *field);
+void addRow(const QString &labelText, QLayout *field);
+void addRow(QWidget *widget);
+void addRow(QLayout *layout);
+
+void insertRow(int row, QWidget *label, QWidget *field);
+void insertRow(int row, QWidget *label, QLayout *field);
+void insertRow(int row, const QString &labelText, QWidget *field);
+void insertRow(int row, const QString &labelText, QLayout *field);
+void insertRow(int row, QWidget *widget);
+void insertRow(int row, QLayout *layout);
+
+void removeRow(int row);
+void removeRow(QWidget *widget);
+void removeRow(QLayout *layout);
+```
+
+简单示例：
+
+```c++
+#pragma once
+#include <QWidget>
+#include <QSpinBox>
+#include <QLineEdit>
+#include <QFormLayout>
+
+class myWidget :public QWidget
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QWidget(parent)
+	{
+		QLineEdit *nameLineEdit = new QLineEdit(tr("name"));
+		QLineEdit *emailLineEdit = new QLineEdit(tr("email"));
+		QSpinBox  *ageSpinBox = new QSpinBox();
+		ageSpinBox->setRange(0, 200);
+		ageSpinBox->setWrapping(true); // 循环
+
+		QFormLayout *formLayout = new QFormLayout();
+		formLayout->addRow(tr("&Name:"), nameLineEdit);  // Alt + N
+		formLayout->addRow(tr("&Email:"), emailLineEdit);
+		formLayout->addRow(tr("&Age:"), ageSpinBox);
+		setLayout(formLayout);
+	}
+};
+```
+
+#### 堆栈布局
+
+QStackedLayout 同一时间只能显示其中一个部件，一般与 QComboBox 或其它单选部件合并使用：
+
+```c++
+#pragma once
+#include <QWidget>
+#include <QComboBox>
+#include <QTextEdit>
+#include <QVBoxLayout>
+#include <QStackedLayout>
+
+class myWidget :public QWidget
+{
+	Q_OBJECT
+
+public:
+	myWidget(QWidget *parent = 0)
+		: QWidget(parent)
+	{
+		QComboBox *pageComboBox = new QComboBox();
+		pageComboBox->addItem(tr("Page 1"));
+		pageComboBox->addItem(tr("Page 2"));
+		pageComboBox->addItem(tr("Page 3"));
+
+		QTextEdit *textEdit1 = new QTextEdit(tr("Page 1"));
+		QTextEdit *textEdit2 = new QTextEdit(tr("Page 2"));
+		QTextEdit *textEdit3 = new QTextEdit(tr("Page 3"));
+
+		QStackedLayout *stackedLayout = new QStackedLayout();
+		stackedLayout->addWidget(textEdit1);
+		stackedLayout->addWidget(textEdit2);
+		stackedLayout->addWidget(textEdit3);
+
+		connect(pageComboBox, SIGNAL(activated(int)),
+			stackedLayout, SLOT(setCurrentIndex(int)));
+
+		QVBoxLayout *mainLayout = new QVBoxLayout();
+		mainLayout->addWidget(pageComboBox);
+		mainLayout->addLayout(stackedLayout);
+		setLayout(mainLayout);		
+	}
+};
+```
+
+<h3 id="widget_containers">部件容器</h3>
+
