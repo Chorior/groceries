@@ -45,6 +45,7 @@ tags:
 	*	[窗口几何布局](#window_geometry)
 	*	[布局管理](#layout)
 	*	[部件容器](#widget_containers)
+	*	[模型/视图(model/view)](#model_view)
 *	[资源管理](#resource)
 
 <h2 id="overview">Qt 概述</h2>
@@ -3044,6 +3045,7 @@ GUI常用的小部件无非按钮、文本框、标签、下拉框、复选框�
 #include <QDebug>
 #include <QPixmap>
 #include <QMenuBar>
+#include <QStatusBar>
 #include <QStringList>
 #include <QMainWindow>
 #include <QApplication>
@@ -3090,26 +3092,28 @@ inline void myWidget::createMenu()
 
 inline void myWidget::showLabel()
 {
-	QLabel *tmp = new QLabel(tr("QLabel"), this);
+	QLabel *tmp = new QLabel(tr("QLabel"));
 	tmp->setPixmap(QPixmap("welcome.jpg"));
 
 	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QLabel"), 2000);
 }
 
 inline void myWidget::showSlider()
 {
-	QSlider *tmp = new QSlider(Qt::Horizontal, this);
+	QSlider *tmp = new QSlider(Qt::Horizontal);
 	tmp->setRange(0, 100);
 	tmp->setSingleStep(10);
 	tmp->setSliderPosition(50);
 	connect(tmp, &QSlider::valueChanged, [](int pos) {qDebug() << pos; });
 
 	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QSlider"), 2000);
 }
 
 inline void myWidget::showSpinBox()
 {
-	QSpinBox *tmp = new QSpinBox(this);
+	QSpinBox *tmp = new QSpinBox();
 	tmp->setRange(0, 100);
 	tmp->setWrapping(true); // 循环
 	tmp->setValue(1);
@@ -3118,11 +3122,12 @@ inline void myWidget::showSpinBox()
 		[](int i) {qDebug() << i; });
 
 	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QSpinBox"), 2000);
 }
 
 inline void myWidget::showComboBox()
 {
-	QComboBox *tmp = new QComboBox(this);
+	QComboBox *tmp = new QComboBox();
 	QStringList strList{ tr("str0"),tr("str1"),tr("str2"),tr("str3") };
 	tmp->addItems(strList);
 	tmp->setCurrentIndex(2);
@@ -3130,47 +3135,53 @@ inline void myWidget::showComboBox()
 		[](const QString &str) {qDebug() << str; });
 
 	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QComboBox"), 2000);
 }
 
 inline void myWidget::showCheckBox()
 {
-	QCheckBox *tmp = new QCheckBox(tr("QCheckBox"), this);
+	QCheckBox *tmp = new QCheckBox(tr("QCheckBox"));
 	connect(tmp, &QCheckBox::stateChanged,
 		[](int state) {qDebug() << (state ? tr("true") : tr("false")); });
 
 	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QCheckBox"), 2000);
 }
 
 inline void myWidget::showTextEdit()
 {
-	QTextEdit *tmp = new QTextEdit(tr("QTextEdit"), this);
+	QTextEdit *tmp = new QTextEdit(tr("QTextEdit"));
 	connect(tmp, &QTextEdit::textChanged, [] {qDebug() << tr("text changed."); });
 
 	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QTextEdit"), 2000);
 }
 
 inline void myWidget::showLineEdit()
 {
-	QLineEdit *tmp = new QLineEdit(tr("QLineEdit"), this);
+	QLineEdit *tmp = new QLineEdit(tr("QLineEdit"));
 	connect(tmp, &QLineEdit::editingFinished, [] {qDebug() << tr("edit finished."); });
 
 	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QLineEdit"), 2000);
 }
 
 inline void myWidget::showPushButton()
 {
-	QPushButton *tmp = new QPushButton(tr("QPushButton"), this);
+	QPushButton *tmp = new QPushButton(tr("QPushButton"));
 	connect(tmp, &QPushButton::clicked, [] {qDebug() << tr("QPushButton clicked."); });
 
 	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QPushButton"), 2000);
 }
 
 inline void myWidget::showPlainTextEdit()
 {
-	QPlainTextEdit *tmp = new QPlainTextEdit(tr("QPlainTextEdit"), this);
+	QPlainTextEdit *tmp = new QPlainTextEdit(tr("QPlainTextEdit"));
 	connect(tmp, &QPlainTextEdit::textChanged, [] {qDebug() << tr("text changed."); });
 
 	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QPlainTextEdit"), 2000);
 }
 ```
 
@@ -3657,4 +3668,162 @@ public:
 ```
 
 <h3 id="widget_containers">部件容器</h3>
+
+部件容器是为了让一些部件组合在一起，并且拥有一些共有的属性，常用的如 QFrame、QToolBox、QGroupBox、QMdiArea、QScrollArea 等，这些类都非常简单：
+
+```c++
+#pragma once
+#include <QFrame>
+#include <QToolBox>
+#include <QGroupBox>
+#include <QMdiArea>
+#include <QScrollArea>
+
+#include <QMenu>
+#include <QBrush>
+#include <QLabel>
+#include <QString>
+#include <QPixmap>
+#include <QMenuBar>
+#include <QTextEdit>
+#include <QStatusBar>
+#include <QVBoxLayout>
+#include <QMainWindow>
+#include <QMessageBox>
+#include <QRadioButton>
+
+class widgetContainers :public QMainWindow
+{
+	Q_OBJECT
+private:
+	void createMenu();
+
+private Q_SLOTS:
+	void showFrame();
+	void showToolBox();
+	void showGroupBox();
+	void showMdiArea();
+	void showScrollArea();
+
+public:
+	widgetContainers(QWidget *parent = 0)
+		: QMainWindow(parent)
+	{
+		createMenu();
+	}
+};
+
+inline void widgetContainers::createMenu()
+{
+	QMenu *menu = menuBar()->addMenu(QString("&Containers"));
+	menu->addAction(tr("QFrame"), this, &widgetContainers::showFrame);
+	menu->addAction(tr("QToolBox"), this, &widgetContainers::showToolBox);
+	menu->addAction(tr("QGroupBox"), this, &widgetContainers::showGroupBox);
+	menu->addAction(tr("QMdiArea"), this, &widgetContainers::showMdiArea);
+	menu->addAction(tr("QScrollArea"), this, &widgetContainers::showScrollArea);
+}
+
+inline void widgetContainers::showFrame()
+{
+	// QFrame 提供了一个框架
+	QTextEdit *textEdit = new QTextEdit();
+	QVBoxLayout *vbox = new QVBoxLayout();
+	vbox->addWidget(textEdit);
+
+	QFrame *tmp = new QFrame();
+	tmp->setLineWidth(2);
+	tmp->setMidLineWidth(0);
+	tmp->setFrameStyle(QFrame::Panel | QFrame::Plain);
+	tmp->setLayout(vbox);
+
+	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QFrame"), 2000);
+}
+
+inline void widgetContainers::showToolBox()
+{
+	// QToolBox 继承自 QFrame，支持多个标签页
+	QTextEdit *textEdit1 = new QTextEdit(tr("textEdit1"));
+	QTextEdit *textEdit2 = new QTextEdit(tr("textEdit2"));
+	QTextEdit *textEdit3 = new QTextEdit(tr("textEdit3"));
+
+	QToolBox *tmp = new QToolBox();
+	tmp->addItem(textEdit1, tr("page1"));
+	tmp->addItem(textEdit2, tr("page2"));
+	tmp->addItem(textEdit3, tr("page3"));
+
+	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QToolBox"), 2000);
+}
+
+inline void widgetContainers::showGroupBox()
+{
+	// QGroupBox 为其组件设置了一个标题
+	QRadioButton *radio1 = new QRadioButton(tr("&Radio button 1")); // Alt + r
+	QRadioButton *radio2 = new QRadioButton(tr("R&adio button 2")); // Alt + a
+	QRadioButton *radio3 = new QRadioButton(tr("Ra&dio button 3")); // Alt + d
+	radio1->setChecked(true);
+
+	QVBoxLayout *vbox = new QVBoxLayout();
+	vbox->addWidget(radio1);
+	vbox->addWidget(radio2);
+	vbox->addWidget(radio3);
+	vbox->addStretch(1);
+
+	QGroupBox *tmp = new QGroupBox(tr("QGroupBox"));
+	tmp->setLayout(vbox);
+	tmp->setCheckable(true);
+
+	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QGroupBox"), 2000);
+}
+
+inline void widgetContainers::showMdiArea()
+{
+	// QMdiArea 支持多个子窗口
+	// 通常被用作 QMainWindow 的中心部件
+	QMessageBox *msgBox1 = new QMessageBox();
+	QMessageBox *msgBox2 = new QMessageBox();
+	QMessageBox *msgBox3 = new QMessageBox();
+
+	msgBox1->setText("QMessageBox1");
+	msgBox2->setText("QMessageBox2");
+	msgBox3->setText("QMessageBox3");
+
+	QMdiArea *tmp = new QMdiArea();
+	tmp->addSubWindow(msgBox1);
+	tmp->addSubWindow(msgBox2);
+	tmp->addSubWindow(msgBox3);
+	tmp->setTabsMovable(true);
+	tmp->setTabsClosable(true);
+	tmp->setBackground(QBrush(Qt::yellow));
+
+	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QMdiArea"), 2000);
+}
+
+inline void widgetContainers::showScrollArea()
+{
+	// QScrollArea 提供一个可滚动视图
+	QLabel *imageLabel = new QLabel();
+	imageLabel->setPixmap(QPixmap("big_image.png"));
+
+	QScrollArea *tmp = new QScrollArea();
+	tmp->setWidget(imageLabel);
+	tmp->setBackgroundRole(QPalette::Dark);
+
+	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QScrollArea"), 2000);
+}
+```
+
+<h3 id="model_view">模型/视图(model/view)</h3>
+
+查看[Model/View Programming](http://doc.qt.io/qt-5/model-view-programming.html)，如果你学过Android的话，应该知道MVC设计模式--应用的所有对象分为三类：
+
+*	模型(model)对象：存储数据与业务逻辑。不关心用户界面，它存在的唯一目的就是存储和管理应用数据；
+*	视图(view)对象：凡是能够在屏幕上看见的对象，就是视图对象。视图对象知道如何在屏幕上绘制自己以及如何响应用户输入；
+*	控制器(controller)对象：视图对象与模型对象的联系纽带，响应由视图对象触发的各种事件，以及管理模型对象与视图层间的数据流动。
+
+**如果将视图对象与控制器对象合并，其结果就是模型/视图(model/view)架构**。很明显，模型/视图架构可以使用不同的视图来表示相同的数据。
 
