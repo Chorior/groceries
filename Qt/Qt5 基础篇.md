@@ -46,6 +46,10 @@ tags:
 	*	[布局管理](#layout)
 	*	[部件容器](#widget_containers)
 	*	[模型/视图(model/view)](#model_view)
+*	[界面外观](#interface_appearance)
+	*	[QStyle](#qstyle)
+	*	[调色板 QPalette](#qpalette)
+	*	[样式表](#qstylesheet)
 *	[资源管理](#resource)
 
 <h2 id="overview">Qt 概述</h2>
@@ -3048,7 +3052,6 @@ GUI常用的小部件无非按钮、文本框、标签、下拉框、复选框�
 #include <QStatusBar>
 #include <QStringList>
 #include <QMainWindow>
-#include <QApplication>
 
 class myWidget :public QMainWindow
 {
@@ -3819,7 +3822,7 @@ inline void widgetContainers::showScrollArea()
 
 <h3 id="model_view">模型/视图(model/view)</h3>
 
-查看[Model/View Programming](http://doc.qt.io/qt-5/model-view-programming.html)，如果你学过Android的话，应该知道MVC设计模式--应用的所有对象分为三类：
+查看 [Model/View Programming](http://doc.qt.io/qt-5/model-view-programming.html)，如果你学过Android的话，应该知道MVC设计模式--应用的所有对象分为三类：
 
 *	模型(model)对象：存储数据与业务逻辑。不关心用户界面，它存在的唯一目的就是存储和管理应用数据；
 *	视图(view)对象：凡是能够在屏幕上看见的对象，就是视图对象。视图对象知道如何在屏幕上绘制自己以及如何响应用户输入；
@@ -3827,3 +3830,183 @@ inline void widgetContainers::showScrollArea()
 
 **如果将视图对象与控制器对象合并，其结果就是模型/视图(model/view)架构**。很明显，模型/视图架构可以使用不同的视图来表示相同的数据。
 
+有关模型/视图的底层知识有些难懂，但是 Qt 实现了一些基于模型/视图的便捷类--QListWidget、QTreeWidget 和 QTableWidget。之所以称它们为便捷类，是因为它们用起来非常方便，但是它们**没有将模型与视图分离，仅适用于少量数据的存储和显示**；**它们也被称为视图类，但是它们使用默认的模型来存储数据**；**由于它们使用 item 来添加数据，所以又被称为基于项目的视图类**。
+
+有关模型/视图的底层知识，我们将在高级篇进行讲解。
+
+```c++
+#pragma once
+#include <QListWidget>
+#include <QTreeWidget>
+#include <QTableWidget>
+
+#include <QIcon>
+#include <QMenu>
+#include <QString>
+#include <QMenuBar>
+#include <QStatusBar>
+#include <QStringList>
+#include <QMainWindow>
+
+class itemBasedViews :public QMainWindow
+{
+	Q_OBJECT
+private:
+	void createMenu();
+
+private Q_SLOTS:
+	void showListWidget();
+	void showTreeWidget();
+	void showTableWidget();
+
+public:
+	itemBasedViews(QWidget *parent = 0)
+		: QMainWindow(parent)
+	{
+		createMenu();
+	}
+};
+
+inline void itemBasedViews::createMenu()
+{
+	QMenu *menu = menuBar()->addMenu(QString("&Views"));
+	menu->addAction(tr("QListWidget"), this, &itemBasedViews::showListWidget);
+	menu->addAction(tr("QTreeWidget"), this, &itemBasedViews::showTreeWidget);
+	menu->addAction(tr("QTableWidget"), this, &itemBasedViews::showTableWidget);
+}
+
+inline void itemBasedViews::showListWidget()
+{
+	// QListWidget 提供一个列表视图
+	QListWidgetItem *item1 = new QListWidgetItem();
+	QListWidgetItem *item2 = new QListWidgetItem();
+	QListWidgetItem *item3 = new QListWidgetItem();
+
+	item1->setText(tr("file"));
+	item1->setIcon(QIcon("file.png"));
+	item2->setText(tr("new"));
+	item2->setIcon(QIcon("new.png"));
+	item3->setText(tr("open"));
+	item3->setIcon(QIcon("open.png"));
+
+	QListWidget *tmp = new QListWidget();
+	tmp->addItem(item1);
+	tmp->addItem(item2);
+	tmp->addItem(item3);
+	tmp->sortItems(Qt::AscendingOrder); // 升序
+
+	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QListWidget"), 2000);
+}
+
+inline void itemBasedViews::showTreeWidget()
+{
+	// QTreeWidget 提供一个树状视图
+	QTreeWidget *tmp = new QTreeWidget();
+	tmp->setColumnCount(2); // 设置列数
+	tmp->setHeaderLabels(QStringList{ tr("name"), ("age") });
+
+	QTreeWidgetItem *top1 = new QTreeWidgetItem(tmp);
+	QTreeWidgetItem *top2 = new QTreeWidgetItem(tmp, top1);
+	QTreeWidgetItem *child11 = new QTreeWidgetItem(top1);
+	QTreeWidgetItem *child12 = new QTreeWidgetItem(top1, child11);
+
+	top1->setText(0, tr("family"));
+	top2->setText(0, tr("company"));
+	child11->setText(0, tr("mother"));
+	child11->setText(1, tr("37"));
+	child12->setText(0, tr("father"));
+	child12->setText(1, tr("40"));
+
+	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QTreeWidget"), 2000);
+}
+
+inline void itemBasedViews::showTableWidget()
+{
+	// QTableWidget 提供一个表格视图
+	QTableWidgetItem *item1 = new QTableWidgetItem();
+	QTableWidgetItem *item2 = new QTableWidgetItem();
+	QTableWidgetItem *item3 = new QTableWidgetItem();
+
+	item1->setText("file");
+	item1->setIcon(QIcon("file.png"));
+	item2->setText("new");
+	item2->setIcon(QIcon("new.png"));
+	item3->setText("open");
+	item3->setIcon(QIcon("open.png"));
+
+	QTableWidget *tmp = new QTableWidget();
+	tmp->setRowCount(2);     // 设置行数
+	tmp->setColumnCount(3);  // 设置列数
+	tmp->setVerticalHeaderLabels(
+		QStringList{ tr("row1"), tr("row2") });
+	tmp->setHorizontalHeaderLabels(
+		QStringList{ tr("col1"), tr("col2"), tr("col3") });
+
+	tmp->setItem(0, 0, item1);
+	tmp->setItem(0, 1, item2);
+	tmp->setItem(0, 2, item3);
+
+	setCentralWidget(tmp);
+	statusBar()->showMessage(tr("QTableWidget"), 2000);
+}
+```
+
+<h2 id="interface_appearance">界面外观</h2>
+
+一个好的 GUI 程序不仅需要强大的功能，更需要优美的界面，所以才有设计师这一职业的出现。作为一个跨平台的 UI 开发框架，Qt 也提供了强大而灵活的界面外观设计机制。
+
+<h3 id="qstyle">QStyle</h3>
+
+QStyle 是一个抽象基类，**Qt 的内建组件使用它来完成几乎所有的绘制工作**。
+
+你可以使用 `QApplication::setStyle()` 或 `QWidget::setStyle()` 来为整个应用或单个组件设置风格，当前环境支持的风格可以使用 `QStyleFactory::keys()` 进行查看：
+
+```text
+("Windows", "WindowsXP", "WindowsVista", "Fusion")
+```
+
+你也可以在运行时指定风格选项：
+
+```bash
+$ ./myApp -style windowsxp
+```
+
+你还可以使用 QStyle 对自定义组件进行绘制，你甚至可以创建自定义风格类型，具体查看 [QStyle](http://doc.qt.io/qt-5/qstyle.html#developing-style-aware-custom-widgets)。
+
+<h3 id="qpalette">调色板 QPalette</h3>
+
+**一个调色板包含三个颜色组**：
+
+*	Active：当窗口获得焦点时；
+*	Inactive：当焦点在其他窗口时；
+*	Disabled：当组件(非窗口)不可用时。
+
+对大多数风格来说，Active 和 Inactive 看起来是一样的。
+
+**当你创建一个新的组件时，建议使用调色板而非直接指定某种颜色**。
+
+当你修改应用的调色板或某个组件的调色板时，**建议使用 `QGuiApplication::palette()` 或 `QWidget::palette()` 获取原有的调色板，然后再进行更改**，这样会保留原有的未改变的设置，最后再调用 `QGuiApplication::setPalette` 或 `QWidget::setPalette` 来使用修改后的调色板。
+
+```c++
+// myWidget.h
+#pragma once
+#include <QPalette>
+#include <QMainWindow>
+
+struct myWidget : QMainWindow
+{
+	myWidget(QWidget *parent = 0)
+		: QMainWindow(parent)
+	{
+		QPalette palette = this->palette();
+		// 设置窗口背景在聚焦时为绿色、非聚焦时为黄色
+		palette.setColor(QPalette::Active, QPalette::Window, Qt::green);
+		palette.setColor(QPalette::Inactive, QPalette::Window, Qt::yellow);
+		setPalette(palette);
+	}
+};
+```
+
+<h3 id="qstylesheet">样式表</h3>
