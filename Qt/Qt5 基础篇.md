@@ -4010,3 +4010,48 @@ struct myWidget : QMainWindow
 ```
 
 <h3 id="qstylesheet">样式表</h3>
+
+样式表比调色板更加强大，**样式表的设置对所有风格、所有系统有效，并且低层级的样式表会使用高层级中有效的样式表**，例如你可以为顶层组件设置一个样式表，那么该样式表对所有子组件有效(如果子组件不修改样式表的话)。
+
+你可以使用 `QApplication::setStyleSheet()` 或 `QWidget::setStyleSheet()` 来为整个应用或单个组件设置样式表，**样式表在设计模式中设置会更加便捷和直观**。
+
+#### 样式规则
+
+Qt 样式表的术语和语法规则与 HTML CSS 基本相同，**一个样式规则由一个选择符(selector)和一个声明(declaration)组成，其中选择符指定改规则形象的组件，声明指定影响该组件的那个属性**，如：
+
+```css
+QPushButton { color: red }
+```
+
+你可以为多个组件设置相同的属性，只需使用逗号将组件名分隔即可：
+
+```css
+QPushButton, QLineEdit, QComboBox { color: red }
+```
+
+支持的属性查看 [List of Properties](http://doc.qt.io/qt-5/stylesheet-reference.html#list-of-properties)，它们之间使用分号进行分隔：
+
+```css
+QPushButton { color: red; background-color: white }
+```
+
+#### 选择符类型
+
+选择符 | 示例 | 说明
+------------ | ---------- | ---------------------
+通用选择符 | \* | 所有部件
+类型选择符 | QPushButton | QPushButton 及其子类
+属性选择符 | QPushButton[flat="false"] | flat 属性为 false 的 QPushButton
+类选择符 | .QPushButton | QPushButton，不含子类
+ID 选择符 | QPushButton#okButton | 对象名为 okButton 的 QPushButton
+后代选择符 | QDialog QPushButton | QDialog 的子孙部件 QPushButton
+亲子选择符 | QDialog > QPushButton | QDialog 的直系子部件 QPushButton
+
+#### 子控件
+
+对于某些复杂的部件，可能需要访问它们的子控件(subcontrol)，如 QComboBox 的下拉按钮或 QSpinBox 的上下箭头等，可以通过选择符来访问这些子控件：
+
+```css
+QComboBox::drop-down { image: url(dropdown.png) }
+```
+
