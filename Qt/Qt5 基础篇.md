@@ -37,6 +37,7 @@ tags:
 	*	[QPointer](#qpointer)
 	*	[元对象系统](#the_meta_object_system)
 *	[GUI 基础](#gui_basic)
+	*	[QApplication](#qapplication)
 	*	[基础窗口部件 QWidget](#qwidget)
 	*	[启动界面 QSplashScreen](#qsplashscreen)
 	*	[对话框 QDialog](#qdialog)
@@ -454,15 +455,15 @@ false   true   true   true
 "There are 2 punctuation characters"
 ```
 
-上面打印出来的字符串有引号，如果你觉得不爽的话，可以使用 [qPrintable](http://doc.qt.io/qt-5/qtglobal.html#qPrintable) 全局函数将 QString 转换为 `const char *`后再进行输出。
+上面打印出来的字符串有引号，如果你觉得不爽的话，可以使用 [qPrintable](http://doc.qt.io/qt-5/qtglobal.html#qPrintable) 全局函数将 QString 转换为 `const char *` 后再进行输出。
 
 <h2 id="qvariant">QVariant</h2>
 
-QVariant 像是一个 Qt 常见数据类型的共用体。由于标准 union 只支持有默认构造函数和析构函数的类型，然而许多有用的 Qt 类都不满足这一要求，所以有了 QVariant。
+QVariant 像是一个 Qt 常见数据类型的共用体。由于**标准 union 只支持有默认构造函数和析构函数的类型**，然而许多有用的 Qt 类都不满足这一要求，所以有了 QVariant。
 
 **一个 QVariant 对象在同一时间只持有一种数据类型的一个值**，假定该类型为 T，那么你就可以使用成员函数 `toT()` 来获取这个值，你还可以使用成员函数 `canConvert` 来判断该类型是否能够转换到你想要的类型，你甚至可以使用成员函数 `typename()` 来得到该类型的类型字符串。
 
-由于 QVariant 是 Qt Core 模块的一部分，所以没有提供 Qt GUI 定义的数据类型的额转换函数 `toT()`，但是 [QVariant 支持的类型](http://doc.qt.io/qt-5/qvariant-obsolete.html#Type-enum)是包含一些 GUI 定义的类型的，如 QColor、QImage、QPixmap 等，这时你可以使用成员函数 `value` 或者转换函数 `qvariant_cast` 来获取存储的值。**实际上所有的 QVariant 对象都可以使用这样的方式来获取值**。
+由于 QVariant 是 Qt Core 模块的一部分，所以没有提供 Qt GUI 定义的数据类型的额转换函数 `toT()`，但是 [QVariant 支持的类型](http://doc.qt.io/qt-5/qvariant-obsolete.html#Type-enum)是包含一些 GUI 定义的类型的，如 QColor、QImage、QPixmap 等，这时你可以使用成员函数 `value` 或者强制转换函数 `qvariant_cast` 来获取存储的值，**实际上所有的 QVariant 对象都可以使用这样的方式来获取值**。
 
 演示：
 
@@ -548,7 +549,7 @@ minute: 8
 second: 21
 ```
 
-在 C++11 中还有头文件 `<chrono>` 中的 `system_clock` 也可以获取当前时间，因为它提供了向 `time_t` 的类型转换函数 `to_time_t`，另外它还支持超**高精度的计时功能**，而使用 `time_t` 你只能获取到精确到秒的计时功能：
+在 C++11 中还有头文件 `<chrono>` 中的 `system_clock` 也可以获取当前时间，因为它提供了向 `time_t` 的类型转换函数 `to_time_t`，另外它还支持**超高精度的计时功能**，而使用 `time_t` 你只能获取到精确到秒的计时功能：
 
 ```c++
 #include <ctime>
@@ -590,7 +591,7 @@ Thu Aug 31 15:22:07 2017
 took 100.01 ms
 ```
 
-**在 Qt 中，如果你想处理日期的话，你可以使用 QDate，如果你想处理时间的话，你可以使用 QTime，如果你想日期、时间一起处理的话，你可以使用 QDateTime**。
+**在 Qt 中，处理日期可以使用 QDate，处理时间可以使用 QTime，日期、时间一起处理可以使用 QDateTime**。
 
 <h3 id="qdate">QDate</h3>
 
@@ -870,11 +871,11 @@ took  100  ms
 took  206  ms
 ```
 
-**可以看到，其精度只到达毫秒，远不如 `chrono` 的精度高**。
+**可以看到，其计时精度只到达毫秒，远不如 `chrono` 的精度高**。
 
 <h3 id="qdatetime">QDateTime</h3>
 
-**你可以把 QDateTime 当做 QDate 和 QTime 的并集**，使用时可以使用成员函数`date()`和`time()`来获取对应的 QDate 和 QTime，修改之后再通过成员函数`setDate`和`setTime`将修改合并到原 QDateTime 实例中；剩余比较独立的函数是`toUTC`和`toTime_t`，其中UTC时间是世界标准时间，不随地区、季节的改变而改变，`time_t`是Unix时间。
+**你可以把 QDateTime 当做 QDate 和 QTime 的并集**，使用时可以使用成员函数 `date()` 和 `time()` 来获取对应的 QDate 和 QTime，修改之后再通过成员函数 `setDate` 和 `setTime` 将修改合并到原 QDateTime 实例中；剩余比较独立的函数是 `toUTC `和 `toTime_t` ，其中 UTC 时间是世界标准时间，不随地区、季节的改变而改变，`time_t` 是 Unix 时间。
 
 ```c++
 #include <QDebug>
@@ -913,7 +914,7 @@ $ release\qt_practice.exe
 
 <h2 id="qfile_qdir">文件输入输出</h2>
 
-有些时候你可能需要对很多歌文件执行相同的操作，比如对几十张图片进行一些算法处理，你当然可以手动将这些文件的名字一一写死到程序里面，但是如果有一天需要换一批文件，你是否又需要一个一个去写呢？遇到这种问题，我一般都是将所有文件放在同一个目录下，让程序去一个个读文件，然后进行操作。**但 C++11 并没有读取目录的接口**，你可以在 [stackoverflow](https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c) 上找到如何在标准 C++ 里读取目录的方法。就我使用过的来说，[`dirent.h`](https://github.com/tronkko/dirent) 确实比较轻便又好用：
+有些时候你可能需要对很多个文件执行相同的操作，比如对几十张图片进行一些算法处理。你当然可以手动将这些文件的名字一一写死到程序里面，但是如果有一天需要换一批文件，你是否又需要一个一个去写呢？遇到这种问题，我一般都是将所有文件放在同一个目录下，让程序去一个个读，然后进行操作。**但 C++11 并没有读取目录的接口**，你可以在 [stackoverflow](https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c) 上找到如何在标准 C++ 里读取目录的方法。就我使用过的来说，[`dirent.h`](https://github.com/tronkko/dirent) 确实轻便又好用：
 
 ```c++
 #include <iostream>
@@ -948,7 +949,7 @@ int main()
 }
 ```
 
-由于新添加了一个头文件，所以需要在 `.pro` 文件中加上 `HEADERS += dirent.h`，然后重新生成 makefile并编译：
+由于新添加了一个头文件，所以需要在 `.pro` 文件中加上 `HEADERS += dirent.h`，然后重新生成 makefile 并编译：
 
 ```text
 $ qmake
@@ -1002,6 +1003,7 @@ int main()
 	file.open(QIODevice::ReadWrite | QIODevice::Text);
 	if (!file.isOpen()) {
 		qDebug() << "open " << filePath << " failed.";
+		exit(EXIT_FAILURE);
 	}
 
 	// 读取文件
@@ -1031,8 +1033,10 @@ int main()
 	qDebug() << "after seek(0):";
 	qDebug() << "stream.pos(): " << stream.pos();
 
+	// 写文件
 	stream << "\nline6";
 	
+	// 从当前位置读取文件
 	QString str;
 	stream >> str;
 	qDebug() << "str: " << str;	
@@ -1051,36 +1055,37 @@ file.readLine():  " line1 line1\n"
 file.readAll():
  "line2 line2 line2\nline3 line3 line3\nline4 line4 line4"
 file.isEnd():  true
-file.pos():  74
-file.size():  74
+file.pos():  81
+file.size():  81
 after seek(0):
 file.pos():  0
-stream.read(5):  " line"
-stream.readLine():  "1 line1"
+stream.read(5):  "line1"
+stream.readLine():  " line1 line1"
 stream.readAll():
- "line2 line2 line2\nline3 line3 line3\nline4 line4 line4"
+ "line2 line2 line2\nline3 line3 line3\nline4 line4 line4\nline5"
 stream.isEnd():  true
-stream.pos():  74
+stream.pos():  81
 after seek(0):
 stream.pos():  0
-str:  "line0"
+str:  "line1"
 ```
 
 test.txt:
 
 ```text
-line0 line1 line1
+line1 line1 line1
 line2 line2 line2
 line3 line3 line3
 line4 line4 line4
 line5
+line6
 ```
 
-可以看到，**这里的 `\n` 被当做了两个字符，由于是在 Windows 下，所以应该是 `\r\n`；QFile 的读写可能会影响流的读写，所以不能将它们混用；QFile 会读取换行符，而流不会**。
+可以看到，**`\n` 被当做两个字符；QFile 的读写可能会影响流的读写，所以最好不要将它们混用**。
 
 <h3 id="qfileinfo">QFileInfo</h3>
 
-前面我们说过，QFileInfo 提供关于文件或文件夹的相关信息，它可以使用绝对路径，又可以使用相对路径，你可以使用成员函数 `isRelative` 进行确认，也可以使用成员函数`makeAbsolute`从一个相对路径得到一个绝对路径。
+前面我们说过，**QFileInfo 提供关于文件或文件夹的相关信息**，它可以使用绝对路径，又可以使用相对路径，你可以使用成员函数 `isRelative` 进行确认，也可以使用成员函数 `makeAbsolute` 从一个相对路径得到一个绝对路径。
 
 查看其头文件，你会发现其实它能用的函数并不多：
 
@@ -1097,8 +1102,8 @@ void refresh(); // 刷新文件信息
 QString fileName() const;
 QString filePath() const;
 QString absoluteFilePath() const;
-QString suffix() const; // 返回文件名最后一个.后所有字符
-QString completeSuffix() const; // 返回文件名第一个.后所有字符
+QString suffix() const; // 返回最后一个后缀名
+QString completeSuffix() const;
 bool isReadable() const;
 bool isWritable() const;
 bool isExecutable() const;
@@ -1117,7 +1122,7 @@ bool permission(QFile::Permissions permissions) const;
 QFile::Permissions permissions() const;
 ```
 
-其中`owner`、`group`、`permissions`在NTFS文件系统上的返回值是不准确的，因为NTFS系统默认禁用了所有权的权限的检查，要想启用它，你需要：
+其中 `owner`、`group`、`permissions` 在 NTFS 文件系统上的返回值是不准确的，因为 **NTFS 系统默认禁用了所有权的权限的检查**，要想启用它，你需要使用：
 
 ```c++
 extern Q_CORE_EXPORT int qt_ntfs_permission_lookup;
@@ -1182,19 +1187,19 @@ owner:  "pengzhen"
 permissions:  QFlags(0x10|0x40|0x100|0x200|0x400|0x1000|0x2000|0x4000)
 ```
 
-对照 `QFile::Permissions` 可以看到，该 `main.cpp` 的权限为其他人不可访问、组内可读可执行、用户或所有者可读可写可执行，即750。
+对照 `QFile::Permissions` 可以看到，该 `main.cpp` 的权限为其他人不可访问、组内可读可执行、用户或所有者可读可写可执行，即 Linux 下的 750。
 
 <h3 id="qdir">QDir</h3>
 
 QDir 也使用正斜杠 `/` 作为其目录分隔符，并且支持相对路径，你可以使用其成员函数 `isRelative()` 或 `isAbsolute()` 来判断使用的路径的是相对的还是绝对的，你甚至可以使用成员函数 `makeAbsolute` 从一个相对路径得到一个绝对路径。
 
-QDir 有一些相似shell命令行的函数，如`mkdir`、`rmdir`、`cd`。
+QDir 有一些类似 shell 命令行的函数，如 `mkdir`、`rmdir`、`cd`。
 
 一些有用的静态成员函数：
 
 QDir | QString | 返回值
 --------------- | -------------- | ------------------------
-current() | currentPath() | 当前工作目录 <br>你可以使用`setCurrent`来手动设置当前工作目录
+current() | currentPath() | 当前工作目录 <br>你可以使用 `setCurrent` 进行更改
 home() | homePath() | 当前用户目录
 root() | rootPath() | 根目录
 temp() | tempPath() | 系统临时文件夹
@@ -1210,9 +1215,9 @@ temp() | tempPath() | 系统临时文件夹
 *	`entryList`：目录下的文件夹和文件名列表；
 *	`entryInfoList`：目录下的文件夹和文件信息列表；
 *	`remove`：删除文件；
-*	`setFilter`：文件类型过滤器，影响`entryList`和`entryInfoList`；
-*	`setNameFilters`：文件名过滤器，影响`entryList`和`entryInfoList`；
-*	`setSorting`：设置文件排序顺序，如按大小排列、按修改时间排列等，影响`entryList`和`entryInfoList`；
+*	`setFilter`：文件类型过滤器，影响 `entryList` 和 `entryInfoList`；
+*	`setNameFilters`：文件名过滤器，影响 `entryList` 和 `entryInfoList`；
+*	`setSorting`：设置文件排序顺序，如按大小排列、按修改时间排列等，影响 `entryList` 和 `entryInfoList`；
 
 演示：
 
@@ -1291,7 +1296,7 @@ after rmdir(dir):  dir exists?:  false
 
 Qt 添加了这些功能到 C++ 中：
 
-*	[信号和槽](http://doc.qt.io/qt-5/signalsandslots.html): 一种强大的无缝对象通信机制；
+*	[信号和槽](http://doc.qt.io/qt-5/signalsandslots.html): 一种强大的对象间通信机制；
 *	[对象属性](http://doc.qt.io/qt-5/properties.html): 提供可查询可设计的对象属性；
 *	[事件与事件过滤器](http://doc.qt.io/qt-5/eventsandfilters.html)；
 *	[国际化的字符串翻译机制](http://doc.qt.io/qt-5/internationalization.html)；
@@ -1303,16 +1308,16 @@ Qt 添加了这些功能到 C++ 中：
 
 这些 Qt 特性大多都是继承自 QObject，然后使用标准 C++ 技术实现的。像信号槽和对象属性这样的特性还需要[元对象系统](http://doc.qt.io/qt-5/metaobjects.html)的支持。
 
-**元对象系统是一种 C++ 扩展，使得该语言更适合于真正的组件 GUI 编程**。
+**元对象系统是一种 C++ 扩展，使得该语言更适合于真正的 GUI 编程**。
 
 <h3 id="signals_and_slots">信号和槽</h3>
 
 **信号和槽用于两个对象之间的通信，它是 Qt 的核心特征，也是区别于其它开发框架的突出特征**。
 
-在 GUI 编程中，当我们改变一个部件时，通常希望有另一个部件做出一些回应，举个简单的栗子，当你点击窗口的关闭按钮时，通常希望执行窗口的 `close` 函数来关闭窗口。一些工具包如 Android，使用回调机制(callback)来处理这样的通信，虽然回调机制很快，但却有两个很大的缺陷：**不直观、必须保证参数类型的正确性**；而 Qt 使用信号槽机制来处理这样的通信，当一个事件发生时，如上面的按钮被点击，便发射一个信号到一个槽，这个槽就是一个函数，接着便执行这个槽函数，即上面的 `close` 函数。
+在 GUI 编程中，当我们改变一个部件时，通常希望有另一个部件做出一些回应。举个简单的例子，当你点击窗口的关闭按钮时，通常希望执行窗口的 `close` 函数来关闭窗口。一些工具包如 Android，使用回调机制(callback)来处理这样的通信，虽然回调机制很快，但却有两个很大的缺陷：**不直观、必须保证参数类型的正确性**；而 Qt 使用信号槽机制来处理这样的通信，当一个事件发生时，如上面的按钮被点击，便发射一个信号到一个槽，这个槽就是一个函数，接着便执行这个槽函数，即上面的 `close` 函数。
 
 *	信号槽机制是类型安全的：**信号的函数签名必须与关联的槽的函数签名相匹配，实际上槽的函数签名可以短于信号的函数签名，多余的参数会被忽略**；
-*	信号槽机制还是松散耦合的：**信号既不需要知道也不需要关心那个槽会接收这个信号**；
+*	信号槽机制还是松散耦合的：**信号既不需要知道也不需要关心哪个槽会接收这个信号**；
 *	**任何继承自 QObject 或其子类且声明了 [`Q_OBJECT`](http://doc.qt.io/qt-5/qobject.html#Q_OBJECT) 宏的类都能使用信号槽机制**；
 *	**信号不能被定义，也不能有返回值，即只能是 void 类型**；
 *	**槽函数可以被用来接收信号，但也可以被当做正常函数进行调用**；
@@ -1320,7 +1325,7 @@ Qt 添加了这些功能到 C++ 中：
 *	**一个信号被关联多少次，当其被触发时，就会发射多少次，不管槽函数是否相同，除非你使用 [`Qt::UniqueConnection`](http://doc.qt.io/qt-5/qt.html#ConnectionType-enum)**；
 *	**当一个信号被发射时，其关联的槽默认会立即执行**，但是你也可以在关联时设置不同的[关联选项](http://doc.qt.io/qt-5/qt.html#ConnectionType-enum)来决定是否立即执行；
 *	当有多个信号关联到同一个槽时，可以使用 [`QObject::sender()` 或 QSignalMapper](http://doc.qt.io/qt-5/signalsandslots.html#advanced-signals-and-slots-usage) 来对不同的信号进行不同的处理；
-*	如果第三方库(如 boost)中有 `signals`、`slots`、`emit` 关键字的话，就会与 Qt 关键字重复，为了解决这个问题，你可以在 `.pro`文件中加上 `CONFIG += no_keywords` 来取消定义这三个关键字，转而使用 `Q_SIGNALS`、`Q_SLOTS` 和 `Q_EMIT` 宏，所以为了可扩展性，**建议一致使用这三个大写的宏**。
+*	如果第三方库(如 boost)中有 `signals`、`slots`、`emit` 关键字的话，就会与 Qt 关键字重复，为了解决这个问题，你可以在 `.pro`文件中加上 `CONFIG += no_keywords` 来取消定义这三个关键字，转而使用 `Q_SIGNALS`、`Q_SLOTS` 和 `Q_EMIT` 宏。所以为了可扩展性，**建议一致使用这三个大写的宏**。
 
 有多种关联信号和槽的 [`connect`](http://doc.qt.io/qt-5/qobject.html#connect) 函数，其中最常用的有三种：
 
@@ -1377,7 +1382,7 @@ inline void Test::setValue(int value)
 {
 	if (value != m_value) {
 		m_value = value;
-		emit valueChanged(value);
+		Q_EMIT valueChanged(value);
 	}
 }
 ```
@@ -1426,9 +1431,9 @@ b:  2
 
 <h3 id="object_properties">对象属性</h3>
 
-Qt提供了类似于一些编译器供应商提供的复杂的属性系统，该属性系统基于[元对象系统](http://doc.qt.io/qt-5/metaobjects.html)，并且支持信号槽。
+Qt 提供了类似于一些编译器供应商提供的复杂的属性系统，该属性系统基于[元对象系统](http://doc.qt.io/qt-5/metaobjects.html)，并且支持信号槽。
 
-要想声明一个属性，你只需在 QObject 的继承类中使用 [`Q_PROPERTY` 宏](http://doc.qt.io/qt-5/qobject.html#Q_PROPERTY)即可：
+要想声明一个属性，你只需在 QObject 的继承类中使用 [`Q_PROPERTY`](http://doc.qt.io/qt-5/qobject.html#Q_PROPERTY) 即可：
 
 ```c++
 Q_PROPERTY(type name(type name
@@ -1504,7 +1509,7 @@ public:
 	int value() const;
 	QString key() const;
 
-Q_SLOTS:
+public Q_SLOTS:
 	void setValue(int);
 	void setKey(const QString&);
 
@@ -1526,7 +1531,7 @@ inline void Test::setValue(int value)
 {
 	if (value != m_value) {
 		m_value = value;
-		emit valueChanged(value);
+		Q_EMIT valueChanged(value);
 	}
 }
 
@@ -1539,7 +1544,7 @@ inline void Test::setKey(const QString& key)
 {
 	if (key != m_key) {
 		m_key = key;
-		emit keyChanged(key);
+		Q_EMIT keyChanged(key);
 	}
 }
 ```
@@ -1560,15 +1565,15 @@ int main(void)
 		[](const QString& str) { qDebug() << "key changed: " << str; });
 
 	qDebug() << "after init:";
-	qDebug() << " t.value: " << t.value();
-	qDebug() << " t.key: " << t.property("key").toString();
+	qDebug() << "\tt.value: " << t.value();
+	qDebug() << "\tt.key: " << t.property("key").toString();
 
 	t.setValue(2);
 	t.setProperty("key", "pengzhen");
 
 	qDebug() << "after write:";
-	qDebug() << " t.value: " << t.property("value").toInt();
-	qDebug() << " t.key: " << t.key();
+	qDebug() << "\tt.value: " << t.property("value").toInt();
+	qDebug() << "\tt.key: " << t.key();
 
 	qDebug() << "print all properties of t:";
 	const QMetaObject *metaobject = t.metaObject();
@@ -1577,7 +1582,7 @@ int main(void)
 		QMetaProperty metaproperty = metaobject->property(i);
 		const char *name = metaproperty.name();
 		QVariant value = t.property(name);
-		qDebug() << " " << name << ": " << value;
+		qDebug() << "\t" << name << ": " << value;
 	}
 }
 ```
@@ -1587,29 +1592,28 @@ int main(void)
 ```text
 $ release\qt_practice.exe
 after init:
- t.value:  0
- t.key:  ""
+        t.value:  0
+        t.key:  ""
 value changed:  2
 key changed:  "pengzhen"
 after write:
- t.value:  2
- t.key:  "pengzhen"
+        t.value:  2
+        t.key:  "pengzhen"
 print all properties of t:
-  objectName :  QVariant(QString, "")
-  value :  QVariant(int, 2)
-  key :  QVariant(QString, "pengzhen")
+         objectName :  QVariant(QString, "")
+         value :  QVariant(int, 2)
+         key :  QVariant(QString, "pengzhen")
 ```
 
-可以看到，**QObject 对象自带一个名为 `objectName` 的属性**，该属性在自动信号槽连接时有用，可以通过 `QObject::setObjectName` 重新设置。
+可以看到，**QObject 对象自带一个名为 `objectName` 的属性**，该属性在自动信号槽连接时有用，可以通过 `QObject::setObjectName` 进行设置。
 
-另外，[`QObject::setProperty()`](http://doc.qt.io/qt-5/qobject.html#setProperty)还可以设置[动态属性](http://doc.qt.io/qt-5/properties.html#dynamic-properties)，即添加一个仅对当前对象有效的属性；**如果你的属性类型是自定义类型的话，还需要使用 [`Q_DECLARE_METATYPE` 宏](http://doc.qt.io/qt-5/qmetatype.html#Q_DECLARE_METATYPE)进行声明之后才能用于属性系统**。
-
+另外，[`QObject::setProperty()`](http://doc.qt.io/qt-5/qobject.html#setProperty) 还可以设置[动态属性](http://doc.qt.io/qt-5/properties.html#dynamic-properties)，即添加一个仅对当前对象有效的属性；**如果你的属性类型是自定义类型的话，还需要使用 [`Q_DECLARE_METATYPE`](http://doc.qt.io/qt-5/qmetatype.html#Q_DECLARE_METATYPE) 进行声明之后才能用于属性系统**。
 
 <h3 id="event_system">事件系统</h3>
 
 在 Qt 中，事件是一个对象，继承自抽象 QEvent 类，用以表示发生在应用程序内部的事情、或应用程序需要知道的外部活动的结果。**它们可以被任何 QObject 或其子类的对象进行接收和处理，通常被用于 Qt 组件**。
 
-常见的事件如鼠标事件，分为单击、双击、移动等事件类型；又比如键盘事件，分为按下、释放等事件类型。**这些事件类型都有在 [`QEvent::Type`](http://doc.qt.io/qt-5/qevent.html#Type-enum)被定义，你可以通过不同的事件类型来快速的判断该事件的动态类型**。
+常见的事件如鼠标事件，分为单击、双击、移动等事件类型；又比如键盘事件，分为按下、释放等事件类型。**这些事件类型都有在 [`QEvent::Type`](http://doc.qt.io/qt-5/qevent.html#Type-enum)被定义，你可以通过不同的事件类型来快速的判断该事件的动态类型**：
 
 ```c++
 bool MyWidget::event(QEvent *event)
@@ -1630,7 +1634,9 @@ bool MyWidget::event(QEvent *event)
 }
 ```
 
-当一个事件发生后，Qt 构造一个合适的 QEvent 子类的对象来表示它，然后将其传递到一个特定的 QObject 或其子类的对象。**要想使 Qt 程序进入事件循环，即使应用程序在运行时接收发生的各种事件，你必须调用 QCoreApplication 的 `exec()` 函数**。
+当一个事件发生后，Qt 构造一个合适的 QEvent 子类的对象来表示它，然后将其传递到一个特定的 QObject 或其子类的对象。
+
+**要想使 Qt 程序进入事件循环，即应用程序在运行时接收发生的各种事件，你必须调用 `QCoreApplication::exec()` 函数**：
 
 ```c++
 int QApplication::exec()
@@ -1647,7 +1653,9 @@ int QGuiApplication::exec()
 }
 ```
 
-所有事件通过 [`QCoreApplication::notify`](http://doc.qt.io/qt-5/qcoreapplication.html#notify)函数进行发送，其返回值为接收对象处理该事件后的结果。**当接收对象所属类对该事件不感兴趣时(即返回值为 false)，该事件会被传递到其父类进行处理**。处理事件的方法有五种：
+所有事件都要通过 [`QCoreApplication::notify`](http://doc.qt.io/qt-5/qcoreapplication.html#notify) 函数进行发送，其返回值为接收对象处理该事件后的结果。**当接收对象所属类对该事件不感兴趣时(返回值为 false)，该事件会被传递到其父类进行处理**。
+
+处理事件的方法有五种：
 
 *	重新实现 QWidget 的 `paintEvent`、`mousePressEvent` 等特定事件处理函数，**只对单个部件有效**；
 *	重新实现 [`QCoreApplication::notify`](http://doc.qt.io/qt-5/qcoreapplication.html#notify) 函数，这样能够对所有事件进行完全的控制，但**同一时间只能处理一个事件**；
@@ -1655,7 +1663,7 @@ int QGuiApplication::exec()
 *	重新实现 [`QObject::event`](http://doc.qt.io/qt-5/qobject.html#event) 函数，该函数的优先级比特定事件处理函数的优先级高；
 *	在对象上安装事件过滤器，这样能够处理所有该对象的子对象事件。
 
-**实际编程中最常用的是第一种和第五种，因为方法二需要继承 QCoreApplication 且需要考虑诸多问题，方法三是实现的全局事件过滤器会减缓事件的处理**。
+**实际编程中最常用的是第一种和第五种，因为方法二需要继承 QCoreApplication 且需要考虑诸多问题，方法三实现的全局事件过滤器会减缓事件的处理**。
 
 下面先来演示方法一四：
 
@@ -1730,13 +1738,12 @@ int main(int argc, char *argv[])
 	QApplication app(argc, argv);
 
 	myWidget window;
-
 	window.resize(250, 150);
 	window.move(300, 300);
 	window.setWindowTitle("event handlers");
 	window.show();
 
-	return app.exec();
+	return app.exec(); // 开始事件循环
 }
 ```
 
@@ -1814,7 +1821,7 @@ mousePressEvent called.
 **如果你想代码发送一个事件的话，使用 [`QCoreApplication::sendEvent`](http://doc.qt.io/qt-5/qcoreapplication.html#sendEvent) 或 [`QCoreApplication::postEvent`](http://doc.qt.io/qt-5/qcoreapplication.html#postEvent)**，它们的两个主要区别是：
 
 *	`sendEvent` 立即发送事件而 `postEvent` 会将事件添加到事件队列中等待调度处理；
-*	`sendEvent` 的 事件指针在事件处理完毕之后不会自行调用 delete，而 `postEvent` 会。
+*	`sendEvent` 的事件指针在事件处理完毕之后不会自行调用 delete，而 `postEvent` 会。
 
 <h4 id="qapp">qApp</h4>
 
@@ -1841,14 +1848,14 @@ static QCoreApplication *self;
 
 <h3 id="international_string">国际化字符串</h3>
 
-**应用程序的国际化(internationalization)和本地化(localization)是应用程序适应不同语言、不同区域、和不同目标市场技术需求的过程**。其中国际化意是指应用程序不需要修改工程就能适应不同语言和区域；本地化是指将应用程序适应到一个特定的语言或区域。
+**应用程序的国际化(internationalization)和本地化(localization)是应用程序适应不同语言、不同区域、和不同目标市场技术需求的过程**。其中国际化是指应用程序不需要修改工程就能适应不同语言和区域；本地化是指将应用程序适应到一个特定的语言或区域。
 
-Qt 支持现在使用的大多数语言，包括所有东亚语言(汉语、日语、韩语)、所有西方语言(使用拉丁字母)、阿拉伯语言等，**所有 Qt 的输入部件和文本绘制方式都对这些语言提供了内置支持，Qt 内置的字体引擎可以在同一时间正确而精确的绘制不同的文本，这些文本可以包含来自众多不同书写系统的字符**。
+Qt 支持现在使用的大多数语言，包括所有东亚语言(汉语、日语、韩语)、所有西方语言(使用拉丁字母)、阿拉伯语言等。**所有 Qt 的输入部件和文本绘制方式都对这些语言提供了内置支持，Qt 内置的字体引擎可以在同一时间正确的绘制不同的文本，这些文本可以包含来自众多不同书写系统的字符**。
 
 你可以很容易的使用 [Qt Linguist](http://doc.qt.io/qt-5/qtlinguist-index.html) 工具来完成应用程序的翻译工作：
 
 *	[编写可以翻译的源代码](http://doc.qt.io/qt-5/i18n-source-translation.html)；
-*	在 `.pro` 文件中指定生成的 `.ts` 文件，如 `TRANSLATIONS = zh_CN.ts`；
+*	在 `.pro` 文件中指定生成的 `.ts` 文件名，如 `TRANSLATIONS = zh_CN.ts`；
 *	Qt 命令行执行 `lupdate myproject.pro` 生成 `.ts` 文件；
 *	[使用 Qt Linguist](http://blog.csdn.net/liang19890820/article/details/50274409) 对生成的 `.ts` 文件进行翻译；
 *	Qt 命令行执行 `lrelease myproject.pro` 生成 `.qm` 文件；
@@ -1864,7 +1871,7 @@ qApp->installTranslator(&t);
 ...
 ```
 
-**其实一般使用的翻译函数就两个，`tr()` 和 `QCoreApplication::translate`**，另外你还可以使用 [QTextCodec](http://doc.qt.io/qt-5/qtextcodec.html#details) 来转换各种编码，另外如数字、日期、时间等的本地化还需使用 [QLocal 类](http://doc.qt.io/qt-5/qlocale.html#details)，更多内容可以查看 <http://doc.qt.io/qt-5/internationalization.html> 。
+**其实一般使用的翻译函数就两个，`tr()` 和 `QCoreApplication::translate`**，另外你还可以使用 [QTextCodec](http://doc.qt.io/qt-5/qtextcodec.html#details) 来转换各种编码，另外如数字、日期、时间等的本地化还需使用 [QLocal](http://doc.qt.io/qt-5/qlocale.html#details)，更多内容可以查看 <http://doc.qt.io/qt-5/internationalization.html> 。
 
 <h3 id="qtimer">定时器</h3>
 
@@ -1884,9 +1891,13 @@ while (!done)
 ...
 ```
 
-当然我一开始没有想到线程的问题，不过 [SOF](https://stackoverflow.com/questions/14650885/how-to-create-timer-events-using-c-11) 总会给你一些不一样的灵感。
+当然我一开始没有想到线程的问题，不过 [stackoverflow](https://stackoverflow.com/questions/14650885/how-to-create-timer-events-using-c-11) 总会给你一些不一样的灵感。
 
-在 Qt 中，QObject 提供了基础的定时器支持，[QObject::startTimer](http://doc.qt.io/qt-5/qobject.html#startTimer) 开始一个定时器并返回该定时器 ID；每当一定时间过后，就会有一个定时器事件(就是时间到了)，然后就会调用 [QObject::timerEvent](http://doc.qt.io/qt-5/qobject.html#timerEvent) 虚函数，你可以重新实现该函数来完成相应任务；如果你想销毁这个定时器，调用 [QObject::killTimer](http://doc.qt.io/qt-5/qobject.html#killTimer)。
+在 Qt 中，QObject 提供了基础的定时器支持：
+
+*	[QObject::startTimer](http://doc.qt.io/qt-5/qobject.html#startTimer) 开始一个定时器并返回该定时器 ID；
+*	每当定时器事件到了，就会调用 [QObject::timerEvent](http://doc.qt.io/qt-5/qobject.html#timerEvent) 虚函数，我们一般重新实现该函数来周期性的完成某项任务；
+*	销毁定时器调用 [QObject::killTimer](http://doc.qt.io/qt-5/qobject.html#killTimer)。
 
 ```c++
 // Test.h
@@ -1939,7 +1950,7 @@ inline void Test::timerEvent(QTimerEvent *e)
 }
 ```
 
-由于需要传递 QTimerEvent，你必须先开始事件循环，即调用 `QCoreApplication::exec` 或 `QApplication::exec`：
+由于 QTimerEvent 是一个事件，所以必须开始事件循环：
 
 ```c++
 // main.cpp
@@ -2037,9 +2048,9 @@ update
 
 <h3 id="object_tree">对象树</h3>
 
-**Qt 使用对象树(object tree)来管理所有的 QObject 类及其子类的对象**，当你创建一个 QObject 对象时，如果使用了其它的 QObject 对象作为父对象(parent)，就像上面的 QTimer 一样，那么这个 QObject 对象就会被添加到父对象的 [`QObject::children()`](http://doc.qt.io/qt-5/qobject.html#children) 列表中，**这样当父对象被销毁时，这个 QObject 对象也会被销毁；你也可以手动销毁该子对象，之后该子对象会将自己从其父对象的对象树中移除**。
+**Qt 使用对象树(object tree)来管理所有的 QObject 类及其子类的对象**：当你创建一个 QObject 对象时，如果使用了其它的 QObject 对象作为该对象的父对象(parent)，就像上面的 QTimer 一样，那么这个 QObject 对象就会被添加到父对象的 [`QObject::children()`](http://doc.qt.io/qt-5/qobject.html#children) 列表中，**这样当父对象被销毁时，这个 QObject 对象也会被销毁；你也可以手动销毁该子对象，之后该子对象会将自己从其父对象的对象树中移除**。
 
-不管你的 QObject 对象时创建在堆(heap)上还是栈(stack)上，对象树都能正常工作：
+**不管你的 QObject 对象创建在堆(heap)上还是栈(stack)上，对象树都能正常工作**：
 
 ```c++
 // Test.h
@@ -2233,7 +2244,9 @@ delete  1
 
 <h3 id="qapplication">QApplication</h3>
 
-QApplication 管理 GUI 应用的控制流和主要设置，它继承自 QGUIApplication，实现了一些基于 QWidget 的应用程序所需要的功能。**使用 Qt 的任何 GUI 应用，都需要一个 QApplication 对象，不管该应用有多少个窗口**；**对于非基于 QWidget 的 Qt 应用，可以使用 QGUIApplication 代替**，因为 QGUIApplication 不依赖于 [QtWidget 库](http://doc.qt.io/qt-5/qtwidgets-module.html)。
+QApplication 管理 GUI 应用的控制流和主要设置，它继承自 QGUIApplication，实现了一些基于 QWidget 的应用程序所需要的功能。
+
+**使用 Qt 的任何 GUI 应用，都需要一个 QApplication 对象，不管该应用有多少个窗口**；**对于非基于 QWidget 的 Qt 应用，可以使用 QGUIApplication 代替**，因为 QGUIApplication 不依赖于 [Qt 组件库](http://doc.qt.io/qt-5/qtwidgets-module.html)。
 
 一些 GUI 应用提供特殊的批处理模式，如根据提供的命令行参数执行相关任务而不能人工干预，在这种非 GUI 模式下，**只需要实例化一个简单的 QCoreApplication 就足够了**，这避免了不必要的图形用户界面所需资源的初始化，官方示例如下：
 
@@ -2285,9 +2298,12 @@ QWidget 是所有用户界面对象的基类，其继承自 QObject 和 [QPaintD
 explicit QWidget(QWidget* parent = Q_NULLPTR, Qt::WindowFlags f = Qt::WindowFlags());
 ```
 
-当不传入参数或传入的第一个参数为空时，表示该部件是一个窗口，也被称为顶层部件(top-level widget)，顶层部件可以使用成员函数 `setWindowTitle` 来设置标题栏、`setWindowIcon` 来设置窗口图标；当传入的第一个参数不为空时，表示该部件是传入参数的一个子部件，**由于对象树特性，当父部件被删除时，所有该父部件的子部件都将被删除。当你为一个可视部件添加一个子部件时，要想子部件变得可见，你必须显式调用其成员函数 `show()`**。
+*	当不传入参数或传入的第一个参数为空时，表示该部件是一个窗口，也被称为顶层部件(top-level widget)，顶层部件可以使用成员函数 `setWindowTitle` 来设置标题栏、`setWindowIcon` 来设置窗口图标；
+*	当传入的第一个参数不为空时，表示该部件是传入参数的一个子部件，**由于对象树特性，当父部件被删除时，所有该父部件的子部件都将被删除**。
 
-第二个参数指定部件的各种窗口系统属性，其默认值已适应大多数部件，你可以查看[`Qt::WindowFlags`](http://doc.qt.io/qt-5/qt.html#WindowType-enum)了解各种标志的意义。
+**当你为一个可视部件添加一个子部件时，要想子部件变得可见，你必须显式调用其成员函数 `show()`**。
+
+第二个参数指定部件的各种窗口系统属性，其默认值已适应大多数部件，你可以查看 [`Qt::WindowFlags`](http://doc.qt.io/qt-5/qt.html#WindowType-enum) 了解各种标志的意义。
 
 查看 QMainWindow 和 QDialog 的公有构造函数：
 
@@ -2376,14 +2392,14 @@ int main(int argc, char *argv[])
 	QSplashScreen splash(pixmap);
 	splash.show();
 
-	splash.showMessage("Loaded module 1"); // 显示一些字符串信息
+	splash.showMessage("Load module 1"); // 显示一些字符串信息
 	std::this_thread::sleep_for(
-		std::chrono::duration<double, std::milli>(1000)  // 1s
+		std::chrono::duration<double, std::milli>(2000)  // 2s
 	);
 
-	splash.showMessage("Loaded module 2");
+	splash.showMessage("Load module 2");
 	std::this_thread::sleep_for(
-		std::chrono::duration<double, std::milli>(1000)  // 1s
+		std::chrono::duration<double, std::milli>(2000)  // 2s
 	);
 
 	QMainWindow window;
@@ -2397,7 +2413,7 @@ int main(int argc, char *argv[])
 }
 ```
 
-**如果你想自定义启动界面的话，可以继承 QSplashScreen，然后重新实现 [drawContents 函数](http://doc.qt.io/qt-5/qsplashscreen.html#drawContents)**。
+**如果你想自定义启动界面的话，重新实现 [`QSplashScreen::drawContents`](http://doc.qt.io/qt-5/qsplashscreen.html#drawContents)** 虚函数。
 
 <h3 id="qdialog">对话框 QDialog</h3>
 
@@ -2423,7 +2439,7 @@ QDialog 有两个默认的按键功能，Enter 键和 Esc 键。当你按下 Ent
 
 #### 消息对话框 QMessageBox
 
-QMessageBox 提供一个模态对话框，用来通知用户一些消息、或者向用户提出一个问题并获取答案，你可以很快速的查看 [QMessageBox](http://doc.qt.io/qt-5/qmessagebox.html) 获取其使用方式：
+QMessageBox 提供一个模态对话框，用来通知用户一些消息、或者向用户提出一个问题并获取答案，你可以很快速的查看 [QMessageBox](http://doc.qt.io/qt-5/qmessagebox.html) 并获取其使用方式：
 
 ```c++
 #include <QDebug>
@@ -2460,7 +2476,7 @@ int main(int argc, char *argv[])
 }
 ```
 
-一般比较简单的使用方式就是使用其静态函数，这样比较快速，但是也失去了灵活性，一共有四种类型--information、question、warning 和 critical，它们的接口一样，只是图标不同：
+比较简单的使用方式就是使用其静态函数，这样更加快速，但失去了灵活性。一共有四种类型--information、question、warning 和 critical，它们的接口一样，只是图标不同：
 
 ```c++
 int ret = QMessageBox::information(0, QMessageBox::tr("My Application"),     // 标题
@@ -2595,7 +2611,7 @@ int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
 
-	QStringList filenames = QFileDialog::getOpenFileNames(0,                      // 父类
+	QStringList filenames = QFileDialog::getOpenFileNames(0,                      // 父组件
 								QFileDialog::tr("QFileDialog"),                   // 标题
 								QDir::currentPath(),                              // 默认打开目录
 								QFileDialog::tr("header (*.h);;source (*.cpp)")); // 文件名过滤器
@@ -2732,7 +2748,7 @@ int main(int argc, char *argv[])
 
 <h3 id="qmainwindow">主程序窗口 QMainWindow</h3>
 
-QMainWindow 包含菜单栏(QMenuBar)、工具栏(QToolBar)、Dock 部件(QDockWidget)、中心部件(Central Widget)和状态栏(QStatusBar)五个组件：
+QMainWindow 包含菜单栏(QMenuBar)、工具栏(QToolBar)、Dock 部件(QDockWidget)、中心部件(Central Widget)和状态栏(QStatusBar)五个部件：
 
 ![mainwindowlayout](http://doc.qt.io/qt-5/images/mainwindowlayout.png)
 
@@ -2799,7 +2815,7 @@ QAction *exec(const QPoint &pos, QAction *at = Q_NULLPTR);
 
 我们一般会使用 Alt 加一个字母键来快速打开某个菜单、或者使用 Ctrl 加某些键来快速执行某个操作，你可以分别通过在字符串名中使用 `&` 加一个字母来设置菜单 Alt 快捷键、使用 `QAction::setShortcut(const QKeySequence &shortcut)` 来设置动作快捷键。
 
-**如果同一个菜单中多个 QAction 只能选择其中一个的话，将这些 QAction 放置在同一个 [QActionGroup](http://doc.qt.io/qt-5/qactiongroup.html#details) 中**，这些 QAction 还是像普通 QAction 一样添加到该菜单中，不过为了方便使用，通常会将这些 QAction 放置在一起、添加一个 separator、并为该 separator 命名。
+**如果同一个菜单中多个 QAction 只能选择其中一个的话，可以将这些 QAction 放置在同一个 [QActionGroup](http://doc.qt.io/qt-5/qactiongroup.html#details) 中**，这些 QAction 还是像普通 QAction 一样添加到该菜单中，不过为了方便使用，通常会将这些 QAction 放置在一起、添加一个 separator、并为该 separator 命名。
 
 一个简单的菜单栏示例如下：
 
@@ -2881,7 +2897,6 @@ int main(int argc, char *argv[]) {
 	QApplication app(argc, argv);
 
 	myWidget window;
-
 	window.resize(250, 150);
 	window.move(300, 300);
 	window.setWindowTitle("QMenuBar");
@@ -2893,7 +2908,7 @@ int main(int argc, char *argv[]) {
 
 #### QToolBar
 
-Qt 使用 QToolBar 来实现工具栏。所谓工具栏，就是包含一系列控制的可移动面板。
+Qt 使用 QToolBar 来实现工具栏，所谓工具栏，就是包含一系列控制的可移动面板。
 
 QToolBar 也是用 QAction 来实现各种控制，但是与 QMenu 不同，QToolBar 没有 `addMenu` 或 `insertMenu` 函数，但是它有 `addWidget` 和 `insertWidget` 函数，这意味着你可以显式向工具栏里添加各种部件，但是**如果你的 QToolBar 不是 QMainWindow 的子部件的话，你就不能使用它们，你只能像 QMenu 一样使用 `QWidgetAction`**。
 
@@ -3046,7 +3061,7 @@ public:
 
 <h3 id="qt_common_widgets">常用小部件</h3>
 
-GUI常用的小部件无非按钮、文本框、标签、下拉框、复选框、滚动条等等，在Qt中，按钮用`QPushButton`实现、文本框分为`QTextEdit`(大型文本)和`QLineEdit`(行文本)以及`QPlainTextEdit`(纯文本)、标签用`QLabel`实现、下拉框分为`QComboBox`和`QSpinBox`以及`QDoubleSpinBox`、复选框用`QCheckBox`实现、滚动条分为`QSlider`和`QScrollBar`。
+GUI常用的小部件无非按钮、文本框、标签、下拉框、复选框、滚动条等等，在Qt中，按钮用 `QPushButton` 实现、文本框分为 `QTextEdit`(大型文本)和 `QLineEdit`(行文本)以及 `QPlainTextEdit`(纯文本)、标签用 `QLabel` 实现、下拉框分为 `QComboBox` 和 `QSpinBox` 以及 `QDoubleSpinBox`、复选框用 `QCheckBox` 实现、滚动条分为 `QSlider` 和 `QScrollBar`。
 
 这些小部件非常简单：
 
@@ -3229,13 +3244,13 @@ int main(int argc, char *argv[]) {
 
 优秀的gui应用都是立即响应的，这意味着当用户做完某个操作时，可以立即做下一个操作。如果某个操作特别耗时，应用就会卡住，所以一般耗时的操作都是交给另一个线程去做的，主线程只需要显示操作的进度即可。
 
-Qt中的线程类是 QThread，你可以参照[官网](http://doc.qt.io/qt-5/qthread.html#details)进行简单的使用:
+Qt 中的线程类是 QThread，你可以参照[官网](http://doc.qt.io/qt-5/qthread.html#details)进行简单的使用:
 
 ```c++
 class WorkerThread : public QThread
 {
 	Q_OBJECT
-		void run() Q_DECL_OVERRIDE {
+	void run() Q_DECL_OVERRIDE {
 		QString result;
 		/* ... here is the expensive or blocking operation ... */
 		emit resultReady(result);
@@ -3272,7 +3287,7 @@ private:
 	void run() override
 	{
 		if (mProgressBar) {
-			emit begin();
+			Q_EMIT begin();
 			std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(2000));
 			mProgressBar->setValue(10);
 			std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(5000));
@@ -3280,7 +3295,7 @@ private:
 			std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(3000));
 			mProgressBar->setValue(100);
 			std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(500));
-			emit end();
+			Q_EMIT end();
 		}
 	}
 
@@ -3306,7 +3321,6 @@ int main(int argc, char *argv[]) {
 	QApplication app(argc, argv);
 
 	QProgressBar window;
-
 	window.resize(250, 20);
 	window.move(300, 300);
 	window.setWindowTitle("QProgressBar");
@@ -3345,7 +3359,7 @@ class WorkerThread :public QThread
 private:
 	void run() override
 	{
-		emit begin();
+		Q_EMIT begin();
 		std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(2000));
 		update(10);
 		std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(5000));
@@ -3353,7 +3367,7 @@ private:
 		std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(3000));
 		update(100);
 		std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(500));
-		emit end();
+		Q_EMIT end();
 	}
 
 Q_SIGNALS:
@@ -3401,7 +3415,7 @@ int main(int argc, char *argv[]) {
 
 <h3 id="window_geometry">窗口几何布局</h3>
 
-QWidget 是所有用户界面对象的基类，其提供如下函数用于处理窗口的集合布局：
+QWidget 是所有用户界面对象的基类，其提供如下函数用于处理窗口的几何布局：
 
 *	包含框架：`x()`、`y()`、`frameGeometry()`、`pos()`、`move()`；
 *	不含框架：`geometry()`、`width()`、`height()`、`rect()`、`size()`。
@@ -3469,7 +3483,7 @@ width:  250 height:  200
 
 #### 垂直水平布局
 
-QVBoxLayout 和 QHBoxLayout 都是 QBoxLayout 的子类，它们只是分别在构造时强制了项目排列的方向，QVBoxLayout 是 TopToBottom、QHBoxLayout 是 LeftToRight，所以如果你想布置一个水平或者垂直的布局，你也可以直接使用 QBoxLayout，其支持的排列方向包括：
+**QVBoxLayout 和 QHBoxLayout 都是 QBoxLayout 的子类**，它们只是分别在构造时强制了项目排列的方向，QVBoxLayout 是 TopToBottom、QHBoxLayout 是 LeftToRight，所以如果你想布置一个水平或者垂直的布局，你也可以直接使用 QBoxLayout，其支持的排列方向包括：
 
 ```c++
 enum Direction { LeftToRight, RightToLeft, TopToBottom, BottomToTop, 
@@ -3589,7 +3603,7 @@ public:
 
 QFormLayout 只有两列，它最初被设计出来就是为了写表单用的，**其表单与 QGridLayout 设计出来的表单相比，其左右两列具有一一对应的关系，如果你在标签列设置了快捷键，那么快捷键会使光标跳到对应的右侧组件上**，另外使用 QFormLayout 会比使用 QGridLayout 制作表单更为方便(代码量更小)。
 
-你可已使用如下函数对 QFormLayout 进行操作：
+你可以使用如下函数对 QFormLayout 进行操作：
 
 ```c++
 void addRow(QWidget *label, QWidget *field);
@@ -3636,8 +3650,8 @@ public:
 
 		QFormLayout *formLayout = new QFormLayout();
 		formLayout->addRow(tr("&Name:"), nameLineEdit);  // Alt + N
-		formLayout->addRow(tr("&Email:"), emailLineEdit);
-		formLayout->addRow(tr("&Age:"), ageSpinBox);
+		formLayout->addRow(tr("&Email:"), emailLineEdit);// Alt + E
+		formLayout->addRow(tr("&Age:"), ageSpinBox);     // Alt + A
 		setLayout(formLayout);
 	}
 };
@@ -3975,7 +3989,7 @@ inline void itemBasedViews::showTableWidget()
 
 一个好的 GUI 程序不仅需要强大的功能，更需要优美的界面，所以才有设计师这一职业的出现。
 
-作为一个跨平台的 UI 开发框架，Qt 也提供了强大而灵活的界面外观设计机制，它经常使用调色板 QPalette 和样式表对应用外观进行调整；如果你需要不规则窗口(非矩形)的话，查看 [QWidget::setMask](http://doc.qt.io/qt-5/qwidget.html#setMask)；想要设置透明度的话，使用 [QWidget::setWindowOpacity](http://doc.qt.io/qt-5/qwidget.html#windowOpacity-prop) 会比较方便。
+作为一个跨平台的 UI 开发框架，Qt 也提供了强大而灵活的界面外观设计机制，它经常使用调色板 QPalette 和样式表来对应用外观进行调整；如果你需要不规则窗口(非矩形)的话，查看 [QWidget::setMask](http://doc.qt.io/qt-5/qwidget.html#setMask)；想要设置透明度的话，使用 [QWidget::setWindowOpacity](http://doc.qt.io/qt-5/qwidget.html#windowOpacity-prop) 会比较方便。
 
 <h3 id="qstyle">QStyle</h3>
 
@@ -4007,7 +4021,7 @@ $ ./myApp -style windowsxp
 
 **当你创建一个新的组件时，建议使用调色板而非直接指定某种颜色**。
 
-当你修改应用的调色板或某个组件的调色板时，**建议使用 `QGuiApplication::palette()` 或 `QWidget::palette()` 获取原有的调色板，然后再进行更改**，这样会保留原有的未改变的设置，最后再调用 `QGuiApplication::setPalette` 或 `QWidget::setPalette` 来使用修改后的调色板。
+当你修改应用的调色板或某个组件的调色板时，**建议使用 `QGuiApplication::palette()` 或 `QWidget::palette()` 获取原有的调色板，然后再进行更改**，这样会保留原有的未更改的设置，最后再调用 `QGuiApplication::setPalette` 或 `QWidget::setPalette` 来使用修改后的调色板。
 
 ```c++
 // myWidget.h
@@ -4031,7 +4045,7 @@ struct myWidget : QMainWindow
 
 <h3 id="qstylesheet">样式表</h3>
 
-样式表比调色板更加强大，**样式表的设置对所有风格、所有系统有效，并且低层级的样式表会使用高层级中有效的样式表**，例如你可以为顶层组件设置一个样式表，那么该样式表对所有子组件有效(如果子组件不设置样式表的话)。
+样式表比调色板更加强大，**样式表的设置对所有风格、所有系统都有效，并且低层级的样式表会使用高层级中有效的样式表**，例如你可以为顶层组件设置一个样式表，那么该样式表对所有子组件有效(如果子组件不设置样式表的话)。
 
 你可以使用 `QApplication::setStyleSheet()` 或 `QWidget::setStyleSheet()` 来为整个应用或单个组件设置样式表，但是**样式表在设计模式中设置会更加便捷和直观**。
 
@@ -4129,7 +4143,7 @@ QPushButton { color: red }
 
 解决这个冲突的原则是：**越特殊的规则优先级越高，如果特殊性一致则越靠后的规则优先级越高，所有的选择符特殊性都一样，不管继承关系如何**。
 
-下面两个规则的特殊性一致，即使 QPushButton 继承自 QAbstractButton：
+下面两个规则的特殊性一致，虽然 QPushButton 继承自 QAbstractButton：
 
 ```css
 QPushButton { color: red }
@@ -4177,7 +4191,9 @@ QPushButton { qproperty-iconSize: 20px 20px; }
 
 <h2 id="resource">资源管理</h2>
 
-当你开发某个应用时，可能需要读取很多的文件，这个时候你可以使用绝对路径，但是如果运行环境改变的话，又要一个个的取修改，非常麻烦！那么如果将所有这些文件都放到可执行文件目录下，然后使用相对路径不就可以避免这个问题了吗？确实，如果你需要的文件的容量足够小的话，比如就两三兆，也许没什么大问题；但是如果容量超级大，几个G的话，传一次可能需要很久才能传完。Qt 使用资源文件来解决这个问题，**你可以向资源文件中添加你想要读取的文件，注意只能是读取的文件，你不能对资源文件中的文件进行修改**，编译时，Qt 会对加入的资源自动进行压缩，这样就能使生成的最终产物的容量尽可能最小。
+当你开发某个应用时，可能需要读取很多的文件，这个时候你可以使用绝对路径，但是如果运行环境改变的话，又要一个个的去修改，非常麻烦！那么如果将所有这些文件都放到可执行文件目录下，然后使用相对路径不就可以避免这个问题了吗？确实，如果你需要的文件的容量**足够小**的话，比如就两三兆，也许没什么大问题；但是如果容量超级大，几个G的话，传一次可能需要很久才能传完。
+
+Qt 使用资源文件来解决这个问题，**你可以向资源文件中添加你想要读取的文件，注意只能是读取的文件，你不能对资源文件中的文件进行修改**。编译时，Qt 会对加入的资源自动进行压缩，这样就能使生成的最终产物的容量尽可能最小。
 
 Qt 的资源文件使用 `.qrc` 为后缀，如果你要将某个资源文件应用到项目中，需要向 `.pro` 文件中添加：
 
