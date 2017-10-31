@@ -2482,11 +2482,11 @@ int main(int argc, char *argv[])
 
 ```c++
 int ret = QMessageBox::information(0, QMessageBox::tr("My Application"),     // 标题
-								QMessageBox::tr("The document has been modified.\n"
-									"Do you want to save your changes?"),    // 信息文本
-								QMessageBox::Save | QMessageBox::Discard
-								| QMessageBox::Cancel,                       // 按键
-								QMessageBox::Save);                          // 默认按键 
+				QMessageBox::tr("The document has been modified.\n"
+					"Do you want to save your changes?"),// 信息文本
+				QMessageBox::Save | QMessageBox::Discard
+				| QMessageBox::Cancel,                       // 按键
+				QMessageBox::Save);                          // 默认按键 
 ```
 
 #### 错误消息对话框 QErrorMessage
@@ -2530,11 +2530,11 @@ int main(int argc, char *argv[])
 
 	bool ok;
     QString text = QInputDialog::getText(0,                                          // 父组件
-										QInputDialog::tr("QInputDialog::getText()"), // 标题
-										QInputDialog::tr("User name:"),              // 输入提示
-										QLineEdit::Normal,                           // 文本显示类型
-										QDir::home().dirName(),                      // 默认值
-										&ok);                                        // 用户是否确认
+					QInputDialog::tr("QInputDialog::getText()"), // 标题
+					QInputDialog::tr("User name:"),              // 输入提示
+					QLineEdit::Normal,                           // 文本显示类型
+					QDir::home().dirName(),                      // 默认值
+					&ok);                                        // 用户是否确认
     if (ok && !text.isEmpty())
         qDebug() << text;
 }
@@ -2548,60 +2548,60 @@ QFileDialog 提供一个模态对话框，用来让用户选择文件或目录�
 
 ```c++
 static QString getOpenFileName(QWidget *parent = Q_NULLPTR,
-								const QString &caption = QString(),
-								const QString &dir = QString(),
-								const QString &filter = QString(),
-								QString *selectedFilter = Q_NULLPTR,
-								Options options = Options());
+				const QString &caption = QString(),
+				const QString &dir = QString(),
+				const QString &filter = QString(),
+				QString *selectedFilter = Q_NULLPTR,
+				Options options = Options());
 
 static QUrl getOpenFileUrl(QWidget *parent = Q_NULLPTR,
-							const QString &caption = QString(),
-							const QUrl &dir = QUrl(),
-							const QString &filter = QString(),
-							QString *selectedFilter = Q_NULLPTR,
-							Options options = Options(),
-							const QStringList &supportedSchemes = QStringList());
+				const QString &caption = QString(),
+				const QUrl &dir = QUrl(),
+				const QString &filter = QString(),
+				QString *selectedFilter = Q_NULLPTR,
+				Options options = Options(),
+				const QStringList &supportedSchemes = QStringList());
 
 static QString getSaveFileName(QWidget *parent = Q_NULLPTR,
-								const QString &caption = QString(),
-								const QString &dir = QString(),
-								const QString &filter = QString(),
-								QString *selectedFilter = Q_NULLPTR,
-								Options options = Options());
+				const QString &caption = QString(),
+				const QString &dir = QString(),
+				const QString &filter = QString(),
+				QString *selectedFilter = Q_NULLPTR,
+				Options options = Options());
 
 static QUrl getSaveFileUrl(QWidget *parent = Q_NULLPTR,
-							const QString &caption = QString(),
-							const QUrl &dir = QUrl(),
-							const QString &filter = QString(),
-							QString *selectedFilter = Q_NULLPTR,
-							Options options = Options(),
-							const QStringList &supportedSchemes = QStringList());
+				const QString &caption = QString(),
+				const QUrl &dir = QUrl(),
+				const QString &filter = QString(),
+				QString *selectedFilter = Q_NULLPTR,
+				Options options = Options(),
+				const QStringList &supportedSchemes = QStringList());
 
 static QString getExistingDirectory(QWidget *parent = Q_NULLPTR,
-									const QString &caption = QString(),
-									const QString &dir = QString(),
-									Options options = ShowDirsOnly);
+					const QString &caption = QString(),
+					const QString &dir = QString(),
+					Options options = ShowDirsOnly);
 
 static QUrl getExistingDirectoryUrl(QWidget *parent = Q_NULLPTR,
-									const QString &caption = QString(),
-									const QUrl &dir = QUrl(),
-									Options options = ShowDirsOnly,
-									const QStringList &supportedSchemes = QStringList());
+					const QString &caption = QString(),
+					const QUrl &dir = QUrl(),
+					Options options = ShowDirsOnly,
+					const QStringList &supportedSchemes = QStringList());
 
 static QStringList getOpenFileNames(QWidget *parent = Q_NULLPTR,
-									const QString &caption = QString(),
-									const QString &dir = QString(),
-									const QString &filter = QString(),
-									QString *selectedFilter = Q_NULLPTR,
-									Options options = Options());
+					const QString &caption = QString(),
+					const QString &dir = QString(),
+					const QString &filter = QString(),
+					QString *selectedFilter = Q_NULLPTR,
+					Options options = Options());
 
 static QList<QUrl> getOpenFileUrls(QWidget *parent = Q_NULLPTR,
-									const QString &caption = QString(),
-									const QUrl &dir = QUrl(),
-									const QString &filter = QString(),
-									QString *selectedFilter = Q_NULLPTR,
-									Options options = Options(),
-									const QStringList &supportedSchemes = QStringList());
+					const QString &caption = QString(),
+					const QUrl &dir = QUrl(),
+					const QString &filter = QString(),
+					QString *selectedFilter = Q_NULLPTR,
+					Options options = Options(),
+					const QStringList &supportedSchemes = QStringList());
 ```
 
 演示：
@@ -2617,10 +2617,10 @@ int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
 
-	QStringList filenames = QFileDialog::getOpenFileNames(0,                      // 父组件
-								QFileDialog::tr("QFileDialog"),                   // 标题
-								QDir::currentPath(),                              // 默认打开目录
-								QFileDialog::tr("header (*.h);;source (*.cpp)")); // 文件名过滤器
+	QStringList filenames = QFileDialog::getOpenFileNames(0,                          // 父组件
+					QFileDialog::tr("QFileDialog"),                   // 标题
+					QDir::currentPath(),                              // 默认打开目录
+					QFileDialog::tr("header (*.h);;source (*.cpp)")); // 文件名过滤器
 	
 	qDebug() << filenames;
 }
@@ -2643,9 +2643,9 @@ int main(int argc, char *argv[])
 
 	int numFiles = 100;
 	QProgressDialog progress("Copying files...",   // 进度描述
-							"Cancel",              // 按钮名
-							0,                     // 进度条最小值
-							numFiles);             // 进度条最大值
+				"Cancel",              // 按钮名
+				0,                     // 进度条最小值
+				numFiles);             // 进度条最大值
 	progress.setWindowModality(Qt::WindowModal);
 	progress.show();
 
@@ -2681,9 +2681,9 @@ int main(int argc, char *argv[])
 	QApplication a(argc, argv);
 
 	QColor color = QColorDialog::getColor(Qt::red,  // 默认颜色
-		0,                                          // 父组件
-		QColorDialog::tr("QColorDialog"),           // 标题
-		QColorDialog::ShowAlphaChannel);            // 是否显示 alpha 选项
+		0,                                      // 父组件
+		QColorDialog::tr("QColorDialog"),       // 标题
+		QColorDialog::ShowAlphaChannel);        // 是否显示 alpha 选项
 
 	qDebug() << color;
 }
