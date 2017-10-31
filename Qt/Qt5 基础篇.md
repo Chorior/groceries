@@ -2476,7 +2476,7 @@ int main(int argc, char *argv[])
 }
 ```
 
-![QMessageBox](https://github.com/Chorior/Chorior.github.io/blob/master/img/QMessageBox.jpg)
+![QMessageBox](https://github.com/Chorior/Chorior.github.io/blob/master/img/QMessageBox.png)
 
 比较简单的使用方式就是使用其静态函数，这样更加快速，但失去了灵活性。一共有四种类型--information、question、warning 和 critical，它们的接口一样，只是图标不同：
 
@@ -2510,7 +2510,7 @@ int main(int argc, char *argv[])
 }
 ```
 
-![QErrorMessage](https://github.com/Chorior/Chorior.github.io/blob/master/img/QErrorMessage.jpg)
+![QErrorMessage](https://github.com/Chorior/Chorior.github.io/blob/master/img/QErrorMessage.png)
 
 #### 输入对话框 QInputDialog
 
@@ -2540,7 +2540,7 @@ int main(int argc, char *argv[])
 }
 ```
 
-![QInputDialog](https://github.com/Chorior/Chorior.github.io/blob/master/img/QInputDialog.jpg)
+![QInputDialog](https://github.com/Chorior/Chorior.github.io/blob/master/img/QInputDialog.png)
 
 #### 文件对话框 QFileDialog
 
@@ -2663,7 +2663,7 @@ int main(int argc, char *argv[])
 }
 ```
 
-![QProgressDialog](https://github.com/Chorior/Chorior.github.io/blob/master/img/QProgressDialog.jpg)
+![QProgressDialog](https://github.com/Chorior/Chorior.github.io/blob/master/img/QProgressDialog.png)
 
 非模态进度对话框实现查看 [QProcessDialog](http://doc.qt.io/qt-5/qprogressdialog.html#details)。
 
@@ -2689,7 +2689,7 @@ int main(int argc, char *argv[])
 }
 ```
 
-![QColorDialog](https://github.com/Chorior/Chorior.github.io/blob/master/img/QColorDialog.jpg)
+![QColorDialog](https://github.com/Chorior/Chorior.github.io/blob/master/img/QColorDialog.png)
 
 #### 字体对话框 QFontDialog
 
@@ -2722,7 +2722,7 @@ int main(int argc, char *argv[])
 }
 ```
 
-![QFontDialog](https://github.com/Chorior/Chorior.github.io/blob/master/img/QFontDialog.jpg)
+![QFontDialog](https://github.com/Chorior/Chorior.github.io/blob/master/img/QFontDialog.png)
 
 #### 向导对话框 QWizard
 
@@ -2758,7 +2758,7 @@ int main(int argc, char *argv[])
 }
 ```
 
-![QWizard](https://github.com/Chorior/Chorior.github.io/blob/master/img/QWizard.jpg)
+![QWizard](https://github.com/Chorior/Chorior.github.io/blob/master/img/QWizard.png)
 
 <h3 id="qmainwindow">主程序窗口 QMainWindow</h3>
 
@@ -2920,7 +2920,7 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-![QMenuBar](https://github.com/Chorior/Chorior.github.io/blob/master/img/QMenuBar.jpg)
+![QMenuBar](https://github.com/Chorior/Chorior.github.io/blob/master/img/QMenuBar.png)
 
 #### QToolBar
 
@@ -2996,7 +2996,7 @@ private Q_SLOTS:
 };
 ```
 
-![QToolBar](https://github.com/Chorior/Chorior.github.io/blob/master/img/QToolBar.jpg)
+![QToolBar](https://github.com/Chorior/Chorior.github.io/blob/master/img/QToolBar.png)
 
 #### QDockWidget
 
@@ -3039,7 +3039,7 @@ public:
 };
 ```
 
-![QDockWidget](https://github.com/Chorior/Chorior.github.io/blob/master/img/QDockWidget.jpg)
+![QDockWidget](https://github.com/Chorior/Chorior.github.io/blob/master/img/QDockWidget.png)
 
 #### QStatusBar
 
@@ -3079,7 +3079,7 @@ public:
 };
 ```
 
-![QStatusBar](https://github.com/Chorior/Chorior.github.io/blob/master/img/QStatusBar.jpg)
+![QStatusBar](https://github.com/Chorior/Chorior.github.io/blob/master/img/QStatusBar.png)
 
 <h3 id="qt_common_widgets">常用小部件</h3>
 
@@ -3244,7 +3244,7 @@ inline void myWidget::showPlainTextEdit()
 }
 ```
 
-![common_widgets](https://github.com/Chorior/Chorior.github.io/blob/master/img/common_widgets.jpg)
+![common_widgets](https://github.com/Chorior/Chorior.github.io/blob/master/img/common_widgets.png)
 
 <h3 id="progressbar">进度条 QProgressBar</h3>
 
@@ -3430,7 +3430,7 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-![QProgressBar](https://github.com/Chorior/Chorior.github.io/blob/master/img/QProgressBar.jpg)
+![QProgressBar](https://github.com/Chorior/Chorior.github.io/blob/master/img/QProgressBar.png)
 
 结果没有任何问题，同时工作线程也显得特别干净，这正是我们想要的。
 
@@ -3576,7 +3576,7 @@ public:
 };
 ```
 
-![QBoxLayout](https://github.com/Chorior/Chorior.github.io/blob/master/img/QBoxLayout.jpg)
+![QBoxLayout](https://github.com/Chorior/Chorior.github.io/blob/master/img/QBoxLayout.png)
 
 #### 网格布局
 
@@ -3628,7 +3628,7 @@ public:
 };
 ```
 
-![QGridLayout](https://github.com/Chorior/Chorior.github.io/blob/master/img/QGridLayout.jpg)
+![QGridLayout](https://github.com/Chorior/Chorior.github.io/blob/master/img/QGridLayout.png)
 
 #### 表单布局
 
@@ -3688,7 +3688,7 @@ public:
 };
 ```
 
-![QFormLayout](https://github.com/Chorior/Chorior.github.io/blob/master/img/QFormLayout.jpg)
+![QFormLayout](https://github.com/Chorior/Chorior.github.io/blob/master/img/QFormLayout.png)
 
 #### 堆栈布局
 
@@ -3735,7 +3735,7 @@ public:
 };
 ```
 
-![QStackedLayout](https://github.com/Chorior/Chorior.github.io/blob/master/img/QStackedLayout.jpg)
+![QStackedLayout](https://github.com/Chorior/Chorior.github.io/blob/master/img/QStackedLayout.png)
 
 <h3 id="widget_containers">部件容器</h3>
 
@@ -3887,7 +3887,7 @@ inline void widgetContainers::showScrollArea()
 }
 ```
 
-![widgetContainers](https://github.com/Chorior/Chorior.github.io/blob/master/img/widgetContainers.jpg)
+![widgetContainers](https://github.com/Chorior/Chorior.github.io/blob/master/img/widgetContainers.png)
 
 <h3 id="model_view">模型/视图(model/view)</h3>
 
@@ -4022,7 +4022,7 @@ inline void itemBasedViews::showTableWidget()
 }
 ```
 
-![itemBasedViews](https://github.com/Chorior/Chorior.github.io/blob/master/img/itemBasedViews.jpg)
+![itemBasedViews](https://github.com/Chorior/Chorior.github.io/blob/master/img/itemBasedViews.png)
 
 <h2 id="interface_appearance">界面外观</h2>
 
