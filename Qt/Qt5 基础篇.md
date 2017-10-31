@@ -2476,6 +2476,8 @@ int main(int argc, char *argv[])
 }
 ```
 
+![QMessageBox](https://github.com/Chorior/Chorior.github.io/blob/master/img/QMessageBox.jpg)
+
 比较简单的使用方式就是使用其静态函数，这样更加快速，但失去了灵活性。一共有四种类型--information、question、warning 和 critical，它们的接口一样，只是图标不同：
 
 ```c++
@@ -2508,6 +2510,8 @@ int main(int argc, char *argv[])
 }
 ```
 
+![QErrorMessage](https://github.com/Chorior/Chorior.github.io/blob/master/img/QErrorMessage.jpg)
+
 #### 输入对话框 QInputDialog
 
 QInputDialog 提供一个模态对话框，用来从用户那里获取一个单一的值，这个值可以是一个数字、一个字符串或者列表中的某个项目。
@@ -2535,6 +2539,8 @@ int main(int argc, char *argv[])
         qDebug() << text;
 }
 ```
+
+![QInputDialog](https://github.com/Chorior/Chorior.github.io/blob/master/img/QInputDialog.jpg)
 
 #### 文件对话框 QFileDialog
 
@@ -2657,6 +2663,8 @@ int main(int argc, char *argv[])
 }
 ```
 
+![QProgressDialog](https://github.com/Chorior/Chorior.github.io/blob/master/img/QProgressDialog.jpg)
+
 非模态进度对话框实现查看 [QProcessDialog](http://doc.qt.io/qt-5/qprogressdialog.html#details)。
 
 #### 颜色对话框 QColorDialog
@@ -2680,6 +2688,8 @@ int main(int argc, char *argv[])
 	qDebug() << color;
 }
 ```
+
+![QColorDialog](https://github.com/Chorior/Chorior.github.io/blob/master/img/QColorDialog.jpg)
 
 #### 字体对话框 QFontDialog
 
@@ -2711,6 +2721,8 @@ int main(int argc, char *argv[])
 	// return a.exec();
 }
 ```
+
+![QFontDialog](https://github.com/Chorior/Chorior.github.io/blob/master/img/QFontDialog.jpg)
 
 #### 向导对话框 QWizard
 
@@ -2745,6 +2757,8 @@ int main(int argc, char *argv[])
 	wizard.exec();
 }
 ```
+
+![QWizard](https://github.com/Chorior/Chorior.github.io/blob/master/img/QWizard.jpg)
 
 <h3 id="qmainwindow">主程序窗口 QMainWindow</h3>
 
@@ -2906,6 +2920,8 @@ int main(int argc, char *argv[]) {
 }
 ```
 
+![QMenuBar](https://github.com/Chorior/Chorior.github.io/blob/master/img/QMenuBar.jpg)
+
 #### QToolBar
 
 Qt 使用 QToolBar 来实现工具栏，所谓工具栏，就是包含一系列控制的可移动面板。
@@ -2980,6 +2996,8 @@ private Q_SLOTS:
 };
 ```
 
+![QToolBar](https://github.com/Chorior/Chorior.github.io/blob/master/img/QToolBar.jpg)
+
 #### QDockWidget
 
 **Dock 部件是一个窗口，它由一个标题栏和一个内容区(content area)组成，你可以将其停靠在中心部件(Central Widget)的四周，也可以单独作为一个顶级窗口**。
@@ -3021,6 +3039,8 @@ public:
 };
 ```
 
+![QDockWidget](https://github.com/Chorior/Chorior.github.io/blob/master/img/QDockWidget.jpg)
+
 #### QStatusBar
 
 **状态栏是一个水平条，用来显示状态信息**，它被分为如下三类：
@@ -3059,6 +3079,8 @@ public:
 };
 ```
 
+![QStatusBar](https://github.com/Chorior/Chorior.github.io/blob/master/img/QStatusBar.jpg)
+
 <h3 id="qt_common_widgets">常用小部件</h3>
 
 GUI常用的小部件无非按钮、文本框、标签、下拉框、复选框、滚动条等等，在Qt中，按钮用 `QPushButton` 实现、文本框分为 `QTextEdit`(大型文本)和 `QLineEdit`(行文本)以及 `QPlainTextEdit`(纯文本)、标签用 `QLabel` 实现、下拉框分为 `QComboBox` 和 `QSpinBox` 以及 `QDoubleSpinBox`、复选框用 `QCheckBox` 实现、滚动条分为 `QSlider` 和 `QScrollBar`。
@@ -3085,6 +3107,7 @@ GUI常用的小部件无非按钮、文本框、标签、下拉框、复选框�
 #include <QStatusBar>
 #include <QStringList>
 #include <QMainWindow>
+#include <QApplication>
 
 class myWidget :public QMainWindow
 {
@@ -3129,7 +3152,7 @@ inline void myWidget::createMenu()
 inline void myWidget::showLabel()
 {
 	QLabel *tmp = new QLabel(tr("QLabel"));
-	tmp->setPixmap(QPixmap("welcome.jpg"));
+	tmp->setPixmap(QPixmap("welcome.png"));
 
 	setCentralWidget(tmp);
 	statusBar()->showMessage(tr("QLabel"), 2000);
@@ -3220,6 +3243,8 @@ inline void myWidget::showPlainTextEdit()
 	statusBar()->showMessage(tr("QPlainTextEdit"), 2000);
 }
 ```
+
+![common_widgets](https://github.com/Chorior/Chorior.github.io/blob/master/img/common_widgets.jpg)
 
 <h3 id="progressbar">进度条 QProgressBar</h3>
 
@@ -3405,6 +3430,8 @@ int main(int argc, char *argv[]) {
 }
 ```
 
+![QProgressBar](https://github.com/Chorior/Chorior.github.io/blob/master/img/QProgressBar.jpg)
+
 结果没有任何问题，同时工作线程也显得特别干净，这正是我们想要的。
 
 <h2 id="widget_management">部件管理</h2>
@@ -3549,6 +3576,8 @@ public:
 };
 ```
 
+![QBoxLayout](https://github.com/Chorior/Chorior.github.io/blob/master/img/QBoxLayout.jpg)
+
 #### 网格布局
 
 QGridLayout 与 QBoxLayout 类似，你可以使用 `addWidget`、`addLayout` 或 `addItem` 来添加部件或子布局并指定行列位置和行列大小，你还可以使用 `removeWidget` 彻底删除某个部件或使用 `QWidget::hide()` 来隐藏(但不占用绘制空间)某个部件。
@@ -3598,6 +3627,8 @@ public:
 	}
 };
 ```
+
+![QGridLayout](https://github.com/Chorior/Chorior.github.io/blob/master/img/QGridLayout.jpg)
 
 #### 表单布局
 
@@ -3657,6 +3688,8 @@ public:
 };
 ```
 
+![QFormLayout](https://github.com/Chorior/Chorior.github.io/blob/master/img/QFormLayout.jpg)
+
 #### 堆栈布局
 
 QStackedLayout 同一时间只能显示其中一个部件，一般与 QComboBox 或其它单选部件合并使用：
@@ -3701,6 +3734,8 @@ public:
 	}
 };
 ```
+
+![QStackedLayout](https://github.com/Chorior/Chorior.github.io/blob/master/img/QStackedLayout.jpg)
 
 <h3 id="widget_containers">部件容器</h3>
 
@@ -3841,7 +3876,7 @@ inline void widgetContainers::showScrollArea()
 {
 	// QScrollArea 提供一个可滚动视图
 	QLabel *imageLabel = new QLabel();
-	imageLabel->setPixmap(QPixmap("big_image.png"));
+	imageLabel->setPixmap(QPixmap("big_image.jpg"));
 
 	QScrollArea *tmp = new QScrollArea();
 	tmp->setWidget(imageLabel);
@@ -3851,6 +3886,8 @@ inline void widgetContainers::showScrollArea()
 	statusBar()->showMessage(tr("QScrollArea"), 2000);
 }
 ```
+
+![widgetContainers](https://github.com/Chorior/Chorior.github.io/blob/master/img/widgetContainers.jpg)
 
 <h3 id="model_view">模型/视图(model/view)</h3>
 
@@ -3984,6 +4021,8 @@ inline void itemBasedViews::showTableWidget()
 	statusBar()->showMessage(tr("QTableWidget"), 2000);
 }
 ```
+
+![itemBasedViews](https://github.com/Chorior/Chorior.github.io/blob/master/img/itemBasedViews.jpg)
 
 <h2 id="interface_appearance">界面外观</h2>
 
