@@ -1,22 +1,16 @@
-# Python 知识要点
+# Python 基础篇
 
-:bowtie:
+Python 凭借其实用性与可扩展性，在各个行业飞速发展，**由其是数据科学(Data Science)、机器学习(Machine Learning)和学术研究(Academic Research)**，这三个方面都是当前 IT 行业最为火热的领域，所以熟悉甚至精通 Python 将使你更容易的找到心仪的工作、同时也能使你的工作和生活更加灵活和便捷。
 
----
->作者：彭侦
->
->链接：<https://github.com/Chorior/groceries/blob/master/Python/README.md>
+# 本文结构
 
-本文知识来自Vamei的《从Python开始学编程》。
-
-## 本文结构
-
-* [Python初识](#overview)
-* [Python安装](#installation)
-	*	[Mac与Linux](#mac-and-linux)
+* [Python 初识](#overview)
+* [Python 安装](#installation)
+	*	[Linux](#linux)
 	*	[Windows](#windows)
-* [Hello Python](#hello-python)
-* [Python基本数据类型与运算](#python-basis)
+	*	[IDE](#integrated_development_environment)
+* [Hello Python3](#hello-python3)
+* [Python 基本数据类型与运算](#python-basis)
 	*	[注释](#annotation)
 	*	[基本运算](#basic-operation)
 	*	[变量类型](#variable-type)
@@ -37,85 +31,131 @@
 
 <h2 id="overview">Python初识</h2>
 
-Python是一门多范式编程语言，既能面向过程，也能面向对象，还支持函数式编程；其作者是Guido von Rossum；语法多来自于C，但又受到ABC语言的强烈影响；优点在于实用和可扩展性，故而性能相比其它语言有些差距。
+Python 是一门跨平台的多范式编程语言，支持面向过程、面向对象、函数式及命令式编程，其作者是 Guido van Rossum。
+
+Python 的优点在于其实用性和可扩展性，故而性能相比其它语言有些差距，但随着电脑速度的不断加快，性能的缺点逐渐被其优点所覆盖。
+
+你可能在 Python2 和 Python3 间艰难的抉择，但是查看 [Python2orPython3](https://wiki.python.org/moin/Python2orPython3/) 后你应该知道：**Python3 才是 Python 的未来**。
 
 <h2 id="installation">Python安装</h2>
 
-<h3 id="mac-and-linux">Mac与Linux</h3>
+<h3 id="linux">Linux</h3>
 
-这两个系统大多预装了Python，直接打开终端，输入`python`，然后回车就能使用pytho命令行了，退出命令为`exit()`：
+Linux 一般预装了 Python，直接打开终端，输入 `python` 后回车，你将看到安装的 Python 版本；最后的 `>>>` 是一个提示符，表示你能够继续输入 Python 命令；**退出 Python 命令行的命令是 `exit()`，快捷键是 `Ctrl + D`**：
 
 ```bash
 $ python
-Python 2.7.12 (default, Jul  1 2016, 15:12:24)
+Python 2.7.12 (default, Nov 19 2016, 06:48:10)
 [GCC 5.4.0 20160609] on linux2
 Type "help", "copyright", "credits" or "license" for more information.
->>> exit()
-$
+>>>
 ```
 
-如果想要运行当前目录下的某个Python文件，使用Python+空格+文件名即可：
+可以看到，默认的 Python 命令行是 python2，这并不是我们想要的，**要检查系统是否安装了 Python3，尝试运行命令 python3**：
 
 ```bash
-$ python hello.py
+$ python3
+Python 3.5.2 (default, Sep 14 2017, 22:51:06)
+[GCC 5.4.0 20160609] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>>
+```
+
+如果没有安装 python3 的话，执行如下命令来安装 python3:
+
+```bash
+$ sudo apt-get install python3.5
+```
+
+你可以把一系列 Python 命令写在一个后缀名为 `.py` 的文件中，然后使用 `python+空格+文件名` 来执行这些命令：
+
+```bash
+$ python3 hello.py
 ```
 
 如果文件不在当前目录下，那么说明文件的完整路径即可，绝对或相对皆可：
 
 ```bash
-$ python /home/pengzhen/python/hello.py
+$ python3 /home/pengzhen/python3/hello.py
 $ pwd
 /home/pengzhen
-$ python python/hello.py
+$ python3 python3/hello.py
 ```
 
-如果要将Python文件改成一个可执行的脚本，在文件第一行加上`#!/usr/bin/env python`（这跟shell脚本有些相似），然后将其权限改为可执行即可：
+如果要将 Python 文件改成一个可执行的脚本，在文件第一行加上 `#!/usr/bin/env python3`（这跟shell脚本有些相似），然后将其权限改为可执行即可：
 
 ```bash
-$ chmod 775 hello.py
+$ chmod 755 hello.py
 $ ./hello.py
 ```
 
 <h3 id="windows">Windows</h3>
 
-到[Python官网](https://www.python.org)进行下载安装，安装时选择Customize来进行个性安装，另外勾选`Add python.exe to Path`，然后打开dos就可以像Mac和Linux一样使用命令行和运行Python文件了。
+到[Python官网](https://www.python.org/downloads/)下载对应的安装包，安装时选择 Customize 来进行个性安装，另外勾选 `Add python.exe to Path`。
 
-<h2 id="hello-python">Hello Python</h2>
+安装完成后，打开终端，输入 python 即可进入 python 命令行了：
 
-学习一门编程语言，首先要做的就是写Hello World，就像拿到一个单片机先点亮一盏led灯一样。进入Python命令行之后，每行都会有>>>提示符提醒你在后面输入命令，你输入的每一行Python语句都会被解释器直接转译运行。我们首先打印一个字符串"Hello Python":
-
-```bash
-$ >>> print("Hello Python")
+```cmd
+>python
+Python 3.6.3 (v3.6.3:2c5fed8, Oct  3 2017, 18:11:49) [MSC v.1900 64 bit (AMD64)]
+ on win32
+Type "help", "copyright", "credits" or "license" for more information.
+>>> ^Z
 ```
 
-print是一个专门用来打印的函数，如果你学过C语言，那么这跟printf很像，但printf里的f是格式化Format的意思，Python没有格式化，所以没有f；  
+与 Linux 不同，**Windows 下退出 Python 命令行的快捷键是 `Ctrl + Z`**。
 
-打印“Hello Python”的另一种方式是写文件，该文件的后缀必须是.py，下面是一个示例(名为hello.py)：
+<h3 id="integrated_development_environment">IDE</h3>
+
+安装好 Python3 之后，选择一个舒适的 IDE 来编写 Python 程序至关重要。你可以查看 [SOF](https://stackoverflow.com/questions/81584/what-ide-to-use-for-python) 进行选择；但 Visual Studio 一直是我认为的最好的 IDE，没有之一，所以在这里**建议使用 [vscode](https://github.com/Microsoft/vscode) 作为 Python 的 IDE**。
+
+vscode 是一款强大的、开源的跨平台文本编辑器，它拥有众多的插件来进行扩展，建议安装 Atom One Dark Theme 优化主题、vscode-icons 来支持各种文件图标、以及 python 来支持 python 编写与调试相关。
+
+要应用安装的主题和图标插件的话，需要到用户设置中进行设置：
+
+```yml
+"workbench.colorTheme": "Atom One Dark",
+"workbench.iconTheme": "vscode-icons"
+```
+
+<h2 id="hello-python3">Hello Python3</h2>
+
+学习一门编程语言，首先要做的就是写 Hello World，就像拿到一个单片机先点亮一盏led灯一样。进入 Python 命令行之后，每行都会有 `>>>` 提示符提醒你在后面输入命令，你输入的每一行Python语句都会被解释器直接转译运行。
+
+我们首先打印一个字符串 "Hello Python3!":
 
 ```bash
-#! /usr/bin/env Python
+$ >>> print("Hello Python3!")
+```
 
-print("Hello Python")
+print 是一个专门用来打印的函数，如果你学过C语言，那么这跟 printf 很像，但 printf 里的f是格式化 Format 的意思，Python 没有格式化，所以没有f；  
+
+打印 "Hello Python" 的另一种方式是写文件，该文件的后缀必须是 `.py`，下面是一个示例：
+
+```python
+#! /usr/bin/env Python3
+
+print("Hello Python3!")
 ```
 
 然后运行：
 
 ```bash
-$ python hello.py
+$ python3 hello.py
 ```
 
-<h2 id="python-basis">Python基本数据类型与运算</h2>
+<h2 id="python-basis">Python 基本数据类型与运算</h2>
 
 <h3 id="annotation">注释</h3>
 
-在Python文件中，每行从#开始的文字都是注释，这跟shell脚本一样，连特殊的第一行不为注释也是一样的；如果要使用多行注释，使用三个连续的双引号或但引号将注释内容括起来即可，这又跟github版markdown的代码块有些类似：
+在Python文件中，每行从#开始的文字都是注释，这跟shell脚本一样，连特殊的第一行不为注释也是一样的；如果要使用多行注释，使用三个连续的双引号或单引号将注释内容括起来即可：
 
 `````bash
 #! /usr/bin/env python
-```
+'''
 Author: pengzhen
 Function: print hello python
-```	
+'''	
 print("Hello Python") # print
 `````
 
