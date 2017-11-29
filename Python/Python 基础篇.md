@@ -1,4 +1,4 @@
-# Python 基础篇
+# Python 知识要点
 
 Python 凭借其实用性与可扩展性，在各个行业飞速发展，**由其是数据科学(Data Science)、机器学习(Machine Learning)和学术研究(Academic Research)**，这三个方面都是当前 IT 行业最为火热的领域，所以熟悉甚至精通 Python 将使你更容易的找到心仪的工作、同时也能使你的工作和生活更加灵活和便捷。
 
@@ -14,6 +14,7 @@ Python 凭借其实用性与可扩展性，在各个行业飞速发展，**由�
 	*	[注释](#annotation)
 	*	[基本运算](#basic-operation)
 	*	[变量类型](#variable-type)
+		*	[字符串](#string)
 		*	[序列](#tuple-and-list)
 		*	[词典](#dictionary)
 * [分支与循环语句](#loop-and-branch)
@@ -43,7 +44,7 @@ Python 的优点在于其实用性和可扩展性，故而性能相比其它语�
 
 Linux 一般预装了 Python，直接打开终端，输入 `python` 后回车，你将看到安装的 Python 版本；最后的 `>>>` 是一个提示符，表示你能够继续输入 Python 命令；**退出 Python 命令行的命令是 `exit()`，快捷键是 `Ctrl + D`**：
 
-```bash
+```python
 $ python
 Python 2.7.12 (default, Nov 19 2016, 06:48:10)
 [GCC 5.4.0 20160609] on linux2
@@ -53,7 +54,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 可以看到，默认的 Python 命令行是 python2，这并不是我们想要的，**要检查系统是否安装了 Python3，尝试运行命令 python3**：
 
-```bash
+```python
 $ python3
 Python 3.5.2 (default, Sep 14 2017, 22:51:06)
 [GCC 5.4.0 20160609] on linux
@@ -95,7 +96,7 @@ $ ./hello.py
 
 安装完成后，打开终端，输入 python 即可进入 python 命令行了：
 
-```cmd
+```python
 >python
 Python 3.6.3 (v3.6.3:2c5fed8, Oct  3 2017, 18:11:49) [MSC v.1900 64 bit (AMD64)]
  on win32
@@ -124,8 +125,8 @@ vscode 是一款强大的、开源的跨平台文本编辑器，它拥有众多�
 
 我们首先打印一个字符串 "Hello Python3!":
 
-```bash
-$ >>> print("Hello Python3!")
+```python
+>>> print("Hello Python3!")
 ```
 
 print 是一个专门用来打印的函数，如果你学过C语言，那么这跟 printf 很像，但 printf 里的f是格式化 Format 的意思，Python 没有格式化，所以没有f；  
@@ -148,43 +149,33 @@ $ python3 hello.py
 
 <h3 id="annotation">注释</h3>
 
-在Python文件中，每行从#开始的文字都是注释，这跟shell脚本一样，连特殊的第一行不为注释也是一样的；如果要使用多行注释，使用三个连续的双引号或单引号将注释内容括起来即可：
+在 Python 文件中，每行从#开始的文字都是注释，这跟 shell 脚本一样；如果要使用多行注释，使用三个连续的双引号或单引号将注释内容括起来即可：
 
-`````bash
-#! /usr/bin/env python
+`````python
+#! /usr/bin/env python3
 '''
 Author: pengzhen
-Function: print hello python
+Function: print hello python3
 '''	
-print("Hello Python") # print
+print("Hello Python3!") # print
 `````
-
-如果想在Python2中使用中文，须在程序开始前加上`# -*- coding: utf-8 -*-`:
-
-```bash
-# -*- coding: utf-8 -*-
-
-print("你好！Python!")
-```
 
 <h3 id="basic-operation">基本运算</h3>
 
-#### 数值运算(大体与C差不多，多了乘方)
+#### 数值运算(注意除法和乘方)
 
-```bash
+```python
 >>> 1 + 9            # 加法。结果为10
 >>> 1.3 - 4          # 减法。结果为-2.7
 >>> 3*5              # 乘法。结果为15
->>> 4.5/1.5          # 除法。结果为3.0
+>>> 3/2              # 除法。结果为1.5
 >>> 3**2             # 乘方。结果为9
 >>> 10%3             # 求余。结果为1
->>> "he" + "llo"     # 字符串相加。结果为"hello"
->>> "he" * 3         # 结果为"hehehe"
 ```
 
 #### 逻辑运算(True表示真，False表示假)
 
-```bash
+```python
 >>> True and False   # and表示与逻辑。结果为False
 >>> True or False    # or表示或逻辑。结果为True
 >>> not True         # not表示非逻辑。结果为False
@@ -192,7 +183,7 @@ print("你好！Python!")
 
 #### 判断表达式
 
-```bash
+```python
 >>> 1 == 1           # ==，等于。结果为True
 >>> 1 != 1           # !=，不等于。结果为False
 >>> 1 < 2            # <，小于。结果为True
@@ -201,7 +192,7 @@ print("你好！Python!")
 >>> 1 >= 2           # >=，大于等于。结果为False
 ```
 
-#### 运算优先级(相同优先级按从左到右顺序进行)
+#### 运算优先级(相同优先级按从左到右顺序运行)
 
 ```text
 括号： ()
@@ -214,11 +205,111 @@ print("你好！Python!")
 
 <h3 id="variable-type">变量类型</h3>
 
-Python的变量根据数据自动转换类型，这称为动态类型，像C就是静态类型，C必须事先说好变量的类型才能进行赋值。查看一个Python变量的类型使用`type(var)`函数，常见的类型包括整型、浮点型、字符串和布尔型
+Python的变量会根据数据自动转换类型，这称为动态类型，像C就是静态类型，C必须事先说好变量的类型才能进行赋值。
 
-```bash
-$ >>> a = 10
-$ >>> type(a)
+你可以使用 `type(var)` 函数查看一个 Python 变量的类型，常见的标准类型包括整型(int)、浮点型(float)、布尔型(bool)、字符串(str)、列表(list)、元组(tuple)、词典(dict)和集合(set)，比较不常见的标准类型有字节(bytes)、复数(complex)、空值(NoneType)和类型(type)，其中 type 是所有类型的类型。
+
+```python
+>>> a = 10; type(a)
+<class 'int'>
+>>> a = 1.0; type(a)
+<class 'float'>
+>>> a = True; type(a)
+<class 'bool'>
+>>> a ="hello"; type(a)
+<class 'str'>
+>>> a = b"hello"; type(a)
+<class 'bytes'>
+>>> a = 2 + 3.8j; type(a)
+<class 'complex'>
+>>> type(None)
+<class 'NoneType'>
+>>> type(int)
+<class 'type'>
+```
+
+<h4 id="string">字符串</h4>
+
+Python 中的字符串可以用单引号或双引号括起，这使得你可以在双引号字符串中使用单引号而无需使用转义字符 `\`：
+
+```python
+>>> print("I'm OK")
+I'm OK
+>>> print('"Python is awesome"')
+"Python is awesome"
+```
+
+如果字符串里既包括单引号又包括双引号的话，你可以使用转义字符 `\`：
+
+```python
+>>> print('I\'m "OK"')
+I'm "OK"
+```
+
+多行字符串除了可以使用常见的 `\n`之外，还可以使用三个单引号或双引号括起：
+
+```python
+>>> print('hello\nworld')
+hello
+world
+>>> print('''hello
+... world''')       # ... 是提示符，表示可以继续输入
+hello
+world
+```
+
+有了字符串之后，我们就能使用一些简单的函数对字符串变量进行操作：
+
+函数 | 功能(空白：空格、制表符(\t)和换行符(\n))
+---------| ---------------------------------
+`str[i]` | 返回 str 中第 i 个字符，从零开始
+`str[i:j]` | 返回 str 中第 i 个字符到第 j - 1 个字符组成的子字符串
+`str1 + str2` | 返回 str1 和 str2 拼接后的字符串
+`str * N` | 返回 N 个 str 拼接后的字符串
+`title()` | 返回将字符串中所有的单词的首字母大写，其它字母小写的字符串
+`upper()` <br> `lower()` | 返回所有字母大写或小写的字符串
+`rstrip()` | 返回删除字符串末尾空白后的字符串
+`lstrip()` | 返回删除字符串开头空白后的字符串
+`strip()` | 返回删除字符串两端空白的字符串
+
+```python
+>>> str1 = "hEllo"
+>>> str1[1]
+'E'
+>>> str1[0:2]; str1[:2]; str1[1:3]; str1[2:5]; str1[2:]
+'hE'
+'hE'
+'El'
+'llo'
+'llo'
+>>> str1 * 3
+'hEllohEllohEllo'
+>>> str2 = "PythOn"
+>>> msg = str1 + " " + str2; msg
+'hEllo PythOn'
+>>> msg.title()
+'Hello Python'
+>>> msg.upper()
+'HELLO PYTHON'
+>>> msg.lower()
+'hello python'
+>>> msg = '\n\t ' + msg + ' \t\n'; msg
+'\n\t hEllo PythOn \t\n'
+>>> msg.lstrip()
+'hEllo PythOn \t\n'
+>>> msg.rstrip()
+'\n\t hEllo PythOn'
+>>> msg.strip()
+'hEllo PythOn'
+```
+
+我们经常需要将数字或其它非字符串类型表示为字符串，这时我们可以使用 `str(var)`：
+
+```python
+>>> str(True)
+'True'
+>>> str(2.0)
+'2.0'
 ```
 
 <h4 id="tuple-and-list">序列</h4>
@@ -226,9 +317,9 @@ $ >>> type(a)
 序列是一种容器类型，它有两种形式，元组(Tuple)和列表(List)，其区别在于元组元素不可改变，而列表可以。字符串是特殊的元组。元组圆括号括起，而列表用方括号括起，一个序列的元素可以是另一个列表:
 
 ```bash
-$ >>> a = (1,2,3)   # tuple
-$ >>> a = [3,2,1]   # list
-$ >>> a = [1,(2,3)] # list
+>>> a = (1,2,3)   # tuple
+>>> a = [3,2,1]   # list
+>>> a = [1,(2,3)] # list
 ```
 
 访问列表的方式与C的数组差不多，即用下标进行访问，下标从零开始
