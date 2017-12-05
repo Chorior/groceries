@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  </style>
+  <link rel="stylesheet" href="css/markdown10.css">
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<hr />
+<p>title: &quot;C++ 释疑（二）&quot;<br />
+subtitle: &quot; IO库、容器类及一些泛型算法 &quot;<br />
+date: 2017-03-08 20:00:00 +0800<br />
+header-img: &quot;img/sunset_beach.jpg&quot;<br />
+tags:<br />
+- C++<br />
+- C++ primer<br />
+---</p>
+<p>本文是我重温《C++ Primer 5》第二部分 C++ 标准库时，摘录的一些要点，适合初级程序员食用。</p>
+<h1>本文结构</h1>
+<ul>
+<li><a href="#io_library">IO 库</a>
+<ul>
+<li><a href="#io_type_and_header">IO 库类型和头文件</a></li>
+<li><a href="#io_condition_state">IO 库条件状态</a></li>
+<li><a href="#output_buffer">IO 输出缓冲</a></li>
+<li><a href="#file_io">文件输入输出</a></li>
+<li><a href="#string_io">string 流</a></li>
+</ul></li>
+<li><a href="#sequential_containers">顺序容器</a>
+<ul>
+<li><a href="#sequential_containers_overview">顺序容器概述</a></li>
+<li><a href="#choose_sequential_container">顺序容器选择</a></li>
+<li><a href="#basic_container_operation">容器基本操作</a>
+<ul>
+<li><a href="#basic_type_alias">类型别名</a></li>
+<li><a href="#basic_constructor">构造函数</a></li>
+<li><a href="#basic_common_operations">常用操作</a></li>
+<li><a href="#reverse_containers">反向容器</a></li>
+<li><a href="#container_iterators">迭代器</a></li>
+<li><a href="#array_container">array 容器</a></li>
+</ul></li>
+<li><a href="#sequential_container_operation">顺序容器操作</a>
+<ul>
+<li><a href="#add_elements">添加元素</a></li>
+<li><a href="#access_elements">访问元素</a></li>
+<li><a href="#delete_elements">删除元素</a></li>
+<li><a href="#resize_container">改变大小</a></li>
+<li><a href="#capacity_management">容量管理</a></li>
+<li><a href="#string_common_operations">string 常用操作</a></li>
+<li><a href="#string_search_operations">string 搜索操作</a></li>
+<li><a href="#string_numeric_conversion">string 数值转换</a></li>
+<li><a href="#special_forward_list">特殊的 forward_list</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#generic_algorithms">容器泛型算法</a>
+<ul>
+<li><a href="#lambda_expression">lambda 表达式</a></li>
+<li><a href="#bind_function">函数适配器 bind</a></li>
+<li><a href="#other_iterators">各种迭代器</a></li>
+</ul></li>
+<li><a href="#associative_containers">关联容器</a>
+<ul>
+<li><a href="#associative_container_constructor">关联容器构造</a></li>
+<li><a href="#pair_type">pair 类型</a></li>
+<li><a href="#associative_container_operations">关联容器操作</a>
+<ul>
+<li><a href="#associative_container_type_alias">类型别名</a></li>
+<li><a href="#map_class_operations">map 类操作</a></li>
+<li><a href="#common_associative_container_operations">关联容器常用操作</a></li>
+<li><a href="#unordered_associative_containers">无序关联容器</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#dynamic_memory">动态内存</a>
+<ul>
+<li><a href="#new_and_delete">new, delete</a></li>
+<li><a href="#smart_pointer">智能指针</a></li>
+</ul></li>
+</ul>
+<h2 id="io_library">IO 库</h2>
+<h3 id="io_type_and_header">IO 库类型和头文件</h3>
+<table style="width:61%;">
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 47%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>头文件</th>
+<th>类型</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>iostream</td>
+<td>istream, wistream 从流读取数据<br>ostream, wostream 向流写入数据<br>iostream, wiostream 读写流</td>
+</tr>
+<tr class="even">
+<td>fstream</td>
+<td>ifstream, wifstream 从文件读取数据<br>ofstream, wofstream 向文件写入数据<br>fstream, wfstream 读写文件</td>
+</tr>
+<tr class="odd">
+<td>sstream</td>
+<td>istringstream, wistringstream 从 string 读取数据<br>ostringstream, wostringstream 向 string 写入数据<br>stringstream, wstringstream 读写 string</td>
+</tr>
+</tbody>
+</table>
+<p>类型<code>ifstream</code>和<code>istringstream</code>都继承自<code>istream</code>。</p>
+<p>类型<code>ofstream</code>和<code>ostringstream</code>都继承自<code>ostream</code>。</p>
+<p>所以我们可以像使用<code>cin</code>和<code>cout</code>一样使用文件流和string流对象。</p>
+<h3 id="io-">IO 对象无拷贝或赋值</h3>
+<p>不能将形参或返回类型设置为流类型。</p>
+<p>进行 IO 操作的函数通常以引用方式进行传递和返回流。</p>
+<p>读写一个 IO 对象会改变其状态，因此传递和返回的引用都不能时const的。</p>
+<h3 id="io_condition_state">IO 库条件状态</h3>
+<table style="width:78%;">
+<colgroup>
+<col style="width: 19%" />
+<col style="width: 58%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>条件状态</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>strm::iostate</td>
+<td>strm 是一种 <a href="#io_type_and_header">IO 类型</a> <br>iostate是一种机器相关的类型，提供了表达条件状态的完整功能</td>
+</tr>
+<tr class="even">
+<td>strm::badbit</td>
+<td>不可恢复的读写错误，流已崩溃</td>
+</tr>
+<tr class="odd">
+<td>strm::failbit</td>
+<td>可恢复错误，一个 IO 操作失败了</td>
+</tr>
+<tr class="even">
+<td>strm::eofbit</td>
+<td>流到达了文件结尾</td>
+</tr>
+<tr class="odd">
+<td>strm::goodbit</td>
+<td>流未处于错误状态，值为0</td>
+</tr>
+<tr class="even">
+<td>s.eof()</td>
+<td>若流s的eofbit置位，则返回true</td>
+</tr>
+<tr class="odd">
+<td>s.fail()</td>
+<td>若流s的failbit或badbit置位，则返回true</td>
+</tr>
+<tr class="even">
+<td>s.bad()</td>
+<td>若流s的badbit置位，则返回true</td>
+</tr>
+<tr class="odd">
+<td>s.good()</td>
+<td>若流s处于有效状态（所有错误位均未置位），则返回true</td>
+</tr>
+<tr class="even">
+<td>s.clear()</td>
+<td>void函数<br>将流s的所有条件状态位复位<br>将流的状态设置为有效</td>
+</tr>
+<tr class="odd">
+<td>s.clear(flags)</td>
+<td>void函数<br>flags的类型为<code>strm::iostate</code><br>根据给定的flags标志位，将流s中对应条件状态位复位</td>
+</tr>
+<tr class="even">
+<td>s.setstate(flags)</td>
+<td>void函数<br>flags的类型为<code>strm::iostate</code><br>根据给定的flags标志位，将流s中对应条件状态位置位</td>
+</tr>
+<tr class="odd">
+<td>s.rdstate()</td>
+<td>返回流s的当前条件状态<br>返回值类型为<code>strm::iostate</code></td>
+</tr>
+</tbody>
+</table>
+<p>如果达到文件结束位置，<code>eofbit</code>和<code>failbit</code>都会被置位。</p>
+<p><strong>一个流一旦发生错误，那么后续的所有 IO 操作都会失败。因此在使用一个流之前必须检查它是否处于良好状态</strong>。</p>
+<p>确定一个流对象状态的最简单方法是将它当做一个条件来使用：</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="cf">while</span>(cin &gt;&gt; word)
+{
+    <span class="co">// do something</span>
+    <span class="co">// badbit,failbit,eofbit任一个被置位，则检测流状态的条件会失败</span>
+}</code></pre></div>
+<p><strong>将流当做条件使用不等于使用<code>!fail()</code></strong>，因为<code>fail()</code>只检查<code>failbit</code>位和<code>badbit</code>位，而流状态会检查三个错误位。因此，将流当做条件使用与使用<code>good()</code>是等效的。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">...
+<span class="at">static</span> <span class="kw">constexpr</span> _Iostate goodbit = (_Iostate)<span class="bn">0x0</span>;
+<span class="at">static</span> <span class="kw">constexpr</span> _Iostate eofbit = (_Iostate)<span class="bn">0x1</span>;
+<span class="at">static</span> <span class="kw">constexpr</span> _Iostate failbit = (_Iostate)<span class="bn">0x2</span>;
+<span class="at">static</span> <span class="kw">constexpr</span> _Iostate badbit = (_Iostate)<span class="bn">0x4</span>;
+...
+<span class="dt">bool</span> __CLR_OR_THIS_CALL good() <span class="at">const</span>
+    {   <span class="co">// test if no state bits are set</span>
+    <span class="cf">return</span> (rdstate() == goodbit);
+    }
+
+<span class="dt">bool</span> __CLR_OR_THIS_CALL eof() <span class="at">const</span>
+    {   <span class="co">// test if eofbit is set in stream state</span>
+    <span class="cf">return</span> ((<span class="dt">int</span>)rdstate() &amp; (<span class="dt">int</span>)eofbit);
+    }
+
+<span class="dt">bool</span> __CLR_OR_THIS_CALL fail() <span class="at">const</span>
+    {   <span class="co">// test if badbit or failbit is set in stream state</span>
+    <span class="cf">return</span> (((<span class="dt">int</span>)rdstate()
+        &amp; ((<span class="dt">int</span>)badbit | (<span class="dt">int</span>)failbit)) != <span class="dv">0</span>);
+    }
+
+<span class="dt">bool</span> __CLR_OR_THIS_CALL bad() <span class="at">const</span>
+    {   <span class="co">// test if badbit is set in stream state</span>
+    <span class="cf">return</span> (((<span class="dt">int</span>)rdstate() &amp; (<span class="dt">int</span>)badbit) != <span class="dv">0</span>);
+    }</code></pre></div>
+<h3 id="output_buffer">IO 输出缓冲</h3>
+<p>每个输出流都管理一个缓冲区，用来保存程序读写的数据。例如，当你使用如下代码时：</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">os &lt;&lt; <span class="st">&quot;hahah&quot;</span>;</code></pre></div>
+<p>文本串可能立即打印出来，也有可能被操作系统保存在缓冲区随后打印。</p>
+<p>若程序异常终止，输出缓冲区是不会被刷新的。<strong>在log调试的时候，一定要确保所有缓冲区的数据确实已经输出了</strong>，不然你会浪费时间在一些你认为没执行但其实已经执行了的代码上面。</p>
+<p>缓冲机制可以将程序的多个输出操作组合成单一的系统级写操作，这样可以提升性能。</p>
+<h4>刷新输出缓冲区</h4>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="bu">std::</span>cout &lt;&lt; <span class="st">&quot;hahah&quot;</span> &lt;&lt; <span class="bu">std::</span>endl;  <span class="co">// 输出hahah加一个换行，然后刷新缓冲区</span>
+<span class="bu">std::</span>cout &lt;&lt; <span class="st">&quot;hahah&quot;</span> &lt;&lt; <span class="bu">std::</span>ends;  <span class="co">// 输出hahah加一个空字符，然后刷新缓冲区</span>
+<span class="bu">std::</span>cout &lt;&lt; <span class="st">&quot;hahah&quot;</span> &lt;&lt; <span class="bu">std::</span>flush; <span class="co">// 输出hahaa不附加任何字符，然后刷新缓冲区</span></code></pre></div>
+<h4 id="unibuf-">unibuf 操纵符</h4>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="bu">std::</span>cout &lt;&lt; <span class="bu">std::</span>unitbuf;   <span class="co">// 所有输出立即刷新，无缓冲</span>
+<span class="bu">std::</span>cout &lt;&lt; <span class="bu">std::</span>nounitbuf; <span class="co">// 回归正常输出状态，有缓冲</span></code></pre></div>
+<p><strong><code>std::cerr</code>默认是设置<code>unitbuf</code>的，所以log调试时，你可以使用<code>std::cerr</code>进行输出</strong>。当然你也可以手动设置一个流为<code>unitbuf</code>的。</p>
+<h4>输出流关联到另一个流</h4>
+<p>若一个输出流被关联到另一个流，那么当读写另一个流时，该输出流会被刷新。</p>
+<p><code>std::cin</code>和<code>std::cerr</code>默认都关联到<code>std::cout</code>。</p>
+<p><strong>每个流最多同时关联一个流，但输出流可以同时被关联多个流</strong>。</p>
+<p>关联函数<code>tie</code>有两个重载的版本：</p>
+<ul>
+<li>不带参数的版本，返回关联的输出流的指针；若没有关联输出流，那么返回空指针。</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="bu">std::</span>ostream *p = <span class="bu">std::</span>cin.tie();
+<span class="cf">if</span>(p) *p &lt;&lt; <span class="st">&quot;hahah</span><span class="sc">\n</span><span class="st">&quot;</span>;</code></pre></div>
+<ul>
+<li>带参数的版本，接受一个指向ostream的指针，将自己关联到该ostream，并返回旧的关联输出流。</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="bu">std::</span>ostream *old_tie = <span class="bu">std::</span>cin.tie(<span class="kw">nullptr</span>); <span class="co">// 解除关联</span>
+<span class="cf">if</span> (!<span class="bu">std::</span>cin.tie()) <span class="bu">std::</span>cout &lt;&lt; <span class="st">&quot;std::cin.tie() == nullptr</span><span class="sc">\n</span><span class="st">&quot;</span>;
+<span class="bu">std::</span>cin.tie(old_tie);
+<span class="cf">if</span> (<span class="bu">std::</span>cin.tie()) <span class="bu">std::</span>cout &lt;&lt; <span class="st">&quot;std::cin.tie() != nullptr</span><span class="sc">\n</span><span class="st">&quot;</span>;</code></pre></div>
+<h3 id="file_io">文件输入输出</h3>
+<p>头文件<code>&lt;fstream&gt;</code>定义了三个类型</p>
+<ul>
+<li><code>ifstream</code>: 读取给定文件；</li>
+<li><code>ofstream</code>: 写入给定文件；</li>
+<li><code>fstream</code> : 读写给定文件。</li>
+</ul>
+<p>除了继承自<code>iostream</code>类型的行为外，<code>fstream</code>还定义了一些自己独有的成员：</p>
+<table style="width:92%;">
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 58%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>fstream独有的操作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>fstream fstrm</code></td>
+<td>创建一个未绑定的文件流<br><strong>fstream可以是<code>ifstream</code>,<code>ofstream</code>或<code>fstream</code></strong></td>
+</tr>
+<tr class="even">
+<td><code>fstream fstrm(s)</code></td>
+<td>explicit构造函数<br>创建一个fstream，并打开一个名为 <code>s</code> 的文件<br><code>s</code> 是<code>std::string</code>类型或一个指向C风格字符串的指针<br><a href="#file_mode">查看默认打开模式</a></td>
+</tr>
+<tr class="odd">
+<td><code>fstream fstrm(s, mode)</code></td>
+<td>与前一个构造函数一样，但按指定mode打开文件</td>
+</tr>
+<tr class="even">
+<td><code>fstrm.open(s)</code></td>
+<td>void函数<br>打开名为 <code>s</code> 的文件，并将文件与fstrm绑定<br><code>s</code> 是<code>std::string</code>类型或一个指向C风格字符串的指针<br>对一个打开的文件流使用open会导致failbit被置位<br><a href="#file_mode"></a></td>
+</tr>
+<tr class="odd">
+<td><code>fstrm.open(s, mode)</code></td>
+<td>与<code>fstrm.open(s)</code>一样，但按指定mode打开文件</td>
+</tr>
+<tr class="even">
+<td><code>fstrm.close()</code></td>
+<td>void函数<br>关闭与fstrm绑定的文件<br>当一个fstream对象离开其作用域时，会自动调用<code>close()</code></td>
+</tr>
+<tr class="odd">
+<td><code>fstrm.is_open()</code></td>
+<td>若与fstrm关联的文件成功打开，且尚未关闭，则返回true</td>
+</tr>
+</tbody>
+</table>
+<p>可以类比<code>iostream</code>来运用<code>fstream</code>。</p>
+<h4 id="file_mode">文件模式</h4>
+<p>文件模式用来指出如何使用文件。</p>
+<p><strong><code>ifstream</code>默认使用in模式；<code>ofstream</code>默认使用out模式，而out模式默认指定trunc模式；<code>fstream</code>默认使用in和out模式</strong>。</p>
+<table>
+<thead>
+<tr class="header">
+<th>文件模式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>in</td>
+<td>以读方式打开<br><strong>只支持<code>ifstream</code>或<code>fstream</code>对象</strong></td>
+</tr>
+<tr class="even">
+<td>out</td>
+<td>以写方式打开<br>默认指定trunc模式<br>指定in或app模式会保留原有数据<br><strong>只支持<code>ofstream</code>或<code>fstream</code>对象</strong></td>
+</tr>
+<tr class="odd">
+<td>app</td>
+<td>每次写操作前均定位到文件末尾<br>默认指定out模式<br><strong>只有当trunc模式没被设定时才能设定app模式</strong></td>
+</tr>
+<tr class="even">
+<td>ate</td>
+<td>打开文件后立即定位到文件末尾</td>
+</tr>
+<tr class="odd">
+<td>trunc</td>
+<td>截断文件<br><strong>只有当out被设定时才可设定trunc模式</strong></td>
+</tr>
+<tr class="even">
+<td>binary</td>
+<td>以二进制方式进行 IO</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="bu">std::</span>ofstream out(<span class="st">&quot;file&quot;</span>);
+<span class="bu">std::</span>ofstream out1(<span class="st">&quot;file&quot;</span>, <span class="bu">std::</span>ofstream<span class="bu">::</span>out);
+<span class="bu">std::</span>ofstream out2(<span class="st">&quot;file&quot;</span>, <span class="bu">std::</span>ofstream<span class="bu">::</span>out | <span class="bu">std::</span>ofstream<span class="bu">::</span>app);</code></pre></div>
+<h3 id="string_io">string 流</h3>
+<p>头文件<code>&lt;sstream&gt;</code>也定义了三个类型</p>
+<ul>
+<li><code>istringstream</code>: 读取给定string；</li>
+<li><code>ostringstream</code>: 写入给定string；</li>
+<li><code>stringstream</code> : 读写给定string。</li>
+</ul>
+<p>除了继承自<code>iostream</code>类型的行为外，<code>sstream</code>还定义了一些自己独有的成员：</p>
+<table style="width:82%;">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 58%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>sstream独有的操作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>sstream strm</code></td>
+<td>创建一个未绑定的string流<br><strong>sstream可以是<code>istringstream</code>,<code>ostringstream</code>或<code>stringstream</code></strong></td>
+</tr>
+<tr class="even">
+<td><code>sstream strm(s)</code></td>
+<td>explicit构造函数<br>创建一个sstream对象，并保存<code>std::string s</code>的一个拷贝。</td>
+</tr>
+<tr class="odd">
+<td><code>strm.str()</code></td>
+<td>返回strm所保存的<code>std::string</code>的拷贝</td>
+</tr>
+<tr class="even">
+<td><code>strm.str(s)</code></td>
+<td>void函数<br>将<code>std::string s</code>拷贝到strm中</td>
+</tr>
+</tbody>
+</table>
+<p><strong>当函数得到整行文本，但却需要处理单个单词时，使用<code>std::istringstream</code>会很方便</strong>；</p>
+<p><strong>当需要逐步构造输出，最后一起打印时，使用<code>std::ostringstream</code>会比较方便</strong>。</p>
+<h2 id="sequential_containers">顺序容器</h2>
+<p>标准库容器分为顺序容器与<a href="#associative_containers">关联容器</a>。</p>
+<p>顺序容器中元素的顺序由其加入容器时的位置决定；关联容器中元素的顺序由其相关联的关键字值决定。</p>
+<h3 id="sequential_containers_overview">顺序容器概述</h3>
+<table>
+<thead>
+<tr class="header">
+<th>顺序容器类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>vector</td>
+<td>可变大小数组<br>元素保存在连续的内存空间中<br>支持快速随机访问<br>在尾部之外的位置插入或删除元素很慢</td>
+</tr>
+<tr class="even">
+<td>deque</td>
+<td>双端队列<br>支持快速随机访问<br>在头尾插入、删除元素很快</td>
+</tr>
+<tr class="odd">
+<td>list</td>
+<td>双向链表<br>只支持双向顺序访问<br>在任何位置插入、删除都很快<br>额外内存较其他顺序容器开销很大</td>
+</tr>
+<tr class="even">
+<td>forward_list</td>
+<td>单向链表<br>只支持单向顺序访问，没有size操作<br>在任何位置插入、删除都很快<br>额外内存较其他顺序容器开销很大</td>
+</tr>
+<tr class="odd">
+<td>array</td>
+<td>固定大小数组<br>支持快速随机访问<br>不能添加或删除元素</td>
+</tr>
+<tr class="even">
+<td>string</td>
+<td>与vector相似<br>专门用于保存字符<br>元素保存在连续的内存空间中<br>支持快速随机访问<br>在尾部插入、删除元素很快</td>
+</tr>
+</tbody>
+</table>
+<p><strong>现代 C++ 程序推荐使用标准库容器，而不是更原始的数据结构，如内置数组</strong>。</p>
+<h3 id="choose_sequential_container">顺序容器选择</h3>
+<p><strong>通常，使用vector是最好的选择</strong>，除非你有很好的理由选择其他容器。</p>
+<p><strong>选择容器的基本原则</strong>：</p>
+<ul>
+<li>除非你有很好的理由选择其他容器，否则应该使用vector；</li>
+<li>如果你的程序有很多小元素，且空间的额外开销很重要，不要使用<code>list</code>或<code>forward_list</code>；</li>
+<li>如果程序要求随机访问元素，应使用vector或deque；</li>
+<li>如果程序要求在容器的中间插入或删除元素，应使用<code>list</code>或<code>forward_list</code>；</li>
+<li>如果程序要求在头尾位置插入或删除元素，但不会在中间位置插入或删除，那么使用deque；</li>
+<li>如果程序只有在读取输入时才需要在容器中间位置插入元素，随后需要随机访问，
+<ul>
+<li>确定是否真的需要在容器中间插入元素，排序之类的可以使用sort重排；</li>
+<li>如果必须在中间插入元素，考虑在输入阶段使用list，输入完成之后将其拷贝到vector中；</li>
+</ul></li>
+<li>如果程序既要求随机访问又要求在容器中间插入，那么根据占主导地位的操作选择容器。</li>
+</ul>
+<h3 id="basic_container_operation">容器基本操作</h3>
+<h4 id="basic_type_alias">类型别名</h4>
+<p><strong>类型别名在泛型编程中非常有用</strong>。</p>
+<table>
+<thead>
+<tr class="header">
+<th>类型别名</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>iterator</code></td>
+<td>此容器类型的迭代器类型</td>
+</tr>
+<tr class="even">
+<td><code>const_iterator</code></td>
+<td>不可修改元素的迭代器</td>
+</tr>
+<tr class="odd">
+<td><code>size_type</code></td>
+<td>无符号整数类型，足以保存此种容器类型最大可能容器的大小</td>
+</tr>
+<tr class="even">
+<td><code>difference_type</code></td>
+<td>带符号整数类型，足以保存两个迭代器之间的距离</td>
+</tr>
+<tr class="odd">
+<td><code>value_type</code></td>
+<td>元素类型</td>
+</tr>
+<tr class="even">
+<td><code>reference</code></td>
+<td>元素的左值类型；相当于<code>value_type&amp;</code></td>
+</tr>
+<tr class="odd">
+<td><code>const_reference</code></td>
+<td>相当于<code>const value_type&amp;</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="basic_constructor">构造函数</h4>
+<table style="width:92%;">
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 69%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>构造函数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>C c</code></td>
+<td>默认构造函数<br>若C是一个array，那么c中元素按默认方式初始化<br>否则构造一个空容器</td>
+</tr>
+<tr class="even">
+<td><code>C c1(c2)</code><br><code>C c1 = c2</code></td>
+<td>非explicit构造函数<br>c1初始化为c2的拷贝<br><strong>c1和c2容器类型和元素类型必须相同</strong><br>对于array，还必须拥有相同大小</td>
+</tr>
+<tr class="odd">
+<td><code>C c{a,b,c...}</code><br><code>C c = {a,b,c...}</code></td>
+<td>非explicit构造函数<br>c初始化为初始化列表中元素的拷贝<br>列表中元素的类型必须与C的元素类型相容<br>对于array类型，列表元素数目须不大于array的大小，遗漏的元素将进行值初始化</td>
+</tr>
+<tr class="even">
+<td><code>C c(b, e)</code></td>
+<td>c初始化为迭代器b和e指定范围中的元素的拷贝<br>范围中元素的类型必须与c的元素类型相容<br>不适用于array</td>
+</tr>
+<tr class="odd">
+<td><code>C seq(n)</code></td>
+<td>explicit构造函数<br>适用于<code>vector</code>,<code>deque</code>,<code>list</code>,<code>forward_list</code><br>seq包含n个元素，这些元素进行值初始化<br>自定义类型必须具有默认构造函数</td>
+</tr>
+<tr class="even">
+<td><code>C seq(n, t)</code></td>
+<td>适用于<code>vector</code>,<code>deque</code>,<code>list</code>,<code>forward_list</code>,<code>string</code><br>seq包含n个初始化为值t的元素</td>
+</tr>
+</tbody>
+</table>
+<h4 id="basic_common_operations">常用操作</h4>
+<table style="width:96%;">
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 69%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>常用容器操作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>a.swap(b)</code></td>
+<td>交换a与b的元素<br><strong>a与b必须具有相同的类型</strong><br><strong>swap比赋值操作快得多</strong><br>除array外，swap不对任何元素进行拷贝、删除或插入操作</td>
+</tr>
+<tr class="even">
+<td><code>swap(a, b)</code></td>
+<td>等价于<code>a.swap(b)</code><br>非成员版本的swap在泛型编程中非常重要<br><strong>统一使用非成员版本的swap</strong></td>
+</tr>
+<tr class="odd">
+<td><code>c.size()</code></td>
+<td>c中元素的数目<br>不支持<code>forward_list</code></td>
+</tr>
+<tr class="even">
+<td><code>c.max_size()</code></td>
+<td>c中可保存的最大元素数目</td>
+</tr>
+<tr class="odd">
+<td><code>c.empty()</code></td>
+<td>若c中未存储元素，返回true</td>
+</tr>
+<tr class="even">
+<td><code>==, !=</code></td>
+<td>所有容器都支持相等和不等运算符</td>
+</tr>
+<tr class="odd">
+<td><code>&lt;, &lt;=, &gt;, &gt;=</code></td>
+<td>关系运算符，只支持顺序容器<br>左右两边的运算对象的容器类型和容器元素必须相同<br>元素类型必须定义相应的元素比较运算符<br>比较过程类似于string</td>
+</tr>
+<tr class="even">
+<td><code>c.begin()</code><br><code>c.end()</code></td>
+<td>返回指向c的首元素与尾元素之后位置的迭代器<br>若c为const对象，那么调用返回<code>const_iterator</code>的版本</td>
+</tr>
+<tr class="odd">
+<td><code>c.cbegin()</code><br><code>c.cend()</code></td>
+<td>返回<code>const_iterator</code></td>
+</tr>
+<tr class="even">
+<td><code>c1 = c2</code></td>
+<td>将c1中的元素替换为c2中元素的拷贝<br><strong>c1, c2必须具有相同的类型</strong></td>
+</tr>
+<tr class="odd">
+<td><code>c = {a,b,c,...}</code></td>
+<td>将c1中元素替换为初始化列表中元素的拷贝<br>会改变容器的大小(array除外)</td>
+</tr>
+<tr class="even">
+<td><code>seq.assign(b, e)</code></td>
+<td>将seq中的元素替换为迭代器b和e所表示的范围中的元素<br>b和e不能指向seq中的元素<br>不适用于array和关联容器</td>
+</tr>
+<tr class="odd">
+<td><code>seq.assign(il)</code></td>
+<td>将seq中的元素替换为初始化列表il中的元素<br>不适用于array和关联容器</td>
+</tr>
+<tr class="even">
+<td><code>seq.assign(n, t)</code></td>
+<td>将seq中的元素替换为n个值为t的元素<br>不适用于array和关联容器</td>
+</tr>
+</tbody>
+</table>
+<h4 id="reverse_containers">反向容器</h4>
+<p><strong>对一个反向迭代器执行++操作，会得到上一个元素</strong>。</p>
+<table>
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 68%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>反向容器(不支持<code>forward_list</code>)</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>reverse_iterator</code></td>
+<td>按逆序寻址元素的迭代器</td>
+</tr>
+<tr class="even">
+<td><code>const_reverse_iterator</code></td>
+<td>不可修改元素的逆序迭代器</td>
+</tr>
+<tr class="odd">
+<td><code>c.rbegin(), c.rend()</code></td>
+<td>返回指向c的尾元素和首元素之前的迭代器<br>若c为const对象，那么调用返回<code>const_reverse_iterator</code>的版本</td>
+</tr>
+<tr class="even">
+<td><code>c.crbegin(), c.crend()</code></td>
+<td>返回<code>const_reverse_iterator</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="container_iterators">迭代器</h4>
+<p><strong><code>forward_list</code>迭代器不支持递减运算符</strong>。</p>
+<p><strong>当不需要写访问时，使用<code>c(r)begin</code>和<code>c(r)end</code></strong>。</p>
+<p>除了为每个容器定义的迭代器之外，标准库在头文件iterator中还定义了<a href="#other_iterators">额外几种迭代器</a>。</p>
+<h4 id="array_container">array 容器</h4>
+<p>定义一个array时，除了指定元素类型，还要指定容器大小:</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="bu">std::</span>array&lt;<span class="dt">int</span>, <span class="dv">42</span>&gt; arr;</code></pre></div>
+<p>array不初始化时使用默认初始化；列表初始化时，未被初始化得元素将使用值初始化，<strong>自定义类必须包含一个默认构造函数</strong>：</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="bu">std::</span>array&lt;<span class="dt">int</span>, <span class="dv">42</span>&gt; arr0;                 <span class="co">// 默认初始化</span>
+<span class="bu">std::</span>array&lt;<span class="dt">int</span>, <span class="dv">42</span>&gt; arr1{<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>};      
+<span class="bu">std::</span>array&lt;<span class="dt">int</span>, <span class="dv">42</span>&gt; arr2 = {<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>};</code></pre></div>
+<p>array可以进行拷贝和赋值操作：</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="bu">std::</span>array&lt;<span class="dt">int</span>, <span class="dv">42</span>&gt; arr0{<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>};
+<span class="co">// 拷贝赋值时容器类型、元素类型、容器大小都必须相同</span>
+<span class="bu">std::</span>array&lt;<span class="dt">int</span>, <span class="dv">42</span>&gt; arr1(arr0);
+<span class="bu">std::</span>array&lt;<span class="dt">int</span>, <span class="dv">42</span>&gt; arr2 = arr0;
+arr2 = arr1;</code></pre></div>
+<h3 id="sequential_container_operation">顺序容器操作</h3>
+<h4 id="add_elements">添加元素</h4>
+<p>array不支持添加元素。</p>
+<p><code>forward_list</code>不支持<code>push_back</code>和<code>emplace_back</code>；<code>forward_list</code>有自己专有版本的insert和emplace。</p>
+<p>vector和string不支持<code>push_front</code>和<code>emplace_front</code>。</p>
+<p>使用一个对象来初始化容器或将一个对象插入到容器中时，<strong>放入容器中的元素是对象值得一个拷贝，而不是对象本身</strong>。</p>
+<p><code>emplace</code>,<code>emplace_back</code>和<code>emplace_front</code>是C++11新引入的成员，它们在容器中直接构造元素，传递给emplace函数的参数必须与元素类型的构造函数相匹配。无参数时，使用默认构造函数。</p>
+<table style="width:96%;">
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 69%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>向顺序容器添加元素</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>c.push_back(t)</code><br><code>c.emplace_back(args)</code></td>
+<td>在c的尾部创建一个值为t或由args创建的元素，返回void</td>
+</tr>
+<tr class="even">
+<td><code>c.push_front(t)</code><br><code>c.emplace_front(args)</code></td>
+<td>在c的头部创建一个值为t或由args创建的元素，返回void</td>
+</tr>
+<tr class="odd">
+<td><code>c.insert(p, t)</code><br><code>c.emplace(p, args)</code></td>
+<td>在迭代器p指向的元素之前创建一个值为t或由args创建的元素<br>返回新添加的元素的迭代器</td>
+</tr>
+<tr class="even">
+<td><code>c.insert(p, n, t)</code></td>
+<td>在迭代器p指向的元素之前插入n个值为t的元素<br>返回指向新添加的第一个元素的迭代器<br>若n为0，则返回p</td>
+</tr>
+<tr class="odd">
+<td><code>c.insert(p, b, e)</code></td>
+<td>将迭代器b和e指定范围内的元素插入到迭代器p指向的元素之前<br>b和e不能指向c中的元素<br>返回指向新添加的第一个元素的迭代器<br>若范围为空，则返回p</td>
+</tr>
+<tr class="even">
+<td><code>c.insert(p, il)</code></td>
+<td>在迭代器p指向的元素之前插入列表il中的元素<br>返回指向新添加的第一个元素的迭代器<br>若列表为空，则返回p</td>
+</tr>
+</tbody>
+</table>
+<h4 id="access_elements">访问元素</h4>
+<table style="width:96%;">
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 69%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>访问元素操作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>c.back()</code></td>
+<td>返回c中尾元素的引用<br><strong>若c为空，函数行为未定义</strong></td>
+</tr>
+<tr class="even">
+<td><code>c.front()</code></td>
+<td>返回c中首元素的引用<br><strong>若c为空，函数行为未定义</strong><br>不适用于<code>forward_list</code></td>
+</tr>
+<tr class="odd">
+<td><code>c[n]</code></td>
+<td>返回c中下标为n的元素的引用<br>n是一个无符号整数<br>若n&gt;=c.size()，函数行为未定义<br>只适用于string,vector,deque和array</td>
+</tr>
+<tr class="even">
+<td><code>c.at(n)</code></td>
+<td>返回下标为n的元素的引用<br>若下标越界，则抛出<code>out_of_range</code>异常<br>只适用于string,vector,deque和array</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="kw">auto</span> b1 = c.back();  <span class="co">// b1是c中最后一个元素的拷贝</span>
+<span class="kw">auto</span> &amp;b2 = c.back(); <span class="co">// b2是c中最后一个元素的引用</span></code></pre></div>
+<h4 id="delete_elements">删除元素</h4>
+<p>array不支持删除元素。</p>
+<p><code>forward_list</code>有特殊版本的erase；<code>forward_list</code>不支持<code>pop_back</code>。</p>
+<p>vector和string不支持<code>pop_front</code>。</p>
+<p><strong>删除元素前，必须确保它们是存在的</strong>。</p>
+<table>
+<thead>
+<tr class="header">
+<th>删除元素操作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>c.pop_back()</code></td>
+<td>删除c中尾元素<br>若c为空，则函数行为未定义<br>返回void</td>
+</tr>
+<tr class="even">
+<td><code>c.pop_front()</code></td>
+<td>删除c中首元素<br>若c为空，则函数行为未定义<br>返回void</td>
+</tr>
+<tr class="odd">
+<td><code>c.erase(p)</code></td>
+<td>删除迭代器p所指向的元素<br>返回一个指向被删元素之后元素的迭代器<br>若p是尾后迭代器，则函数行为未定义</td>
+</tr>
+<tr class="even">
+<td><code>c.erase(b,e)</code></td>
+<td>删除迭代器b和e所指定范围内(前闭后开)的元素<br>返回e</td>
+</tr>
+<tr class="odd">
+<td><code>c.clear()</code></td>
+<td>删除c中的所有元素<br>返回void</td>
+</tr>
+</tbody>
+</table>
+<h4 id="resize_container">改变大小</h4>
+<table>
+<thead>
+<tr class="header">
+<th>顺序容器大小操作(不适用于array)</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>c.resize(n)</td>
+<td>调整c的大小为n个元素<br>若<code>n&lt;c.size()</code>，则多出的元素被丢弃，反之多出的元素进行值初始化</td>
+</tr>
+<tr class="even">
+<td>c.resize(n, t)</td>
+<td>调整c的大小为n个元素<br>若<code>n&lt;c.size()</code>，则多出的元素被丢弃，反之多出的元素被初始化为t</td>
+</tr>
+</tbody>
+</table>
+<p><strong>resize并不改变容器<code>capacity()</code>的大小</strong>。</p>
+<p><strong>原先得到的迭代器在容器操作后可能造成迭代器失效，使用失效的迭代器会造成严重的运行错误，建议在每次容器操作之后都更新一下指向相应容器的迭代器</strong>。</p>
+<h4 id="capacity_management">容量管理</h4>
+<p>由于vector和string的元素是连续存储的，向它们添加元素时：</p>
+<ul>
+<li>容器必须分配新的内存空间来保存已有元素和新元素；</li>
+<li>将已有元素从旧的位置移动到新空间；</li>
+<li>然后添加新元素，释放旧存储空间。</li>
+</ul>
+<p>如果每次添加都执行一次分配和释放操作，会严重降低性能。</p>
+<p>标准库采用可以减少容器重新分配次数的策略：</p>
+<ul>
+<li>不得不获取新的内存空间时，vector和string会分配比新的空间需求更大的内存空间；</li>
+<li>容器预留这些空间作为备用，用以保存更多的新元素;</li>
+<li>采用这种策略后，vector的扩张操作比list和deque更快。</li>
+</ul>
+<table>
+<thead>
+<tr class="header">
+<th>容器容量管理</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>c.capacity()</code></td>
+<td>不重新分配内存空间的话，c保存元素的数量<br>仅适用于vector和string</td>
+</tr>
+<tr class="even">
+<td><code>c.shrink_to_fit()</code></td>
+<td>将<code>capacity()</code>减小为与size()相同大小<br>仅适用于vector,string和deque</td>
+</tr>
+<tr class="odd">
+<td><code>c.reserve(n)</code></td>
+<td>分配至少能容纳n个元素的内存空间<br>若需求小于等于当前容量，什么也不做<br>仅适用于vector和string</td>
+</tr>
+</tbody>
+</table>
+<h4 id="string_common_operations">string 常用操作</h4>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 66%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>string常用操作(<a href="#string_args_style0">args形式</a>)</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>string s(cp)</code></td>
+<td>cp是<code>const char*</code>参数，拷贝从cp开始直到空字符间的字符到s</td>
+</tr>
+<tr class="even">
+<td><code>s.substr(pos, n)</code></td>
+<td>返回一个string，包含s中从pos开始的n个字符的拷贝<br>pos的默认值为0，n的默认值为<code>s.size() - pos</code></td>
+</tr>
+<tr class="odd">
+<td><code>s.insert(pos, args)</code></td>
+<td>在pos之前插入args指定的字符<br>pos是下标时，返回一个指向s的引用<br>pos是迭代器时，返回指向第一个插入字符的迭代器</td>
+</tr>
+<tr class="even">
+<td><code>s.erase(pos, len)</code></td>
+<td>删除从位置pos开始的len个字符<br>len的默认值为<code>s.size() - pos</code><br>返回一个指向s的引用</td>
+</tr>
+<tr class="odd">
+<td><code>s.assign(args)</code></td>
+<td>将s中的字符替换为args指定的字符<br>返回一个指向s的引用</td>
+</tr>
+<tr class="even">
+<td><code>s.append(args)</code></td>
+<td>将args追加到s<br>返回一个指向s的引用</td>
+</tr>
+<tr class="odd">
+<td><code>s.replace(range, args)</code></td>
+<td>删除s中范围为range中的字符，替换为args指定的字符<br>range可以是一个下标和一个长度，也可以是一对指向s的迭代器<br>返回一个指向s的引用</td>
+</tr>
+</tbody>
+</table>
+<h5 id="string_args_style0">args形式</h5>
+<table>
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>args形式(assign和append都支持)</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>str</td>
+<td>字符串<br><code>replace(pos,len,args)</code><br><code>replace(b,e,args)</code><br><code>insert(pos,args)</code>(pos为下标)</td>
+</tr>
+<tr class="even">
+<td>str, pos, len</td>
+<td>str中从pos开始最多len个字符<br><code>replace(pos,len,args)</code><br><code>insert(pos,args)</code>(pos为下标)</td>
+</tr>
+<tr class="odd">
+<td>cp, len</td>
+<td>从cp指向的字符数组的最多前len个字符<br><code>replace(pos,len,args)</code><br><code>replace(b,e,args)</code><br><code>insert(pos,args)</code>(pos为下标)</td>
+</tr>
+<tr class="even">
+<td>cp</td>
+<td>cp指向的以空字符结尾的字符数组<br><code>replace(pos,len,args)</code><br><code>replace(b,e,args)</code></td>
+</tr>
+<tr class="odd">
+<td>n, c</td>
+<td>n个字符c<br><code>replace(pos,len,args)</code><br><code>replace(b,e,args)</code><br><code>insert(pos,args)</code><br><code>insert(iter,args)</code></td>
+</tr>
+<tr class="even">
+<td>b, e</td>
+<td>迭代器b和e指定范围内的字符<br><code>replace(b,e,args)</code><br><code>insert(iter,args)</code></td>
+</tr>
+<tr class="odd">
+<td>初始化列表</td>
+<td>花括号包围的，以逗号分隔的字符列表<br><code>replace(b,e,args)</code><br><code>insert(iter,args)</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="string_search_operations">string 搜索操作</h4>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 66%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>string搜索操作(<a href="#string_args_style1">args形式</a>)</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>s.find(args)</code></td>
+<td>查找s中args第一次出现的位置<br>失败返回<code>string::npos</code>，成功返回一个<code>string::size_type</code>值，从零开始</td>
+</tr>
+<tr class="even">
+<td><code>s.rfind(args)</code></td>
+<td>查找s中args最后一次出现的位置<br>失败返回<code>string::npos</code>，成功返回一个<code>string::size_type</code>值，从零开始指向从左到右第一个args字符</td>
+</tr>
+<tr class="odd">
+<td><code>s.find_first_of(args)</code></td>
+<td>查找s中args中任何一个字符第一次出现的位置<br>失败返回<code>string::npos</code>，成功返回一个<code>string::size_type</code>值，从零开始</td>
+</tr>
+<tr class="even">
+<td><code>s.find_last_of(args)</code></td>
+<td>查找s中args中任何一个字符最后一次出现的位置<br>失败返回<code>string::npos</code>，成功返回一个<code>string::size_type</code>值，从零开始</td>
+</tr>
+<tr class="odd">
+<td><code>s.find_first_not_of(args)</code></td>
+<td>查找s中第一个不在args中的字符出现的位置<br>失败返回<code>string::npos</code>，成功返回一个<code>string::size_type</code>值，从零开始</td>
+</tr>
+<tr class="even">
+<td><code>s.find_last_not_of(args)</code></td>
+<td>查找s中最后一个不在args中的字符出现的位置<br>失败返回<code>string::npos</code>，成功返回一个<code>string::size_type</code>值，从零开始</td>
+</tr>
+</tbody>
+</table>
+<h5 id="string_args_style1">args形式</h5>
+<table>
+<thead>
+<tr class="header">
+<th>args形式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>c, pos</td>
+<td>从s中位置pos开始查找字符c <br>pos默认为0</td>
+</tr>
+<tr class="even">
+<td>s2, pos</td>
+<td>从s中位置pos开始查找字符串s2 <br>pos默认为0</td>
+</tr>
+<tr class="odd">
+<td>cp, pos</td>
+<td>从s中位置pos开始查找指针cp指向的以空字符结尾的C风格字符串<br>pos默认为0</td>
+</tr>
+<tr class="even">
+<td>cp, pos, n</td>
+<td>从s中位置pos开始查找指针cp指向的数组的前n个字符<br>pos和n无默认值</td>
+</tr>
+</tbody>
+</table>
+<h4 id="string_numeric_conversion">string 数值转换</h4>
+<p>如果string不能转换为一个数值，这些函数抛出一个<code>invalid_argument</code>异常。</p>
+<p>如果转换后的数值无法用任何类型表示，则返回一个<code>out_of_range</code>异常。</p>
+<p><strong>能够进行数值转换的string格式</strong>：</p>
+<ul>
+<li><strong>string参数中第一个非空白字符必须是符号+或-或数字</strong>；</li>
+<li>它可以以<code>0x</code>或<code>0X</code>开头表示十六进制数；</li>
+<li>对于要转换成浮点数的函数，string参数也可以以小数点(.)开头，并可以包含e或E来表示指数部分；</li>
+<li>对于要转换成整型值的函数，根据基数不同，string参数可以包含字母字符，对应大于9的数。</li>
+</ul>
+<table style="width:90%;">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 69%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>string数值转换</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>to_string(val)</code></td>
+<td>返回数值val的string表示<br>val可以是任何算数类型</td>
+</tr>
+<tr class="even">
+<td><code>stoi(s, p, b)</code><br><code>stol(s, p, b)</code><br><code>stoul(s, p, b)</code><br><code>stoll(s, p, b)</code><br><code>stoull(s, p, b)</code></td>
+<td>返回字符串s从开始到p的子串表示的数值<br>分别是int,long,unsigned long,long long,unsigned long long <br>p是<code>size_t</code>指针，用来保存s中第一个非数值字符的下标，默认为0(代表全部字符串) <br>b表示转换所用的基数，默认为10</td>
+</tr>
+<tr class="odd">
+<td><code>stof(s, p)</code><br><code>stod(s, p)</code><br><code>stold(s, p)</code></td>
+<td>返回字符串s从开始到p的子串表示的数值<br>分别是float,double和long double <br>p是<code>size_t</code>指针，用来保存s中第一个非数值字符的下标，默认为0(代表全部字符串)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="special_forward_list">特殊的`forward_list`</h4>
+<p>在一个<code>forward_list</code>中添加或删除元素的操作是通过改变给定元素之后的元素来完成的。</p>
+<table>
+<colgroup>
+<col style="width: 34%" />
+<col style="width: 65%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th><code>forward_list</code>插入删除操作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>lst.before_begin()</code><br><code>lst.cbefore_begin()</code></td>
+<td>返回指向链表首元素之前不存在的元素的迭代器<br>不可解引用</td>
+</tr>
+<tr class="even">
+<td><code>lst.insert_after(p, t)</code><br><code>lst.insert_after(p, n, t)</code><br><code>lst.insert_after(p, b, e)</code><br><code>lst.insert_after(p, il)</code></td>
+<td>在迭代器p之后的位置插入元素<br>t是对象，n是数量，b和e是表示范围的一对迭代器(b和e不能指向lst内)，il是花括号列表<br>返回指向最后一个插入元素的迭代器<br>若范围为空，则返回p<br>若p为尾后迭代器，则函数行为未定义</td>
+</tr>
+<tr class="odd">
+<td><code>emplace_after(p, args)</code></td>
+<td>使用args在p指定的位置之后创建一个元素<br>返回一个指向这个新元素的迭代器<br>若p为尾后迭代器，则函数行为未定义</td>
+</tr>
+<tr class="even">
+<td><code>lst.erase_after(p)</code><br><code>lst.erase_after(b, e)</code></td>
+<td>删除p指向的位置之后的元素，或删除<code>(b,e]</code>之间的元素<br>返回一个指向被删元素之后元素的迭代器<br>若p指向lst的尾元素，或p是一个尾后迭代器，则函数行为未定义</td>
+</tr>
+</tbody>
+</table>
+<h2 id="generic_algorithms">容器泛型算法</h2>
+<p>大多数算法定义于头文件<code>&lt;algorithm&gt;</code>中。</p>
+<p><strong><code>list</code>和<code>forward_list</code>有专门的sort, merge, remove, reverse和unique算法</strong>，并且定义了独有的splice成员，用于拼接。</p>
+<p>很多算法都有重载，以及<code>_if</code>, <code>_copy</code>, <code>_n</code>, <code>_not</code>等后缀组合的版本，下面列出一些常用算法：</p>
+<table>
+<colgroup>
+<col style="width: 39%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>容器泛型常用算法</th>
+<th>说明(func为可调用对象或<a href="#lambda_expression">lambda表达式</a>)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>accumulate(b, e, sum)</code> <br> <code>accumulate(b, e, sum, func)</code></td>
+<td>对迭代器范围<code>[b,e)</code>范围内的所有元素求和，总和加上sum值为返回值<br> sum的类型决定使用哪种加法(若没有func指定)，以及返回值的类型(如string)<br>sum是值传递，代表和的初始值<br><code>const char*</code>没有定义+运算符<br>头文件<code>&lt;numeric&gt;</code></td>
+</tr>
+<tr class="even">
+<td><code>all_of(b, e, func)</code></td>
+<td>若序列为空，或迭代器范围<code>[b1,e1)</code>范围内的所有元素都能使func返回true，则返回true</td>
+</tr>
+<tr class="odd">
+<td><code>any_of(b, e, func)</code></td>
+<td>若迭代器范围<code>[b1,e1)</code>范围内的能找出一个元素使得func返回true，则返回true<br>序列为空时，返回false</td>
+</tr>
+<tr class="even">
+<td><code>none_of(b, e, func)</code></td>
+<td>若序列为空，或迭代器范围<code>[b1,e1)</code>范围内的所有元素都不能使func返回true，则返回true</td>
+</tr>
+<tr class="odd">
+<td><code>copy(b, e, dest)</code> <br> <code>copy_if(b, e, dest, func)</code></td>
+<td>将迭代器范围<code>[b,e)</code>范围内的所有元素或满足func的元素拷贝到从迭代器dest开始的值<br>b和dest指向的元素类型必须相容</td>
+</tr>
+<tr class="even">
+<td><code>copy_n(beg, n, dest)</code></td>
+<td>将从beg开始的n的元素赋值给从dest开始的位置<br>beg和dest指向的元素类型必须相容</td>
+</tr>
+<tr class="odd">
+<td><code>count(b, e, val)</code> <br> <code>count_if(b, e, func)</code></td>
+<td>返回迭代器范围<code>[b,e)</code>范围内与val相等或令func返回true的元素的数量</td>
+</tr>
+<tr class="even">
+<td><code>equal(b1, e1, b2)</code> <br> <code>equal(b1, e1, b2, func)</code></td>
+<td>若迭代器范围<code>[b1,e1)</code>范围内的所有元素都与从迭代器b2开始的的元素对应相等，则返回true <br>默认使用<code>==</code>进行比较，func指定比较函数</td>
+</tr>
+<tr class="odd">
+<td><code>for_each(b, e, func)</code></td>
+<td>对迭代器范围<code>[b1,e1)</code>范围内的所有元素都调用一次func</td>
+</tr>
+<tr class="even">
+<td><code>find(b, e, val)</code> <br> <code>find_if(b, e, func)</code></td>
+<td>在迭代器范围<code>[b,e)</code>范围内搜索val或调用func <br>成功返回指向第一个匹配值的元素的迭代器<br>失败返回e</td>
+</tr>
+<tr class="odd">
+<td><code>fill(b, e, val)</code></td>
+<td>将迭代器范围<code>[b,e)</code>范围内的所有元素赋值为val</td>
+</tr>
+<tr class="even">
+<td><code>fill_n(dest, n, val)</code></td>
+<td>将val赋值给从迭代器dest开始的n个元素<br>从dest开始的序列至少包含n个元素</td>
+</tr>
+<tr class="odd">
+<td><code>max(val1, val2)</code> <br> <code>max(val1, val2, func)</code></td>
+<td>返回val1和val2中较大者的const引用<br>val1和val2的类型必须完全一致</td>
+</tr>
+<tr class="even">
+<td><code>min(val1, val2)</code> <br> <code>min(val1, val2, func)</code></td>
+<td>返回val1和val2中较小者的const引用<br>val1和val2的类型必须完全一致</td>
+</tr>
+<tr class="odd">
+<td><code>max_element(b, e)</code> <br> <code>max_element(b, e, func)</code></td>
+<td>返回指向迭代器范围<code>[b,e)</code>范围内最大元素的迭代器</td>
+</tr>
+<tr class="even">
+<td><code>min_element(b, e)</code> <br> <code>min_element(b, e, func)</code></td>
+<td>返回指向迭代器范围<code>[b,e)</code>范围内最小元素的迭代器</td>
+</tr>
+<tr class="odd">
+<td><code>replace(b, e, old, new)</code> <br> <code>replace_if(b, e, func, new)</code></td>
+<td>将迭代器范围<code>[b,e)</code>范围内的所有等于old或满足func的元素赋值为new</td>
+</tr>
+<tr class="even">
+<td><code>replace(b, e, dest, old, new)</code></td>
+<td>将迭代器范围<code>[b,e)</code>范围内的所有等于old的元素赋值为new，然后保存至从迭代器dest开始的位置，<code>[b,e)</code>范围内的值不变</td>
+</tr>
+<tr class="odd">
+<td><code>remove(b, e, val)</code> <br> <code>remove_if(b, e, func)</code></td>
+<td>删除迭代器范围<code>[b,e)</code>范围内所有等于val或使func返回true的元素</td>
+</tr>
+<tr class="even">
+<td><code>reverse(b, e)</code></td>
+<td>将迭代器范围<code>[b,e)</code>范围内的所有元素顺序反转</td>
+</tr>
+<tr class="odd">
+<td><code>reverse_copy(b, e, dest)</code></td>
+<td>将迭代器范围<code>[b,e)</code>范围内的所有元素按逆序拷贝到从dest开始的位置<br>b1和b2指向的元素类型必须相容</td>
+</tr>
+<tr class="even">
+<td><code>search(b1, e1, b2, e2)</code> <br> <code>search(b1, e1, b2, e2, func)</code></td>
+<td>返回迭代器范围<code>[b2,e2]</code>子序列在迭代器范围<code>[b1,e1]</code>序列中第一次出现的位置<br>失败返回e1<br>默认使用<code>==</code>运算符，func指定比较函数</td>
+</tr>
+<tr class="odd">
+<td><code>set_union(b1, e1, b2, e2, dest)</code> <br> <code>set_union(b1, e1, b2, e2, dest, func)</code></td>
+<td>创建两个序列的有序序列到dest<br>同一序列多次出现的元素不会被删除，两个序列都包含的元素只出现一次<br> func指定比较函数</td>
+</tr>
+<tr class="even">
+<td><code>sort(b, e)</code> <br> <code>sort(b, e, func)</code></td>
+<td>将迭代器范围<code>[b,e)</code>范围内的所有元素排序<br>默认使用元素类型的&lt;运算符，func指定比较函数</td>
+</tr>
+<tr class="odd">
+<td><code>is_sorted(b, e)</code> <br> <code>is_sorted(b, e, func)</code></td>
+<td>判断迭代器范围<code>[b,e)</code>范围内的元素是否有序<br>默认使用元素类型的&lt;运算符，func指定比较函数</td>
+</tr>
+<tr class="even">
+<td><code>stable_sort(b, e, func)</code></td>
+<td>与<code>sort(b, e, func)</code>类似，但相等元素维持原有顺序<br>func接受两个参数</td>
+</tr>
+<tr class="odd">
+<td><code>transform(b, e, dest, func)</code></td>
+<td>对迭代器范围<code>[b,e)</code>范围内的所有值调用func，并将结果写入从dest开始的位置</td>
+</tr>
+<tr class="even">
+<td><code>transform(b1, e1, b2, dest, func)</code></td>
+<td>func接受两个参数<br>对迭代器范围<code>[b1,e1)</code>和从b2开始范围内对应的所有元素调用func，并将结果写入从dest开始的位置</td>
+</tr>
+<tr class="odd">
+<td><code>unique(b, e)</code> <br> <code>unique(b, e, func)</code></td>
+<td>将迭代器范围<code>[b,e)</code>范围内的所有相邻的重复项“消除”，使得不重复部分出现在序列开始部分<br>多余的重复项将被排到后面，顺序不定<br>返回一个指向最后一个不重复元素之后的迭代器<br>默认使用<code>==</code>进行比较，func指定比较函数</td>
+</tr>
+</tbody>
+</table>
+<h3 id="lambda_expression">lambda 表达式</h3>
+<p>lambda 表达式表示一个可调用的代码单元，可以简单的理解为一个未命名的内联函数。对于那种只在一两个地方使用的简单操作，lambda 表达式是最有用的。</p>
+<p>一个 lambda 表达式具有一个返回类型、一个参数列表和一个函数体:</p>
+<pre class="text"><code>[capture list](parameter list) -&gt; return type { function body }</code></pre>
+<ul>
+<li>capture list 表示该lambda表达式能够使用的非静态局部变量的列表，为空时代表该lambda表达式不使用任何非静态局部变量；</li>
+<li>变量的捕获可以是值或引用。为值时，对相应值的改变不会影响到原值；为引用时，必须确保该lambda在执行时，引用变量是存在的；</li>
+<li>当捕获列表为<code>[=]</code>时，代表lambda函数体中使用的所有非静态局部变量都采用值捕获；</li>
+<li>当捕获列表为<code>[&amp;]</code>时，代表lambda函数体中使用的所有非静态局部变量都采用引用捕获；</li>
+<li>当捕获列表为<code>[=, identifier_list]</code>时，代表lambda函数体中除<code>identifier_list</code>列表中的<strong>引用捕获变量</strong>外，其它使用的所有非静态局部变量都采用值捕获；</li>
+<li>当捕获列表为<code>[&amp;, identifier_list]</code>时，代表lambda函数体中除<code>identifier_list</code>列表中的<strong>值捕获变量</strong>外，其它使用的所有非静态局部变量都采用引用捕获；</li>
+<li><strong>一个lambda只有在其捕获列表中捕获一个它所在函数中的非静态局部变量后，才能在函数体中使用该变量</strong>；</li>
+<li><strong>一个lambda可以直接使用定义在它所在函数中的静态局部变量和定义在它所在函数之外的可用的变量</strong>；</li>
+<li>parameter list 不能包含默认参数；</li>
+<li>lambda 必须使用尾置返回类型；</li>
+<li>lambda 表达式可以忽略参数列表及括号和返回类型，但必须包含capture list 和 function body。</li>
+<li>忽略参数列表及括号代表不接受参数；</li>
+<li>忽略返回类型，<strong>如果lambda表达式包含任何单一return语句之外的内容，则返回void</strong>；否则从返回表达式的类型推断出返回类型；</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> example(<span class="bu">std::</span>ostream &amp;os)
+{
+    <span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; vec{ <span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">1</span> };
+    <span class="dt">int</span> num = <span class="dv">2</span>;
+    transform(cbegin(vec), cend(vec), begin(vec), 
+        [&amp;os, num](<span class="at">const</span> <span class="dt">int</span> &amp;i) -&gt; <span class="dt">int</span> 
+    {
+        os &lt;&lt; i &lt;&lt; <span class="bu">std::</span>ends;
+        <span class="cf">return</span> i &lt; num ? i : num; 
+    }
+    );
+    os &lt;&lt; <span class="bu">std::</span>endl;
+    for_each(cbegin(vec), cend(vec),
+        [](<span class="at">const</span> <span class="dt">int</span> &amp;i)
+    {
+        <span class="bu">std::</span>cout &lt;&lt; i &lt;&lt; <span class="bu">std::</span>ends;
+    }
+    );
+}</code></pre></div>
+<h3 id="bind_function">函数适配器 bind</h3>
+<p>C++11 在<code>&lt;functional&gt;</code>头文件中定义了一个名为bind的标准库函数，它接受一个可调用对象，生成一个新的可调用对象来“适应”原对象的参数列表。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="kw">auto</span> newCallable = bind(callable, arg_list);</code></pre></div>
+<ul>
+<li>newCallable 本身是一个可调用对象；</li>
+<li><code>arg_list</code> 是一个逗号分隔的参数列表，对应于 callable 的参数；</li>
+<li>当我们调用 newCallable 时，newCallable 会调用 callable，并<strong>按顺序</strong>传递给它<code>arg_list</code> 中的参数；</li>
+<li><strong><code>arg_list</code> 中如果需要引用传递，须使用<code>std::ref</code>或<code>std::cref</code>函数</strong>，c代表const；</li>
+<li><code>arg_list</code> 中的参数可能包含形如 <code>_n</code> 的名字，其中n是一个整数，代表在生成的可调用对象中参数的位置，例如<code>_2</code>代表第二个参数；</li>
+<li><code>arg_list</code> 中 <code>_n</code> 的最大值为生成的可调用对象参数的总个数；</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp"># include </span><span class="im">&lt;iostream&gt;</span>
+<span class="pp"># include </span><span class="im">&lt;string&gt;</span>
+<span class="pp"># include </span><span class="im">&lt;vector&gt;</span>
+<span class="pp"># include </span><span class="im">&lt;algorithm&gt;</span>
+<span class="pp"># include </span><span class="im">&lt;functional&gt;</span>
+
+<span class="dt">bool</span> isShorter(<span class="at">const</span> <span class="bu">std::</span>string &amp;s1, <span class="at">const</span> <span class="bu">std::</span>string &amp;s2);
+<span class="dt">void</span> print(<span class="bu">std::</span>ostream &amp;os, <span class="at">const</span> <span class="bu">std::</span>string &amp;s);
+<span class="dt">void</span> print(<span class="at">const</span> <span class="dt">int</span> *begin, <span class="at">const</span> <span class="dt">int</span> *end);
+
+<span class="dt">int</span> main()
+{
+    <span class="kw">using</span> <span class="kw">namespace</span> std;
+
+    vector&lt;string&gt; svec{ <span class="st">&quot;jskda&quot;</span>,<span class="st">&quot;asda&quot;</span>,<span class="st">&quot;dkasdka&quot;</span>,<span class="st">&quot;iqheqen&quot;</span>,<span class="st">&quot;qyeiqk&quot;</span> };
+    sort(begin(svec), end(svec), isShorter);
+    <span class="co">// 与上面效果一样</span>
+    sort(begin(svec), end(svec),
+        [](<span class="at">const</span> <span class="bu">std::</span>string &amp;s1, <span class="at">const</span> <span class="bu">std::</span>string &amp;s2)
+    {
+        <span class="cf">return</span> s1.size() &lt; s2.size();
+    }
+    );
+
+    <span class="co">// 使用 _1, _2</span>
+    <span class="kw">using</span> <span class="kw">namespace</span> <span class="bu">std::</span>placeholders;
+
+    <span class="co">// 利用bind重排参数顺序，反向排序</span>
+    sort(begin(svec), end(svec), bind(isShorter,_2,_1));
+
+    for_each(cbegin(svec), cend(svec), 
+        [](<span class="at">const</span> <span class="bu">std::</span>string &amp;s)
+    {
+        cout &lt;&lt; s &lt;&lt; <span class="bu">std::</span>endl;
+    }
+    );
+    <span class="co">// 使用bind将cout引用绑定到print第一个参数，生成一个只接受一个参数的可调用对象</span>
+    <span class="co">// 如果bind的函数有重载，须使用 static_cast 指定类型，print可以添加取地址符号&amp;</span>
+    for_each(cbegin(svec), cend(svec), 
+        bind(<span class="kw">static_cast</span>&lt;<span class="dt">void</span>(*)(<span class="bu">std::</span>ostream &amp;, <span class="at">const</span> <span class="bu">std::</span>string &amp;)&gt;(print), ref(cout), _1));
+
+    getchar();
+    <span class="cf">return</span> <span class="dv">0</span>;
+}
+
+<span class="dt">bool</span> isShorter(<span class="at">const</span> <span class="bu">std::</span>string &amp;s1, <span class="at">const</span> <span class="bu">std::</span>string &amp;s2)
+{
+    <span class="cf">return</span> s1.size() &lt; s2.size();
+}
+
+<span class="dt">void</span> print(<span class="bu">std::</span>ostream &amp;os, <span class="at">const</span> <span class="bu">std::</span>string &amp;s)
+{
+    os &lt;&lt; s &lt;&lt; <span class="bu">std::</span>endl;
+}
+
+<span class="dt">void</span> print(<span class="at">const</span> <span class="dt">int</span> *begin, <span class="at">const</span> <span class="dt">int</span> *end)
+{
+    <span class="cf">while</span> (begin != end) <span class="bu">std::</span>cout &lt;&lt; *begin++ &lt;&lt; <span class="bu">std::</span>endl;
+}</code></pre></div>
+<h3 id="other_iterators">各种迭代器</h3>
+<table style="width:83%;">
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 69%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>迭代器类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>插入迭代器</td>
+<td>被绑定到一个容器，用以向容器插入元素<br>当通过一个插入迭代器进行赋值时，该迭代器调用容器操作在指定位置插入一个元素<br> <code>it = back_inserter(c); *it = val;</code>对应<code>c.push_back(val);</code> <br> <code>it = front_inserter(c); *it = val;</code>对应<code>c.push_front(val);</code> <br> <code>it = inserter(c, iter); *it = val;</code>对应<code>it = c.insert(iter, val); ++ it;</code> <br>插入迭代器对于那些第二个序列只有一个迭代器的算法特别有用，如<code>copy(std::cbegin(c1),std::cend(c1),back_inserter(c2));</code></td>
+</tr>
+<tr class="even">
+<td>流迭代器</td>
+<td>被绑定到输入或输出流，用以遍历关联的 IO 流<br> <code>istream_iterator</code>读取输入流，<code>ostream_iterator</code>向输出流写数据<br>流迭代器对于那些第二个序列只有一个迭代器的算法特别有用，如<code>copy(std::cbegin(vec),std::cend(vec),out);</code></td>
+</tr>
+<tr class="odd">
+<td>反向迭代器</td>
+<td>从右向左移动的迭代器，只有<code>forward_list</code>不支持<br>使用<code>riter.base()</code>得到指向riter指向的元素右边的元素的正向迭代器</td>
+</tr>
+<tr class="even">
+<td>移动迭代器</td>
+<td>不拷贝其中的元素，而是移动它们</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="bu">std::</span>istream_iterator&lt;<span class="dt">int</span>&gt; in_iter(<span class="bu">std::</span>cin), eof;
+<span class="co">// 读取输入，并保存到一个vector</span>
+<span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; vec(in_iter, eof);
+<span class="co">// 读取输入，并求和</span>
+<span class="co">// auto sum = std::accumulate(in_iter, eof, 0);</span>
+<span class="co">// std::ostream_iterator&lt;T&gt; out(os, d)</span>
+<span class="co">// 将类型为T的值写到os，每个值后面输出一个d，d指向一个空字符结尾的字符数组</span>
+<span class="bu">std::</span>ostream_iterator&lt;<span class="dt">int</span>&gt; out(<span class="bu">std::</span>cout, <span class="st">&quot; &quot;</span>);
+copy(<span class="bu">std::</span>cbegin(vec), <span class="bu">std::</span>cend(vec), out);
+<span class="bu">std::</span>cout &lt;&lt; <span class="bu">std::</span>endl;</code></pre></div>
+<h2 id="associative_containers">关联容器</h2>
+<p>关联容器中的元素是按关键字来保存和访问的。map类的元素类型为<a href="#pair_type">pair</a>;</p>
+<p>对于有序容器<code>map</code>,<code>set</code>,<code>multimap</code>和<code>multiset</code>，关键字类型必须定义元素比较的方法。</p>
+<table>
+<thead>
+<tr class="header">
+<th>关联容器类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>map</code></td>
+<td>关联数组<br>保存键值对，元素默认按关键字从小到大排列<br>头文件<code>&lt;map&gt;</code></td>
+</tr>
+<tr class="even">
+<td><code>set</code></td>
+<td>关键字即值<br>只保存关键字，元素默认按关键字从小到大排列<br>头文件<code>&lt;set&gt;</code></td>
+</tr>
+<tr class="odd">
+<td><code>multimap</code></td>
+<td>关键字可重复出现的map<br>头文件<code>&lt;map&gt;</code></td>
+</tr>
+<tr class="even">
+<td><code>multiset</code></td>
+<td>关键字可重复出现的set<br>头文件<code>&lt;set&gt;</code></td>
+</tr>
+<tr class="odd">
+<td><code>unordered_map</code></td>
+<td>用哈希函数组织的无序map<br>头文件<code>&lt;unordered_map&gt;</code></td>
+</tr>
+<tr class="even">
+<td><code>unordered_set</code></td>
+<td>用哈希函数组织的无序set<br>头文件<code>&lt;unordered_set&gt;</code></td>
+</tr>
+<tr class="odd">
+<td><code>unordered_multimap</code></td>
+<td>用哈希函数组织的无序的，关键字可重复出现的map <br>头文件<code>&lt;unordered_map&gt;</code></td>
+</tr>
+<tr class="even">
+<td><code>unordered_multiset</code></td>
+<td>用哈希函数组织的无序的，关键字可重复出现的set <br>头文件<code>&lt;unordered_set&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="associative_container_constructor">关联容器构造</h3>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="co">// 空容器</span>
+map&lt;type1, type2&gt; map_name1;
+<span class="co">// 列表初始化</span>
+map&lt;type1, type2&gt; map_name2 = { {key1, value1}, {key2, value2}, ... };
+<span class="co">// 指定func_comp为map_name3关键字的排序算法</span>
+map&lt;type1, type2, <span class="kw">decltype</span>(func_comp) *&gt; map_name3(func_comp);
+<span class="co">// 空容器</span>
+set&lt;type&gt; set_name1;
+<span class="co">// 列表初始化</span>
+set&lt;type&gt; set_name2 = { key1, key2, ... };
+<span class="co">// set_name2包含来自c的不重复元素，且从小到大进行排列</span>
+set&lt;type&gt; set_name3(c.cbegin(), c.cend()); 
+<span class="co">// 指定func_comp为set_name4关键字的排序算法</span>
+set&lt;type, <span class="kw">decltype</span>(func_comp)*&gt; set_name4(func_comp);</code></pre></div>
+<h3 id="pair_type">pair 类型</h3>
+<p>pair 定义在头文件<code>&lt;utility&gt;</code>中，保存两个数据成员。</p>
+<table>
+<thead>
+<tr class="header">
+<th>pair 操作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>p.first</code></td>
+<td>返回 p 的名为 first 的公有数据成员<br> 类型别名<code>first_type</code></td>
+</tr>
+<tr class="even">
+<td><code>p.second</code></td>
+<td>返回 p 的名为 second 的公有数据成员<br> 类型别名<code>second_type</code></td>
+</tr>
+<tr class="odd">
+<td><code>pair&lt;T1, T2&gt; p</code></td>
+<td>构建一个pair对象<br>对first和second进行值初始化</td>
+</tr>
+<tr class="even">
+<td><code>pair&lt;T1, T2&gt; p(v1, v2)</code></td>
+<td>构建一个pair对象<br>first和second分别使用v1, v2进行初始化</td>
+</tr>
+<tr class="odd">
+<td><code>pair&lt;T1, T2&gt; p = {v1, v2}</code></td>
+<td>与<code>pair&lt;T1, T2&gt; p(v1, v2)</code>等价</td>
+</tr>
+<tr class="even">
+<td><code>make_pair(v1,v2)</code></td>
+<td>返回一个first和second分别使用v1, v2初始化的pair <br> pair 的类型从v1, v2推断出来</td>
+</tr>
+<tr class="odd">
+<td><code>&lt;,&lt;=,&gt;,&gt;=</code></td>
+<td>使用元素运算符进行比较<br>若first不等，则结果为first的比较结果<br>若first相等，则结果为second的比较结果</td>
+</tr>
+<tr class="even">
+<td><code>==,!=</code></td>
+<td>使用元素运算符进行比较<br>当first和second都相等时，两个pair相等</td>
+</tr>
+</tbody>
+</table>
+<h3 id="associative_container_operations">关联容器操作</h3>
+<h4 id="associative_container_type_alias">类型别名</h4>
+<table>
+<thead>
+<tr class="header">
+<th>关联容器类型别名</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>key_type</code></td>
+<td>关键字类型</td>
+</tr>
+<tr class="even">
+<td><code>mapped_type</code></td>
+<td>map 关键字关联的类型</td>
+</tr>
+<tr class="odd">
+<td><code>value_type</code></td>
+<td>对于set，与<code>key_type</code>相同<br> 对于map，为<code>pair&lt;const key_type, mapped_type&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>关键字不能被更改</strong>。</p>
+<h4 id="map_class_operations">map 类操作</h4>
+<p>向map添加元素：</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">word_count.insert({word, <span class="dv">1</span>});
+word_count.insert(make_pair(word, <span class="dv">1</span>));
+word_count.insert(pair&lt;string, <span class="dt">size_t</span>&gt;(word, <span class="dv">1</span>));
+word_count.insert(map&lt;string, <span class="dt">size_t</span>&gt;::<span class="dt">value_type</span>(word, <span class="dv">1</span>));</code></pre></div>
+<p>map类的下标操作：</p>
+<ul>
+<li><strong>不能对multimap进行下标操作</strong>，因为一个关键字可能对应多个值；</li>
+<li>对map进行下标操作时，如果关键字没有在map中，那么会创建一个元素插入到map中，并对关联值进行值初始化；</li>
+<li><strong>不能对const的map进行下标操作</strong>，因为下标操作可能插入一个新元素。</li>
+</ul>
+<table>
+<thead>
+<tr class="header">
+<th>map下标操作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>c[k]</code></td>
+<td>返回关键字为k的元素的值<br>若k不在c中，则添加一个关键字为k的元素，并对关联值进行值初始化</td>
+</tr>
+<tr class="even">
+<td><code>c.at(k)</code></td>
+<td>访问关键字为k的元素的值<br>若k不在c中，抛出<code>out_of_range</code>异常</td>
+</tr>
+</tbody>
+</table>
+<h4 id="common_associative_container_operations">关联容器常用操作</h4>
+<table style="width:96%;">
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 69%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>关联容器常用操作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>c.insert(v)</code> <br> <code>c.emplace(args)</code></td>
+<td>v是一个<code>value_type</code>类型的对象，args用来构造一个元素<br>返回一个pair，first是一个指向具有给定关键字的元素的迭代器，second指示插入是否成功<br>对于map和set，只有当关键字不在c中时才插入或构造元素<br><strong>对于multimap和multiset，总会插入或构造元素，并返回一个指向新元素的迭代器</strong></td>
+</tr>
+<tr class="even">
+<td><code>c.insert(b, e)</code> <br> <code>c.insert(il)</code></td>
+<td>void函数，插入迭代器范围<code>[b,e)</code>内或花括号列表il中的值<br>map和set只插入关键字不存在的值</td>
+</tr>
+<tr class="odd">
+<td><code>c.insert(p, v)</code> <br> <code>c.emplace(p, args)</code></td>
+<td>迭代器p指出从哪里开始搜索新元素应该存储的位置(因为是有序的)，然而是循环搜索的<br>返回一个迭代器，指向具有给定关键字的元素</td>
+</tr>
+<tr class="even">
+<td><code>c.erase(k)</code></td>
+<td>从c中删除每个关键字为k的元素<br>返回删除元素的数量，类型为<code>size_type</code></td>
+</tr>
+<tr class="odd">
+<td><code>c.erase(p)</code></td>
+<td>从c中删除迭代器p指定的元素<br>p必须指向c中一个真实的元素<br>返回一个指向p之后元素的迭代器</td>
+</tr>
+<tr class="even">
+<td><code>c.erase(b, e)</code></td>
+<td>删除迭代器范围<code>[b,e)</code>内的元素<br>返回e</td>
+</tr>
+<tr class="odd">
+<td><code>c.find(k)</code></td>
+<td>返回一个迭代器，指向第一个关键字为k的元素<br>失败返回<code>c.end()</code><br><strong>比通用泛型算法find快得多</strong></td>
+</tr>
+<tr class="even">
+<td><code>c.count(k)</code></td>
+<td>返回关键字为k的元素的数量</td>
+</tr>
+<tr class="odd">
+<td><code>c.lower_bound(k)</code></td>
+<td>返回一个迭代器，指向第一个关键字等于k的元素<br>若关键字k不在c中，则与<code>c.upper_bound(k)</code>返回相同的迭代器</td>
+</tr>
+<tr class="even">
+<td><code>c.upper_bound(k)</code></td>
+<td>返回一个迭代器，指向最后一个关键字等于k的元素之后的位置<br>若关键字k不在c中，则与<code>c.lower_bound(k)</code>返回相同的迭代器</td>
+</tr>
+<tr class="odd">
+<td><code>c.equal_range(k)</code></td>
+<td>返回一个迭代器组成的pair，表示关键字等于k的元素的范围，前闭后开<br>失败两个成员都是<code>c.end()</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="unordered_associative_containers">无序关联容器</h4>
+<p>C++11 定义了4个无序关联容器: <code>unordered_map</code>,<code>unordered_set</code>,<code>unordered_multimap</code>和<code>unordered_multiset</code>。这些容器不使用比较运算符组织元素，而是使用哈希函数(将给定类型的值映射到整形<code>size_t</code>值的函数)和关键字的<code>==</code>运算符。</p>
+<p>可以直接定义关键字为内置类型、string或智能指针类型的无序容器；对于自定义类型，需要提供自定义的hash模板和<code>==</code>运算符。</p>
+<p>无序关联容器可以使用find,insert等操作，理论上哈希技术会获得更好的平均性能。</p>
+<p><strong>无论是有序关联容器，还是无序关联容器，具有相同关键字的元素都是相邻存储的</strong>。</p>
+<h2 id="dynamic_memory">动态内存</h2>
+<p><strong>动态分配的对象的生存期与它们在哪里创建无关，只有当其被显式释放时，这些对象才会被销毁</strong>。</p>
+<p>静态内存用来保存static对象和外部变量，栈内存用来保存函数内的非static对象。<strong>动态分配使用栈内存</strong>。</p>
+<h3 id="new_and_delete">new, delete</h3>
+<p>new: <code>bad_alloc</code>和<code>nothrow</code>定义于头文件<code>&lt;new&gt;</code>中。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">type *name = <span class="kw">new</span> type;                  <span class="co">// 默认初始化，失败抛出std::bad_alloc</span>
+type *name = <span class="kw">new</span> type();                <span class="co">// 值初始化</span>
+<span class="at">const</span> type *name = <span class="kw">new</span> <span class="at">const</span> type(val); <span class="co">// const对象必须初始化，除非有默认构造函数</span>
+type *name = <span class="kw">new</span> (nothrow) type;        <span class="co">// 失败返回nullptr</span>
+<span class="co">// 动态数组，非数组类型</span>
+<span class="co">// 不能对动态数组使用begin或end</span>
+<span class="co">// size为0时，返回一个合法的非空指针，但不能解引用</span>
+type *name = <span class="kw">new</span> type[size];
+type *name = <span class="kw">new</span> type[size]();
+type *name = <span class="kw">new</span> type[size]{ val0, val1, ... }; <span class="co">// 剩余值进行值初始化</span>
+<span class="at">const</span> type *name = <span class="kw">new</span> <span class="at">const</span> type[size](val); 
+type *name = <span class="kw">new</span> (nothrow) type[size];        </code></pre></div>
+<p>delete:</p>
+<ul>
+<li><strong>传递给delete的指针必须指向动态分配的内存，或是一个空指针</strong>；</li>
+<li><strong>对同一块内存多次释放，可能会破坏内存空间</strong>；</li>
+<li><strong>delete之后，指针仍然指向已经释放的动态内存的地址</strong>；</li>
+<li><strong>建议delete之后，赋值为nullptr</strong>；</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">int</span> i, *pi1 = &amp;i, *pi2 = <span class="kw">nullptr</span>;
+<span class="dt">double</span> *pd1 = <span class="kw">new</span> <span class="dt">double</span>(<span class="dv">33</span>), *pd2 = pd1;
+<span class="at">const</span> <span class="dt">int</span> *pci = <span class="kw">new</span> <span class="at">const</span> <span class="dt">int</span>(<span class="dv">123</span>);
+<span class="kw">delete</span> i;      <span class="co">// 错误</span>
+<span class="kw">delete</span> pi1;    <span class="co">// 未定义</span>
+<span class="kw">delete</span> pi2;    <span class="co">// 可以</span>
+<span class="kw">delete</span> pd1;    <span class="co">// 正确</span>
+<span class="kw">delete</span> pd2;    <span class="co">// 未定义，已被释放</span>
+<span class="kw">delete</span> pci;    <span class="co">// 正确</span>
+<span class="co">// 释放动态数组</span>
+<span class="kw">auto</span> *ip = <span class="kw">new</span> <span class="dt">int</span>[<span class="dv">10</span>]();
+<span class="kw">delete</span> []ip;</code></pre></div>
+<h3 id="smart_pointer">智能指针</h3>
+<p>智能指针会自动释放(<strong>默认使用delete</strong>)所指向的对象：</p>
+<ul>
+<li><code>shared_ptr</code>允许多个指针指向同一个对象；</li>
+<li><code>unique_ptr</code>独占所指向的对象；</li>
+<li><code>weak_ptr</code>是一种弱引用，指向<code>shared_ptr</code>所管理的对象；</li>
+<li>它们都在头文件<code>&lt;memory&gt;</code>中。</li>
+</ul>
+<p><code>shared_ptr</code>自动释放的原理：<strong>一旦使用<code>shared_ptr</code>管理指针，就不应该用内置指针来访问<code>shared_ptr</code>所指向的内存</strong>。</p>
+<ul>
+<li>当一个<code>shared_ptr</code>被用于初始化另一个<code>shared_ptr</code>，或将它作为参数传递给一个函数以及作为函数的返回值时，其关联的计数器递增；</li>
+<li>当一个<code>shared_ptr</code>被赋新值或是其被销毁，其关联的计数器会递减；</li>
+<li>当一个<code>shared_ptr</code>所关联的计数器变为0时，就会自动释放其保存的指针。</li>
+</ul>
+<p>关于<code>unique_ptr</code>:</p>
+<ul>
+<li><strong>某个时刻只能有一个<code>unique_ptr</code>指向给定的对象</strong>；</li>
+<li>当<code>unique_ptr</code>被销毁时，其所指向的对象也被销毁；</li>
+<li><strong>定义一个<code>unique_ptr</code>需要将其绑定到一个new返回的指针上，且必须直接初始化</strong>；</li>
+<li><strong><code>unique_ptr</code>不支持拷贝和赋值</strong>；</li>
+<li><strong>可以拷贝或赋值一个即将被销毁的<code>unique_ptr</code></strong>。</li>
+</ul>
+<p>关于<code>weak_ptr</code>:</p>
+<ul>
+<li>不控制所指向对象生存期的智能指针；</li>
+<li>指向由一个<code>shared_ptr</code>管理的对象；</li>
+<li><strong>将一个<code>weak_ptr</code>绑定到一个<code>shared_ptr</code>不会改变<code>shared_ptr</code>的引用计数</strong>；</li>
+<li><strong>不能使用<code>weak_ptr</code>直接访问对象，必须调用lock</strong>。</li>
+</ul>
+<table>
+<thead>
+<tr class="header">
+<th><code>shared_ptr</code> 和 <code>unique_ptr</code> 都支持的操作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>shared_ptr&lt;T&gt; sp</code> <br> <code>unique_ptr&lt;T&gt; up</code></td>
+<td>空智能指针，可以指向类型为T的对象</td>
+</tr>
+<tr class="even">
+<td><code>p</code></td>
+<td>将p用作一个条件判断，保存的指针不为空时为true</td>
+</tr>
+<tr class="odd">
+<td><code>*p</code></td>
+<td>解引用，获得p指向的对象</td>
+</tr>
+<tr class="even">
+<td><code>p-&gt;mem</code></td>
+<td><code>(*p).mem</code></td>
+</tr>
+<tr class="odd">
+<td><code>p.get()</code></td>
+<td>返回p中保存的指针<br>危险，<strong>只有在确定代码不会delete指针的情况下才能使用</strong></td>
+</tr>
+<tr class="even">
+<td><code>swap(p, q)</code> <br> <code>p.swap(q)</code></td>
+<td>交换p和q中的指针</td>
+</tr>
+</tbody>
+</table>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 66%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th><code>shared_ptr</code> 独有的操作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>make_shared&lt;T&gt;(args)</code></td>
+<td>返回一个<code>shared_ptr</code> <br>指向一个动态分配的类型为T的对象<br>使用args初始化此对象<br><strong>最安全的分配和使用动态内存的方法</strong></td>
+</tr>
+<tr class="even">
+<td><code>shared_ptr&lt;T&gt; p(q)</code></td>
+<td>p是<code>shared_ptr</code> q 的拷贝，递增q中的计数器<br> q中的指针必须能转换为 <code>T*</code></td>
+</tr>
+<tr class="odd">
+<td><code>shared_ptr&lt;T&gt; p(q)</code></td>
+<td>explicit构造函数<br>p管理内置指针q指向的对象<br> q必须指向new分配的内存，且必须直接初始化<br>q必须能够转换成<code>T*</code>类型</td>
+</tr>
+<tr class="even">
+<td><code>shared_ptr&lt;T&gt; p(u)</code></td>
+<td>p从<code>unique_ptr</code> u 那里接管了对象的所有权，并将u置为空</td>
+</tr>
+<tr class="odd">
+<td><code>shared_ptr&lt;T&gt; p(q, d)</code></td>
+<td>q可以是内置指针，也可以是<code>shared_ptr</code>，但使用可调用对象d代替delete <br>适用于指针指向的资源不是new分配的内存</td>
+</tr>
+<tr class="even">
+<td><code>p = q</code></td>
+<td>p, q皆为<code>shared_ptr</code>，所保存的指针必须能够相互转换<br>递增q的引用计数，递减p的引用计数</td>
+</tr>
+<tr class="odd">
+<td><code>p.use_count()</code></td>
+<td>返回与p共享对象的智能指针数量<br><strong>很慢，主要用于调试</strong></td>
+</tr>
+<tr class="even">
+<td><code>p.unique()</code></td>
+<td>若<code>p.use_count()</code>为1，返回true</td>
+</tr>
+</tbody>
+</table>
+<table>
+<colgroup>
+<col style="width: 32%" />
+<col style="width: 67%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th><code>unique_ptr</code> 独有的操作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>unique_ptr&lt;T&gt; u1</code> <br> <code>unique_ptr&lt;T, D&gt; u2</code> <br> <code>unique_ptr&lt;T, D&gt; u3(d)</code></td>
+<td>空<code>unique_ptr</code><br> u1使用delete <br> u2使用一个类型为D的可调用对象来释放指针<br> u3使用d释放指针</td>
+</tr>
+<tr class="even">
+<td><code>unique_ptr&lt;T&gt; u1(new T(val))</code> <br> <code>unique_ptr&lt;T, D&gt; u2(new T(val), d)</code></td>
+<td>初始化</td>
+</tr>
+<tr class="odd">
+<td><code>unique_ptr&lt;T[]&gt; u</code></td>
+<td>u指向一个动态分配的数组</td>
+</tr>
+<tr class="even">
+<td><code>unique_ptr&lt;T[]&gt; u(p)</code></td>
+<td>u指向内置指针p所指向的一个动态分配的数组<br> p必须能转换为类型<code>T*</code></td>
+</tr>
+<tr class="odd">
+<td><code>u[i]</code></td>
+<td>若u指向一个动态数组，返回数组下标为i的对象</td>
+</tr>
+<tr class="even">
+<td><code>u = nullptr</code></td>
+<td>释放u指向的对象，并将u置为空</td>
+</tr>
+<tr class="odd">
+<td><code>u.release()</code></td>
+<td>u放弃对指针的控制权，并将u置为空<br>返回管理的指针，<strong>需要负责释放</strong><br>可以将指针所有权转换给另一个<code>unique_ptr</code></td>
+</tr>
+<tr class="even">
+<td><code>u.reset()</code></td>
+<td>释放u指向的对象，并将u置为空</td>
+</tr>
+<tr class="odd">
+<td><code>u.reset(q)</code></td>
+<td>释放u指向的对象，并将u指向内置指针q</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">unique_ptr&lt;<span class="dt">int</span>&gt; p1(<span class="kw">new</span> <span class="dt">int</span>(<span class="dv">10</span>));     <span class="co">// 初始化</span>
+unique_ptr&lt;<span class="dt">int</span>&gt; p2(p1.release());    <span class="co">// p1的所有权转移给p2，p1置为空</span>
+unique_ptr&lt;<span class="dt">int</span>&gt; p3(<span class="kw">new</span> <span class="dt">int</span>(<span class="dv">20</span>)); 
+p2.reset(p3.release());              <span class="co">// 释放p2，将p3的所有权转移给p2</span>
+unique_ptr&lt;<span class="dt">int</span>[]&gt; p4(<span class="kw">new</span> <span class="dt">int</span>[<span class="dv">10</span>]()); <span class="co">// 动态数组</span>
+p4[<span class="dv">1</span>] = <span class="dv">123</span>;
+shared_ptr&lt;<span class="dt">int</span>&gt; sp(<span class="kw">new</span> <span class="dt">int</span>[<span class="dv">10</span>](), [](<span class="dt">int</span> *p){ <span class="kw">delete</span> []p; });
+*(sp.get() + <span class="dv">1</span>) = <span class="dv">123</span>;               <span class="co">// shared_ptr未定义下标运算符</span></code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th><code>weak_ptr</code> 独有的操作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>weak_ptr&lt;T&gt; w</code></td>
+<td>空<code>weak_ptr</code></td>
+</tr>
+<tr class="even">
+<td><code>weak_ptr&lt;T&gt; w(sp)</code></td>
+<td>与<code>shared_ptr</code> sp 指向相同的对象<br>T必须能转换为sp指向的类型</td>
+</tr>
+<tr class="odd">
+<td><code>w = p</code></td>
+<td>p可以是一个<code>shared_ptr</code>或<code>weak_ptr</code> <br> w和p共享对象</td>
+</tr>
+<tr class="even">
+<td><code>w.reset()</code></td>
+<td>将w置为空</td>
+</tr>
+<tr class="odd">
+<td><code>w.use_count()</code></td>
+<td>与w共享对象的<code>shared_ptr</code>的数量</td>
+</tr>
+<tr class="even">
+<td><code>w.expired()</code></td>
+<td>若<code>w.use_count()</code>为0，返回true</td>
+</tr>
+<tr class="odd">
+<td><code>w.lock()</code></td>
+<td>返回一个指向w的对象的<code>shared_ptr</code> <br> 若<code>w.expired()</code>为true，返回一个空<code>shared_ptr</code></td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>
