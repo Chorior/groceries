@@ -931,9 +931,9 @@ cv::Mat draw_skeleton(cv::Mat color, const NUI_SKELETON_DATA& skel)
 
 有了上面的骨架图，就可以开始简单的动作识别了。
 
-博主的第一个任务是识别手左右摆动这个超级简单的动作。首先，手左右摆动最明显的特征是什么？不管你怎么摆，你的手腕总是要左右移动的吧。
+博主的第一个任务是识别手左右挥动这个超级简单的动作。首先，手左右挥动最明显的特征是什么？不管你怎么挥，你的手腕总是要左右移动的吧。
 
-博主试着在 Kinect 前面左右摆动右手，然后使用如下代码来保存得到的骨架图：
+博主试着在 Kinect 前面左右挥动右手，然后使用如下代码来保存得到的骨架图：
 
 ```c++
 static int count;
@@ -945,4 +945,80 @@ cv::imwrite(skel_name, skeleton);
 
 这些骨架图以六个为一组，连续的图手腕移动距离可能不大，那么取最边上的两张进行比较，应该会有比较大的变化。
 
-那么如何来衡量左右摆动的程度呢？为了使问题更加容易解决，博主假定右手摆动的姿势是手腕绕着手肘摆动，这样就能以手腕节点和手肘节点的线段、到以手肘节点和右肩节点的线段的角度来衡量左右摆动的程度了。
+那么如何来衡量左右挥动的程度呢？为了使问题更加容易解决，博主假定右手挥动的姿势是手腕绕着手肘挥动，这样就能以手腕节点和手肘节点的线段、到以手肘节点和右肩节点的线段的角度来衡量左右挥动的程度了。
+
+**测试发现，边上的两个骨架都被跟踪一次都没有**，所以还是老老实实一个个来吧。下面是计算右腕肘肩角度的函数：
+
+```c++
+float calculate_wrist_curvature(const NUI_SKELETON_DATA& skel)
+{	
+	// 检查骨架的状态
+	NUI_SKELETON_TRACKING_STATE trackingState = skel.eTrackingState;
+	if (NUI_SKELETON_TRACKED != trackingState) {
+		return 0.0f;
+	}
+
+	// 右腕、肘、肩位置信息
+	Vector4 wrist = skel.SkeletonPositions[NUI_SKELETON_POSITION_WRIST_RIGHT];
+	Vector4 elbow = skel.SkeletonPositions[NUI_SKELETON_POSITION_ELBOW_RIGHT];
+	Vector4 shoulder = skel.SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_RIGHT];
+
+	// 为Vector4创建一个减法
+	auto sub_func = [](const Vector4& p1, const Vector4& p2)->Vector4
+	{
+		Vector4 ret;
+		ret.x = p1.x - p2.x;
+		ret.y = p1.y - p2.y;
+		ret.z = p1.z - p2.z;
+		ret.w = p1.w - p2.w;
+
+		return ret;
+	};
+
+	// 肘腕、肘肩向量
+	Vector4 vec_ew = sub_func(wrist, elbow);
+	Vector4 vec_es = sub_func(shoulder, elbow);	
+
+	// 计算腕肘肩角度
+	float cos_theta = (vec_ew.x*vec_es.x + vec_ew.y*vec_es.y + vec_ew.z*vec_es.z) /
+		std::sqrt((vec_ew.x*vec_ew.x + vec_ew.y*vec_ew.y + vec_ew.z*vec_ew.z)*(vec_es.x*vec_es.x + vec_es.y*vec_es.y + vec_es.z*vec_es.z));
+
+	float theta = 0.0f;
+	if (cos_theta >= -1.0f && cos_theta <= 1.0f) {
+		theta = std::acos(cos_theta) * 57.325f;
+	}
+	return theta;
+}
+```
+
+博主在保存图像的时候，将这个函数的结果保存在图片名里面，这样就既有图像信息、又有角度信息了：
+
+```c++
+// 测试
+float theta = calculate_wrist_curvature(skeletonFrame.SkeletonData[i]);
+
+static int count;
+std::string skel_name = "skeleton_" + std::to_string(++count) + "_" + std::to_string(theta) + ".png";
+
+cv::cvtColor(skeleton, skeleton, cv::COLOR_BGRA2BGR);
+cv::imwrite(skel_name, skeleton);
+```
+
+博主按照从慢到快的速度挥动右手臂，根据角度的递增递减区间截取最值得到如下三组数据：
+
+序号 | 数据1 | 序号 | 数据2 | 序号 | 数据3
+---- | ---- | ---- | ---- | ---- | ----
+29 | 151.90 | 7 | 43.49 | 16 | 159.30
+57 | 70.40 | 27 | 156.08 | 21 | 47.62
+90 | 155.17 | 47 | 44.35 | 26 | 144.48
+123 | 66.78 | 65 | 157.99 | 30 | 56.54
+160 | 155.30 | 84 | 54.14 | 33 | 145.33
+191 | 65.60 | 100 | 158.62 | 37 | 56.13
+226 | 145.81 | 118 | 54.89 | 41 | 137.45
+
+通过这三组数据我们知道：
+
+*	随着挥动速度的增大，角度变化的周期不断减小，但又不是恒定不变，从慢到快依次是 33、20、4；
+*	不管挥动的速度如何，角度的变化一定是U字型，不管是倒U还是正U。
+
+我们就根据角度的变化呈U字型这一特征来判别手臂左右挥动这一动作吧。既然是左右挥动，那么至少两个U才行，
