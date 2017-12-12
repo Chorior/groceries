@@ -12,6 +12,7 @@
 *	[融合骨架图与色彩图](#combine_skeleton_with_color_image)
 *	[识别左右挥动手腕](#swing_wrist_left_and_right)
 *	[识别前后挥动手腕](#swing_wrist_before_and_after)
+*	[总结](#summary)
 
 <h2 id="install">Kinect for Windows 安装</h2>
 
@@ -516,7 +517,7 @@ int main()
 				// 打印骨架数据信息
 				print_skeleton_info(skeletonFrame);
 
-				// 每个NUI_SKELETON_DATA包含一个骨架数据
+				// 一帧最多识别NUI_SKELETON_COUNT个骨架
 				for (int i = 0; i < NUI_SKELETON_COUNT; ++i) {
 
 					// 转换NUI_SKELETON_DATA到opencv
@@ -819,7 +820,7 @@ int main()
 				// 打印骨架数据信息
 				print_skeleton_info(skeletonFrame);
 				
-				// 每个NUI_SKELETON_DATA包含一个骨架数据
+				// 一帧最多识别NUI_SKELETON_COUNT个骨架
 				for (int i = 0; i < NUI_SKELETON_COUNT; ++i) {
 
 					// 转换NUI_SKELETON_DATA到opencv
@@ -934,6 +935,21 @@ cv::Mat draw_skeleton(cv::Mat color, const NUI_SKELETON_DATA& skel)
 
 博主的第一个任务是识别手左右挥动这个超级简单的动作。首先，手左右挥动最明显的特征是什么？不管你怎么挥，你的**手腕总是要左右移动的**吧。
 
+由于一帧可能识别多个骨架，博主只取第一个有效的骨架进行识别：
+
+```c++
+// 只取第一个骨架进行识别
+for (int i = 0; i < NUI_SKELETON_COUNT; ++i) {
+
+	cv::Mat skeleton = get_skeleton(skeletonFrame.SkeletonData[i]);
+
+	if (!skeleton.empty()) {
+		cv::imshow("skeleton", skeleton);
+		break;
+	}
+}
+```
+
 博主试着在 Kinect 前面左右挥动右手，然后使用如下代码来保存得到的骨架图：
 
 ```c++
@@ -944,11 +960,9 @@ cv::cvtColor(skeleton, skeleton, cv::COLOR_BGRA2BGR);
 cv::imwrite(skel_name, skeleton);
 ```
 
-这些骨架图以六个为一组，连续的图手腕移动距离可能不大，那么取最边上的两张进行比较，应该会有比较大的变化。
-
 那么如何来衡量左右挥动的程度呢？为了使问题更加容易解决，博主假定右手挥动的姿势是手腕绕着手肘挥动，这样就能以手腕节点和手肘节点的线段、到以手肘节点和右肩节点的线段的角度来衡量左右挥动的程度了。
 
-**测试发现，边上的两个骨架都被跟踪一次都没有**，所以还是老老实实一个个来吧。下面是计算右腕肘肩角度的函数：
+下面是计算右腕肘肩角度的函数：
 
 ```c++
 float calculate_wrist_curvature(const NUI_SKELETON_DATA& skel)
@@ -1106,7 +1120,7 @@ bool is_swing_wrist(UCHAR& isSwing, float& theta_pre, float theta_curr)
 	float diff_theta = theta_curr - theta_pre;
 
 	// 初始状态或没有挥动
-	if (theta_pre == 0.0f || std::abs(diff_theta) <= 1.0f) {
+	if (theta_pre == 0.0f || std::abs(diff_theta) <= 5.0f) {
 		isSwing = 0x00;
 	}
 	// 第一次挥动
@@ -1198,6 +1212,7 @@ LONG get_swing_wrist_type(const NUI_SKELETON_DATA& skel)
 ```c++
 if (!skeleton.empty()) {						
 
+	// 识别动作类型
 	LONG actionType = get_swing_wrist_type(skeletonFrame.SkeletonData[i]);
 
 	// 在图像上绘制动作类型						
@@ -1218,7 +1233,8 @@ if (!skeleton.empty()) {
 	}
 
 	// 显示图像
-	cv::imshow("skel_color", skeleton);						
+	cv::imshow("skeleton", skeleton);
+	break;
 }
 ```
 
@@ -1229,6 +1245,8 @@ if (NUI_SKELETON_TRACKED == skeletonFrame.SkeletonData[i].eTrackingState) {
 	LONG actionType = get_swing_wrist_type(skeletonFrame.SkeletonData[i]);
 				
 	// ...
+
+	break;
 }
 ```
 
@@ -1236,9 +1254,11 @@ if (NUI_SKELETON_TRACKED == skeletonFrame.SkeletonData[i].eTrackingState) {
 
 有了上面识别左右挥动手腕的经验，要想识别前后挥动手腕，只需想办法衡量前后挥动的程度，然后满足挥动两个来回就算识别成功了。
 
-博主不断的前后挥动手腕，发现**腕肘肩角度几乎不变、手腕离摄像头的距离会经历从大到小和从小到大两个过程**，猜想手腕前后挥动的特征为：**腕肘肩角度几乎不变，手腕位置的Z值会呈现出U字型变化**。
+博主不断的前后挥动手腕，发现**手腕离摄像头的距离会经历从大到小和从小到大两个过程**，猜想手腕前后挥动的特征为：手腕位置的Z值会呈现出U字型变化。
 
-因为距离不太好度量，所以将距离转化为手肘到手腕组成的射线与Z轴正方向的角度。那么有必要为计算角度单独写一个函数了：
+因为距离不太好度量，所以将距离转化为手肘到手腕组成的射线与Z轴正方向的角度。
+
+那么有必要为计算角度单独写一个函数了：
 
 ```c++
 // 计算两条向量的夹角
@@ -1260,8 +1280,152 @@ inline float calculate_the_angle(const Vector4& v1, const Vector4& v2)
 }
 ```
 
-现在，来编写识别前后挥动手腕的函数吧：
+下面是计算肘腕与Z轴正方向的角度的函数：
 
 ```c++
+float wrist_angle_with_Zaxis(const NUI_SKELETON_DATA& skel, bool isLeft)
+{
+	// 检查骨架跟踪状态
+	NUI_SKELETON_TRACKING_STATE trackingState = skel.eTrackingState;
+	if (NUI_SKELETON_TRACKED != trackingState) {
+		return 0.0f;
+	}
 
+	// 腕、肘、肩索引
+	NUI_SKELETON_POSITION_INDEX index_wrist, index_elbow;
+	if (isLeft) {
+		index_wrist = NUI_SKELETON_POSITION_WRIST_LEFT;
+		index_elbow = NUI_SKELETON_POSITION_ELBOW_LEFT;		
+	}
+	else {
+		index_wrist = NUI_SKELETON_POSITION_WRIST_RIGHT;
+		index_elbow = NUI_SKELETON_POSITION_ELBOW_RIGHT;		
+	}
+
+	// 都被追踪才计算角度
+	NUI_SKELETON_POSITION_TRACKING_STATE joint0State = skel.eSkeletonPositionTrackingState[index_wrist];
+	NUI_SKELETON_POSITION_TRACKING_STATE joint1State = skel.eSkeletonPositionTrackingState[index_elbow];
+
+	if (joint0State != NUI_SKELETON_POSITION_TRACKED ||
+		joint1State != NUI_SKELETON_POSITION_TRACKED) {
+		return 0.0f;
+	}
+
+	// 腕、肘、肩位置
+	Vector4 wrist = skel.SkeletonPositions[index_wrist];
+	Vector4 elbow = skel.SkeletonPositions[index_elbow];
+
+	// 肘腕向量
+	Vector4 vec_ew = wrist - elbow;
+
+	// Z轴正向向量
+	Vector4 vec_pos_Z{ 0, 0, 1, 0 };
+
+	// 计算肘腕与Z轴正向的角度
+	float theta = calculate_the_angle(vec_ew, vec_pos_Z);
+	return theta;
+}
 ```
+
+有了这个函数，我们就能像识别左右挥动手腕那样进行识别了(博主为了区分，稍微改了一下宏和变量的名字)：
+
+```c++
+#define ACTION_UNRECOGNIZED                  0x00000000 // 未识别动作
+#define SWING_WRIST_LEFT_AND_RIGHT_LEFT      0x00000001 // 左右挥动左手腕
+#define SWING_WRIST_LEFT_AND_RIGHT_RIGHT     0x00000002 // 左右挥动右手腕
+#define SWING_WRIST_BEFORE_AND_AFTER_LEFT    0x00000004 // 前后挥动左手腕
+#define SWING_WRIST_BEFORE_AND_AFTER_RIGHT   0x00000008 // 前后挥动右手腕
+
+// ...
+
+// 挥动手腕类型
+LONG get_swing_wrist_type(const NUI_SKELETON_DATA& skel)
+{
+	// 高四位每一位表示当前角度变化趋势是否与上次变化趋势相反，第一位不算
+	// 低四位0000表示角度逐渐变大，1111表示角度逐渐减小
+	static UCHAR isSwingLR_Left = 0x00;
+	static UCHAR isSwingLR_Rigt = 0x00;
+
+	static UCHAR isSwingBA_Left = 0x00;
+	static UCHAR isSwingBA_Rigt = 0x00;
+
+	static float theta_LR_left_pre = 0.0f; // 用于保存上一次的左腕肘肩角度
+	static float theta_LR_rigt_pre = 0.0f; // 用于保存上一次的右腕肘肩角度
+
+	static float theta_BA_left_pre = 0.0f; // 用于保存上一次的左肘腕与Z轴正向的角度
+	static float theta_BA_rigt_pre = 0.0f; // 用于保存上一次的右肘腕与Z轴正向的角度
+
+	static const unsigned INTERVAL = 4; // 间隔次数，因为挥动左右边界速度会降低
+	static int count = INTERVAL - 1;    // 控制间隔
+
+	static LONG actionType = ACTION_UNRECOGNIZED; // 间隔期间保存上一次的动作类型
+
+	if (++count != INTERVAL) {
+		return actionType;
+	}
+	else {
+		count = -1;
+	}
+
+	float theta_LR_left_curr = calculate_wrist_curvature(skel, TRUE);
+	float theta_LR_rigt_curr = calculate_wrist_curvature(skel, FALSE);
+
+	float theta_BA_left_curr = wrist_angle_with_Zaxis(skel, TRUE);
+	float theta_BA_rigt_curr = wrist_angle_with_Zaxis(skel, FALSE);
+
+	actionType = ACTION_UNRECOGNIZED;
+	if (is_swing_wrist(isSwingLR_Left, theta_LR_left_pre, theta_LR_left_curr)) {
+		actionType |= SWING_WRIST_LEFT_AND_RIGHT_LEFT;
+	}
+
+	if (is_swing_wrist(isSwingLR_Rigt, theta_LR_rigt_pre, theta_LR_rigt_curr)) {
+		actionType |= SWING_WRIST_LEFT_AND_RIGHT_RIGHT;
+	}
+	if (is_swing_wrist(isSwingBA_Left, theta_BA_left_pre, theta_BA_left_curr)) {
+		actionType |= SWING_WRIST_BEFORE_AND_AFTER_LEFT;
+	}
+
+	if (is_swing_wrist(isSwingBA_Rigt, theta_BA_rigt_pre, theta_BA_rigt_curr)) {
+		actionType |= SWING_WRIST_BEFORE_AND_AFTER_RIGHT;
+	}
+
+	return actionType;
+}
+```
+
+这样主函数只需要添加对新类型的输出就行了：
+
+```c++
+LONG actionType = get_swing_wrist_type(skeletonFrame.SkeletonData[i]);
+
+// 在图像上绘制动作类型
+if (actionType & SWING_WRIST_LEFT_AND_RIGHT_LEFT) {
+	cv::String str_action = "swing left hand left and right";
+	cv::putText(skeleton, str_action, cv::Point(10, 15),
+		cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+}
+if (actionType & SWING_WRIST_LEFT_AND_RIGHT_RIGHT) {
+	cv::String str_action = "swing right hand left and right";
+	cv::putText(skeleton, str_action, cv::Point(10, 30),
+		cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+}
+if (actionType & SWING_WRIST_BEFORE_AND_AFTER_LEFT) {
+	cv::String str_action = "swing left hand before and after";
+	cv::putText(skeleton, str_action, cv::Point(10, 45),
+		cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+}
+if (actionType & SWING_WRIST_BEFORE_AND_AFTER_RIGHT) {
+	cv::String str_action = "swing right hand before and after";
+	cv::putText(skeleton, str_action, cv::Point(10, 60),
+		cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+}
+if (actionType == ACTION_UNRECOGNIZED) {
+	cv::String str_action = "unrecognized action";
+	cv::putText(skeleton, str_action, cv::Point(10, 75),
+		cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+}
+```
+
+<h2 id="summary">总结</h2>
+
+你应该能够自行优化并封装相关代码。
