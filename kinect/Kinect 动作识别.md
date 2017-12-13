@@ -11,7 +11,7 @@
 *	[显示骨架图](#show_skeleton)
 *	[融合骨架图与色彩图](#combine_skeleton_with_color_image)
 *	[识别左右挥动手腕](#swing_wrist_left_and_right)
-*	[识别前后挥动手腕](#swing_wrist_before_and_after)
+*	[识别上下挥动手腕](#swing_wrist_up_and_down)
 *	[总结](#summary)
 
 <h2 id="install">Kinect for Windows 安装</h2>
@@ -155,7 +155,7 @@ int main()
 
 由于博主经常接触到的是 opencv，所以再添加 opencv 目录和库到工程中。为了便于快速开发和调试，采用函数式编程。
 
-获取彩色图相对于获取倾斜角来说，只不过需要打开并获取图像流而已，比较难的是 [HANDLE 的使用](https://msdn.microsoft.com/en-us/library/windows/desktop/ms686915(v=vs.85).aspx)以及如何将 Kinect 图像数据转换到 opencv 图像。
+获取彩色图相对于获取倾斜角来说，只不过需要打开并获取图像流而已，比较难的是 [HANDLE 的使用](https://msdn.microsoft.com/en-us/library/windows/desktop/ms686915(v=vs.85).aspx)以及如何将 Kinect 图像数据转换到 opencv。
 
 下面的代码将不断显示从 Kinect 获取到的彩色图像直到按下 Esc：
 
@@ -1219,12 +1219,12 @@ if (!skeleton.empty()) {
 	if (actionType & SWING_WRIST_LEFT) {
 		cv::String str_action = "swing left hand";
 		cv::putText(skeleton, str_action, cv::Point(10, 15),
-			cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+			cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 2);
 	}
 	if (actionType & SWING_WRIST_RIGHT) {
 		cv::String str_action = "swing right hand";
 		cv::putText(skeleton, str_action, cv::Point(10, 30),
-			cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+			cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 2);
 	}
 	if (actionType == ACTION_UNRECOGNIZED) {
 		cv::String str_action = "unrecognized action";
@@ -1250,11 +1250,11 @@ if (NUI_SKELETON_TRACKED == skeletonFrame.SkeletonData[i].eTrackingState) {
 }
 ```
 
-<h2 id="swing_wrist_before_and_after">识别前后挥动手腕</h2>
+<h2 id="swing_wrist_up_and_down">识别上下挥动手腕</h2>
 
-有了上面识别左右挥动手腕的经验，要想识别前后挥动手腕，只需想办法衡量前后挥动的程度，然后满足挥动两个来回就算识别成功了。
+有了上面识别左右挥动手腕的经验，要想识别上下挥动手腕，只需想办法衡量上下挥动的程度，然后满足挥动两个来回就算识别成功了。
 
-博主不断的前后挥动手腕，发现**手腕离摄像头的距离会经历从大到小和从小到大两个过程**，猜想手腕前后挥动的特征为：手腕位置的Z值会呈现出U字型变化。
+博主不断的上下挥动手腕，发现**手腕离摄像头的距离会经历从大到小和从小到大两个过程**，猜想手腕上下挥动的特征为：**手腕位置的Z值会呈现出U字型变化**。
 
 因为距离不太好度量，所以将距离转化为手肘到手腕组成的射线与Z轴正方向的角度。
 
@@ -1291,7 +1291,7 @@ float wrist_angle_with_Zaxis(const NUI_SKELETON_DATA& skel, bool isLeft)
 		return 0.0f;
 	}
 
-	// 腕、肘、肩索引
+	// 腕、肘索引
 	NUI_SKELETON_POSITION_INDEX index_wrist, index_elbow;
 	if (isLeft) {
 		index_wrist = NUI_SKELETON_POSITION_WRIST_LEFT;
@@ -1311,7 +1311,7 @@ float wrist_angle_with_Zaxis(const NUI_SKELETON_DATA& skel, bool isLeft)
 		return 0.0f;
 	}
 
-	// 腕、肘、肩位置
+	// 腕、肘位置
 	Vector4 wrist = skel.SkeletonPositions[index_wrist];
 	Vector4 elbow = skel.SkeletonPositions[index_elbow];
 
@@ -1333,8 +1333,8 @@ float wrist_angle_with_Zaxis(const NUI_SKELETON_DATA& skel, bool isLeft)
 #define ACTION_UNRECOGNIZED                  0x00000000 // 未识别动作
 #define SWING_WRIST_LEFT_AND_RIGHT_LEFT      0x00000001 // 左右挥动左手腕
 #define SWING_WRIST_LEFT_AND_RIGHT_RIGHT     0x00000002 // 左右挥动右手腕
-#define SWING_WRIST_BEFORE_AND_AFTER_LEFT    0x00000004 // 前后挥动左手腕
-#define SWING_WRIST_BEFORE_AND_AFTER_RIGHT   0x00000008 // 前后挥动右手腕
+#define SWING_WRIST_UP_AND_DOWN_LEFT         0x00000004 // 上下挥动左手腕
+#define SWING_WRIST_UP_AND_DOWN_RIGHT        0x00000008 // 上下挥动右手腕
 
 // ...
 
@@ -1346,14 +1346,14 @@ LONG get_swing_wrist_type(const NUI_SKELETON_DATA& skel)
 	static UCHAR isSwingLR_Left = 0x00;
 	static UCHAR isSwingLR_Rigt = 0x00;
 
-	static UCHAR isSwingBA_Left = 0x00;
-	static UCHAR isSwingBA_Rigt = 0x00;
+	static UCHAR isSwingUD_Left = 0x00;
+	static UCHAR isSwingUD_Rigt = 0x00;
 
 	static float theta_LR_left_pre = 0.0f; // 用于保存上一次的左腕肘肩角度
 	static float theta_LR_rigt_pre = 0.0f; // 用于保存上一次的右腕肘肩角度
 
-	static float theta_BA_left_pre = 0.0f; // 用于保存上一次的左肘腕与Z轴正向的角度
-	static float theta_BA_rigt_pre = 0.0f; // 用于保存上一次的右肘腕与Z轴正向的角度
+	static float theta_UD_left_pre = 0.0f; // 用于保存上一次的左肘腕与Z轴正向的角度
+	static float theta_UD_rigt_pre = 0.0f; // 用于保存上一次的右肘腕与Z轴正向的角度
 
 	static const unsigned INTERVAL = 4; // 间隔次数，因为挥动左右边界速度会降低
 	static int count = INTERVAL - 1;    // 控制间隔
@@ -1370,23 +1370,22 @@ LONG get_swing_wrist_type(const NUI_SKELETON_DATA& skel)
 	float theta_LR_left_curr = calculate_wrist_curvature(skel, TRUE);
 	float theta_LR_rigt_curr = calculate_wrist_curvature(skel, FALSE);
 
-	float theta_BA_left_curr = wrist_angle_with_Zaxis(skel, TRUE);
-	float theta_BA_rigt_curr = wrist_angle_with_Zaxis(skel, FALSE);
+	float theta_UD_left_curr = wrist_angle_with_Zaxis(skel, TRUE);
+	float theta_UD_rigt_curr = wrist_angle_with_Zaxis(skel, FALSE);
 
 	actionType = ACTION_UNRECOGNIZED;
 	if (is_swing_wrist(isSwingLR_Left, theta_LR_left_pre, theta_LR_left_curr)) {
 		actionType |= SWING_WRIST_LEFT_AND_RIGHT_LEFT;
 	}
-
+	else if (is_swing_wrist(isSwingUD_Left, theta_UD_left_pre, theta_UD_left_curr)) {
+		actionType |= SWING_WRIST_UP_AND_DOWN_LEFT;
+	}
+	
 	if (is_swing_wrist(isSwingLR_Rigt, theta_LR_rigt_pre, theta_LR_rigt_curr)) {
 		actionType |= SWING_WRIST_LEFT_AND_RIGHT_RIGHT;
 	}
-	if (is_swing_wrist(isSwingBA_Left, theta_BA_left_pre, theta_BA_left_curr)) {
-		actionType |= SWING_WRIST_BEFORE_AND_AFTER_LEFT;
-	}
-
-	if (is_swing_wrist(isSwingBA_Rigt, theta_BA_rigt_pre, theta_BA_rigt_curr)) {
-		actionType |= SWING_WRIST_BEFORE_AND_AFTER_RIGHT;
+	else if (is_swing_wrist(isSwingUD_Rigt, theta_UD_rigt_pre, theta_UD_rigt_curr)) {
+		actionType |= SWING_WRIST_UP_AND_DOWN_RIGHT;
 	}
 
 	return actionType;
@@ -1402,22 +1401,22 @@ LONG actionType = get_swing_wrist_type(skeletonFrame.SkeletonData[i]);
 if (actionType & SWING_WRIST_LEFT_AND_RIGHT_LEFT) {
 	cv::String str_action = "swing left hand left and right";
 	cv::putText(skeleton, str_action, cv::Point(10, 15),
-		cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+		cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 2);
 }
 if (actionType & SWING_WRIST_LEFT_AND_RIGHT_RIGHT) {
 	cv::String str_action = "swing right hand left and right";
 	cv::putText(skeleton, str_action, cv::Point(10, 30),
-		cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+		cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 2);
 }
-if (actionType & SWING_WRIST_BEFORE_AND_AFTER_LEFT) {
-	cv::String str_action = "swing left hand before and after";
+if (actionType & SWING_WRIST_UP_AND_DOWN_LEFT) {
+	cv::String str_action = "swing left hand up and down";
 	cv::putText(skeleton, str_action, cv::Point(10, 45),
-		cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+		cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 2);
 }
-if (actionType & SWING_WRIST_BEFORE_AND_AFTER_RIGHT) {
-	cv::String str_action = "swing right hand before and after";
+if (actionType & SWING_WRIST_UP_AND_DOWN_RIGHT) {
+	cv::String str_action = "swing right hand up and down";
 	cv::putText(skeleton, str_action, cv::Point(10, 60),
-		cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+		cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 2);
 }
 if (actionType == ACTION_UNRECOGNIZED) {
 	cv::String str_action = "unrecognized action";
