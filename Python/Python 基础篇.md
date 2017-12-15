@@ -1,16 +1,16 @@
-# Python 知识要点
+# Python 基础篇
 
 Python 凭借其实用性与可扩展性，在各个行业飞速发展，**由其是数据科学(Data Science)、机器学习(Machine Learning)和学术研究(Academic Research)**，这三个方面都是当前 IT 行业最为火热的领域，所以熟悉甚至精通 Python 将使你更容易的找到心仪的工作、同时也能使你的工作和生活更加灵活和便捷。
 
 # 本文结构
 
-* [Python 初识](#overview)
-* [Python 安装](#installation)
+*   [Python 初识](#overview)
+*   [Python 安装](#installation)
 	*	[Linux](#linux)
 	*	[Windows](#windows)
 	*	[IDE](#integrated_development_environment)
-* [Hello Python3](#hello_python3)
-* [Python 基本数据类型与运算](#python_basis)
+*   [Hello Python3](#hello_python3)
+*   [Python 基本数据类型与运算](#python_basis)
 	*	[注释](#annotation)
 	*	[基本运算](#basic_operation)
 	*	[变量类型](#variable_type)
@@ -18,20 +18,26 @@ Python 凭借其实用性与可扩展性，在各个行业飞速发展，**由�
 		*	[序列](#tuple_and_list)
 		*	[词典](#dictionary)
 		*	[集合](#set)
-* [分支与循环语句](#loop_and_branch)
+*   [分支与循环语句](#loop_and_branch)
 	*	[分支语句](#branch)
 	*	[循环语句](#loop)
-* [函数](#function)
+*   [函数](#function)
 	*	[函数的定义](#function_definition)
 	*	[函数的调用](#function_call)
 	*	[函数的作用域](#function_scopes)
-* [模块](#module)
-* [异常处理](#exception)
-* [类](#class)
-* [各种对象](#object)
-* [文件](#file)
+*   [模块](#module)
+*   [异常处理](#exception)
+*   [类](#class)
+    *   [类的定义](#class_definition)
+    *   [类的继承](#class_inheritance)
+    *   [类的使用](#use_class)
+*   [文件](#file)
+    *   [文件的读写](#file_io)
+    *   [使用 json 存储数据](#use_json)
+*   [代码测试](#test_code)
+*   [代码格式建议](#pep8)
 
-<h2 id="overview">Python初识</h2>
+<h2 id="overview">Python 初识</h2>
 
 Python 是一门跨平台的多范式编程语言，支持面向过程、面向对象、函数式及命令式编程，其作者是 Guido van Rossum。
 
@@ -39,7 +45,7 @@ Python 的优点在于其实用性和可扩展性，故而性能相比其它语�
 
 你可能在 Python2 和 Python3 间艰难的抉择，但是查看 [Python2orPython3](https://wiki.python.org/moin/Python2orPython3/) 后你应该知道：**Python3 才是 Python 的未来**。
 
-<h2 id="installation">Python安装</h2>
+<h2 id="installation">Python 安装</h2>
 
 <h3 id="linux">Linux</h3>
 
@@ -259,7 +265,7 @@ hello
 world
 ```
 
-常用函数：
+常用成员函数：
 
 函数 | 功能(空白：空格、制表符(\t)和换行符(\n))
 ---------| ---------------------------------
@@ -270,6 +276,7 @@ world
 `rstrip()` | 返回删除字符串末尾空白后的字符串
 `lstrip()` | 返回删除字符串开头空白后的字符串
 `strip()` | 返回删除字符串两端空白的字符串
+`split(sep)` | 以sep为分隔符将字符串划分为一个单词列表，默认分割符为空格
 
 我们经常需要将数字或其它非字符串类型表示为字符串，这时我们可以使用 `str(var)`：
 
@@ -712,7 +719,7 @@ print(b)                    # 10
 
 <h2 id="module">模块</h2>
 
-*	在 Python 中，**一个 `.py` 文件就是一个模块**，通过模块，你可以调用其他文件中的函数甚至数据；
+*	在 Python 中，**一个 `.py` 文件就是一个模块，通过模块，你可以调用其他文件中的函数、变量、以及后面要学习的[类](#class)**；
 *	使用关键字 import 引入模块；
 *	**关于引入模块时，Python 的搜索路径：首先是当前文件夹，然后是标准库，再然后是环境变量 PYTHONPATH 所包含的路径**；
 
@@ -750,7 +757,7 @@ laugh.laugh2()
 print(laugh.msg)
 ```
 
-#### 导入特定的函数或变量
+#### 导入特定的函数、变量、类
 
 ```python
 #! /usr/bin/env python3
@@ -767,13 +774,14 @@ print(msg)
 #! /usr/bin/env python3
 
 import laugh as l
+from laugh import msg as alias
 
 l.laugh1()
 l.laugh2()
-print(l.msg)
+print(alias)
 ```
 
-#### 导入模块中的所有函数和变量
+#### 导入模块中的所有函数、变量、类
 
 ```python
 #! /usr/bin/env python3
@@ -785,7 +793,7 @@ laugh2()
 print(msg)
 ```
 
-运行上面的 `.py` 文件，可以发现，每次输出都会打印出 laugh1，这说明**在引入模块的时候，同时引入了模块中的其它程序语句**，这不是我们想要的，我们只想运行当前程序中的语句。这个时候我们就需要知道一些线程的知识，**当某个程序是主线程的时候，那个线程的 `__name__` 属性为 `__main__`**，所以我们修改 laugh.py：
+运行上面的 `.py` 文件，可以发现，每次输出都会打印出 laugh1，这说明**在引入模块的时候，同时引入了模块中的其它程序语句**，这不是我们想要的，我们只想运行当前程序中的语句。这个时候我们就需要知道一些线程的知识，**当某个程序是主线程的时候，那个线程的 `__name__` 属性为 `'__main__'`**，所以我们修改 laugh.py：
 
 ```python
 def laugh1():
@@ -798,6 +806,55 @@ msg = "hah"
 
 if(__name__ == "__main__"):			
 	laugh1()
+```
+
+#### 导入标准库
+
+Python **标准库也是一组模块**，安装的 Python 都包含它。要想使用标准库，只需要像上面那样导入相应的模块即可，例如你**想记录词典的添加顺序，可以使用模块 collections 中的 OrderedDict 类**：
+
+```python
+#! /usr/bin/env python3
+
+from collections import OrderedDict
+
+a = OrderedDict()
+
+a['a'] = 1
+a['b'] = 2
+a['c'] = 3
+
+print(a)   # OrderedDict([('a', 1), ('b', 2), ('c', 3)])
+```
+
+#### 模块包
+
+**可以将功能相似的模块放在同一个目录下，构成一个模块包**：
+
+*   该目录下必须包含一个 `__init__.py` 文件，表示该目录是一个模块包，`__init__.py` 可以为空；
+*   每个模块对象都有一个 `__name__` 属性，用于记录模块名；
+*   当一个 `.py` 文件作为主程序运行时，该模块对象的 `__name__` 属性为 `'__main__'`。
+
+假设有下面这样一个目录结构：
+
+```text
+python
+├── py
+│   ├── __init__.py
+│   └── laugh.py
+└── main.py
+```
+
+那么 main.py 可以像下面这般导入 laugh.py：
+
+```python
+#! /usr/bin/env python3
+
+import py.laugh
+
+print(py.laugh.__name__)  # py.laugh
+print(__name__)           # __main__
+
+py.laugh.laugh1()         # laugh1
 ```
 
 <h2 id="exception">异常处理</h2>
@@ -828,7 +885,7 @@ except exception0:       # 如果except后面没跟任何参数，那么所有�
 except exception1:
     ...
     ...
-else:
+else:                    # 依赖于try代码块成功执行的代码都应该放到else代码块中
     ...
 finally:                 # 无论是否有异常最后都要做的事
     ...
@@ -858,65 +915,89 @@ finally:
 
 <h2 id="class">类</h2>
 
-使用class关键字定义一个类，类中方法的第一个参数必须是self(即使没有参数)，这个self用于引用自身，然后是该方法需要的参数，在调用类中的方法时，不需要对self传值；类中的属性和方法使用对象.属性或对象.方法进行调用，这又与C和java类似；
+<h3 id="class_definition">类的定义</h3>
+
+*   **使用关键字 class 定义一个类，类名一般采用首字母大写的驼峰命名法**；
+*   **类中方法的第一个参数必须是 self (即使没有参数)**，这个 self 用于引用自身，然后是该方法需要的参数，在调用类中的方法时，不需要对 self 传值；
+*   **类中的属性和方法使用句点表示法进行调用**。
 
 ```python
-class Bird(object):
-	feather = True
+#! /usr/bin/env python3
 
-	def chirp(self,sound):
-		print(sound)
+class Bird():
+    feather = True
+
+    def chirp(self,sound):
+        print(sound)
 
 summer = Bird()
-print(summer.feather)        # print True
-summer.chirp("jiojiojio")    # print jiojiojio
+print(summer.feather)        # True
+summer.chirp("jiojiojio")    # jiojiojio
 ```
 
-在类下方直接赋初值的属性称为类属性，在方法内部赋值的属性称为对象属性，为一个类添加对象属性很方便，直接使用`self.new_property`即可添加，这是因为类的对象属性由一个叫`__dict__`的词典进行管理，属性名为键，属性值为值，你可以通过打印`your_object.__dict__`查看这个词典；当你使用`self.new_property`时，Python查找这个词典，若没有找到`new_property`，则添加这个属性；
+**在类下方直接赋初值的属性称为类属性，在方法内部赋值的属性称为对象属性，类的对象属性由一个叫 `__dict__` 的词典进行管理**，属性名为键，属性值为值。**当你使用 `self.new_property` 时，Python 查找这个词典，若没有找到 `new_property`，则添加这个属性**：
 
 ```python
-class Bird(object):
-	feather = True
+#! /usr/bin/env python3
 
-	def chirp(self,sound):
-		self.sound = sound   # 为Bird添加sound对象属性
+class Bird():
+    feather = True           # 类属性
+
+    def chirp(self,sound):
+        self.sound = sound   # 对象属性
 
 summer = Bird()
 summer.chirp("jiojiojio")
-print(summer.sound)          # print jiojiojio
-print(summer.__dict__)       # print {'sound': 'jiojiojio'}
+
+print(summer.sound)          # jiojiojio
+print(summer.__dict__)       # {'sound': 'jiojiojio'}
 ```
 
-Python有一系列特殊方法，如`__init__()`,`__add__()`,`__dict__()`等，这里我们只稍微讲几个；Python会在每次创建对象时自动调用`__init__()`方法；，如果类中定义了`__add__()`方法，那么类对象可以进行加法运算，相加时就是调用这个`__add__()`方法；相对的有`__sub__()`方法，对应减法；
+Python 有一系列特殊方法，如 `__init__()`,`__add__()`,`__dict__()` 等，这里我们只稍微讲几个：
+
+*   Python 会在**每次创建对象时自动调用 `__init__()` 方法**；
+*   如果类中定义了 `__add__()` 方法，那么类对象可以进行加法运算时会调用该方法；
+*   相对的有 `__sub__()` 方法，对应减法。
 
 ```python
-class Bird(object):
-	def __init__(self,sound):
-		self.sound = sound
+#! /usr/bin/env python3
+
+class Bird():
+    def __init__(self,sound):
+        self.sound = sound
 
 summer = Bird("jiojiojio")
-print(summer.sound)          # print jiojiojio
+print(summer.sound)          # jiojiojio
 ```
 
-继承类：上面类名后都有一个括号，括号里是object，代表上面的类都是继承自object类，所以如果要继承一个类，在类名后的括号里写上要继承的类即可；继承类对象可以使用父类的属性和方法，继承类也可以覆盖父类的属性和方法，继承类当然也可以新增自己的属性和方法；可以在类里使用`super(current_class,self).function()`(python 2)或者`super().function()`(python 3)调用父类中被覆盖的方法;
+<h3 id="class_inheritance">类的继承</h3>
+
+*   **继承一个类，在类名后的括号里写上要继承的类即可**；
+*   **继承类的 `__init__()` 方法必须首先调用父类的 `__init__()` 方法**；
+*   **继承类对象可以使用父类的属性和方法，继承类也可以覆盖父类的属性和方法，继承类当然也可以新增自己的属性和方法**；
+*   **继承类可以使用 `super().function()` 来调用父类中被覆盖的方法**；
 
 ```python
+#! /usr/bin/env python3
+
 class Bird(object):
-	def chirp(self):
-		print("jiojiojio")
+    def chirp(self):
+        print("jiojiojio")
 
 class Chicken(Bird):
-	def chirp(self):
-		super(Chicken,self).chirp()
-		print("jijiji")
+    def chirp(self):
+        super().chirp()
+        print("jijiji")
 
 summer = Chicken()
-summer.chirp()               # print jiojiojio, jijiji
+summer.chirp()               # jiojiojio, jijiji
 ```
 
-<h2 id="object">各种对象</h2>
+<h3 id="use_class">类的使用</h3>
 
-所谓对象，就是类的一个实例，你可以使用`dir()`函数来查看一个类或者对象的所有属性，你也可以使用`help()`查看函数或类的说明文档。类的说明文档与函数的说明文档类似，在类定义下用多行注释即可：
+你可以**使用 `dir()` 函数来查看一个类或者对象的所有属性**，你也可以**使用 `help()` 查看函数或类的说明文档**。
+
+类的说明文档与函数的说明文档类似：
 
 ```python
 class HelpDemo(object):
@@ -929,79 +1010,276 @@ class HelpDemo(object):
 help(HelpDemo)
 ```
 
-可以通过词典的`key()`方法循环遍历每个元素的键，通过词典的`values()`循环遍历每个元素的值，或者通过`items()`直接遍历每个元素，`clear()`直接清空词典：
+#### 循环对象
+
+*   **当类中包含有 `__next__()` 方法时，一个该类的对象可以通过该方法生成下一个对象**；
+*   **当下一个对象不存在时，该方法会抛出 `StopIteration` 异常**。
+
+**内置函数 `iter()` 可以将一个序列或词典转换为循环对象，当使用方法 `next(obj)` 时相当于调用 `__next__()` 方法**：
 
 ```python
-my_dict = {"a":1, "b":2}
-
-for k in my_dict.keys():
-	print(k)                 # a, b
-
-for v in my_dict.values():
-	print(v)                 # 1, 2
-
-for k,v in my_dict.items():
-	print(k,v)               # ('a', 1), ('b', 2)
+>>> a = [1,2]
+>>> it = iter(a)
+>>> type(it)
+<class 'list_iterator'>
+>>> it.__next__()
+1
+>>> next(it)
+2
+>>> next(it)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+StopIteration
 ```
 
-循环对象：当类中包含有`__next__()`方法(python 2.7中为`next()`方法)时，一个该类的对象可以通过该方法生成下一个对象，当生成过循环所有的结果之后，该方法会抛出`StopIteration`异常。当for使用循环对象时，每次循环的时候会调用`__next__()`方法，直到出现`StopIteration`异常。内置函数`iter()`可以将一个序列或词典转换为循环对象：
+**当 for 使用循环对象时，每次循环的时候会调用 `__next__()` 方法，直到出现 `StopIteration` 异常**：
 
 ```python
-my_iter = iter([1,2])
-print(my_iter.next())        # print 1
-print(my_iter.next())        # print 2
-print(my_iter.next())        # StopIteration 异常
+>>> a = [1,2]
+>>> for it in iter(a):
+...     print(it)
+...
+1
+2
+```  
 
-for item in iter([1,2]):     # python 2.7的for循环直接从序列出对象。不会转成循环对象
-	print(item)
+**可以借助生成器来定义循环对象**：
+
+*   生成器的编写方法与函数定义类似，只是将 return 改为 yield；
+*   生成器中可以有多个 yield，当生成器遇到一个 yield 时，会暂停运行生成器，返回 yield 后面的值，再次调用生成器时，从上次暂停的地方继续运行，直到下一个 yield。
+
+```python
+>>> def gen():
+...     yield 0
+...     yield 1
+...     yield 2
+...
+>>> a = gen()
+>>> type(a)
+<class 'generator'>
+>>> next(a)
+0
+>>> next(a)
+1
+>>> next(a)
+2
+>>> next(a)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+StopIteration
 ```
 
-循环对象的好处：所有要使用的元素在循环过程中逐渐生成，节省了空间，并且提高了效率。python 3的`range()`返回的就是一个循环对象，但python 2.7中返回的是一个序列。  
-可以借助生成器来定义循环对象。生成器的编写方法与函数定义类似，只是将return改为yield。生成器中可以有多个yield，当生成器遇到一个yield时，会暂停运行生成器，返回yield后面的值，再次调用生成器时，从上次暂停的地方继续运行，直到下一个yield：
+#### 函数对象
+
+**任何一个包含 `__call__()` 特殊方法的类对象都是函数对象**，函数对象可以像函数一样被调用，调用时相当于调用 `__call__()`：
 
 ```python
-def gen():
-	yield 0
-	yield 2
-	yield 4
+#! /usr/bin/env python3
 
-a = gen()
-type(a)                      # generator
-a.next()                     # 0
-a.next()                     # 2
-a,next()                     # 4
-a.next()                     # StopIteration 异常
-```
-
-函数对象：任何一个有`__call__()`特殊方法的对象都是函数对象：
-
-```python
 class Sample(object):
-	def __call__(self,a):
-		return a + 5
+    def __call__(self,a):
+        print(a)
 
 add_five = Sample()
-add_five(2)                  # 7
-```
-
-模块对象：
-
-```python
-import time
-import my_time
-import datetime as dt
-
-time.sleep(10)
-my_time.sleep(10)
-dt.datetime(2016,12,24,21,20)
-```
-
-可以将功能相似的模块放在同一个目录下，构成一个模块包：`import this_dir.module`。`this_dir`文件夹必须包含一个`__init__.py`文件，用于提醒python，该文件夹是一个模块包，`__init__.py`可以为空。每个模块对象都有一个`__name__`属性，用于记录模块名。当一个.py文件作为主程序运行时，合格文件会有一个对应的模块对象，该模块对象的`__name__`属性为`"__main__"`。
-
-```python
-import time
-
-print(time.__name__)         # time
+add_five(3)                  # 3
 ```
 
 <h2 id="file">文件</h2>
+
+<h3 id="file_io">文件的读写</h3>
+
+### 全部读取
+
+```python
+#! /usr/bin/env python3
+
+with open('main.py') as file:
+    contents = file.read() # 读取所有内容
+    print(contents)
+```
+
+### 逐行读取
+
+```python
+#! /usr/bin/env python3
+
+with open('main.py') as file:
+    for line in file:      # line 包含换行符
+        print(line)
+```
+
+### 读取每行并存储在一个列表中
+
+```python
+#! /usr/bin/env python3
+
+with open('main.py') as file:
+    lines = file.readlines()
+	
+print(type(lines))         # <class 'list'>
+
+for line in lines:
+    print(line.rstrip())   # 去除换行符
+```
+
+### 写入模式
+
+```python
+#! /usr/bin/env python3
+
+with open('test_file','w') as file:  # 创建或清空
+    file.write('line 1\n')
+    file.write('line 2\n')
+```
+
+### 附加模式
+
+```python
+#! /usr/bin/env python3
+
+with open('test_file','a') as file:  # 添加到文件末尾
+    file.write('line 3\n')
+    file.write('line 4\n')
+```
+
+### 读写模式
+
+```python
+#! /usr/bin/env python3
+
+with open('test_file','r+') as file: # 添加到文件末尾
+    contents = file.read()
+    print(contents)
+
+    file.write('line 5\n')
+```
+
+<h3 id="use_json">使用 json 存储数据</h3>
+
+#### 存储
+
+```python
+#! /usr/bin/env python3
+
+import json
+
+numbers = [2,3,5,7,11,13]
+
+filename = 'numbers.json'
+with open(filename,'w') as f:
+    json.dump(numbers,f)     # [2, 3, 5, 7, 11, 13]
+```
+
+#### 加载
+
+```python
+#! /usr/bin/env python3
+
+import json
+
+filename = 'numbers.json'
+with open(filename,'r') as f:
+    numbers = json.load(f)
+
+print(numbers)               # [2, 3, 5, 7, 11, 13]
+```
+
+<h2 id="test_code">代码测试</h2>
+
+代码编写完成之后，一般都会做一些简单的测试，用以表明代码的正确性。
+
+Python 提供了 **unittest 模块专门用于代码测试**：
+
+*   编写测试代码时，首先导入 unittest 模块，然后导入需要测试的函数或类；
+*   创建一个继承自 `unittest.TestCase` 的新类；
+*   所有该类的以 `test_`打头的方法都将自动运行；
+*   `test_` 方法中必须使用下面列表中的一个断言方法用以表明测试是否通过；
+*   如果创建了 `setUp()` 方法，那么 Python 会先运行该方法，然后再运行各个 `test_` 方法；
+*   `setUp` 方法用于创建所有 `test_` 方法公用的对象；
+*   执行 `unittest.main()` 将运行这个文件中的所有测试。
+
+unittest 断言 | 用途
+-----| -------------
+`assertEqual(a,b)` | a == b
+`assertNotEqual(a,b)` | a != b
+`assertTrue(x)` | x == True
+`assertFalse(x)` | x == False
+`assertIn(item,list)` | (item in list) == True
+`assertNotIn(item,list)` | (item in list) == False
+
+现在假设我们有一个新类需要测试：
+
+```python
+class NewClass():
+    def sum(self,a,b):
+        return a + b
+```
+
+测试代码：
+
+```python
+#! /usr/bin/env python3
+
+import unittest
+from new_class import NewClass
+
+class MyTestCase(unittest.TestCase):
+    def setUp(self):
+        self.test = NewClass()
+
+    def test_1(self):
+        sum = self.test.sum(1,2)
+        self.assertEqual(sum,3)
+
+    def test_2(self):
+        sum = self.test.sum(2,3)
+        self.assertEqual(sum,4)
+	
+unittest.main()
+```
+
+运行测试代码时，每完成一个单元测试，Python 都会打印一个字符：
+
+*   测试通过打印一个句点 `.`；
+*   测试引发错误打印一个 E；
+*   测试导致断言失败打印一个 F。
+
+下面是上面测试的输出结果：
+
+```text
+.F
+======================================================================
+FAIL: test_2 (__main__.MyTestCase)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "./main.py", line 16, in test_2
+    self.assertEqual(sum,4)
+AssertionError: 5 != 4
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.000s
+
+FAILED (failures=1)
+```
+
+<h2 id="pep8">代码格式建议</h2>
+
+推荐使用 [PEP 8](https://www.python.org/dev/peps/pep-0008/) 编写代码。
+
+常见的格式如下：
+
+*   每行不要太长；
+*   比较运算符左右各添加一个空格会让代码阅读起来更容易；
+*   函数命名只使用小写字母和下划线；
+*   每个函数都应该包含简要的注释；
+*   参数太多时，可以在下一行缩进两次；
+*   给形参指定默认值时，等号两边不要有空格；
+*   关键字形式调用函数时，等号两边也不要有空格；
+*   相邻函数间、类间使用两个空行进行分隔；
+*   类中的方法可用一个空行进行分隔；
+*   所有的 import 语句都应放在文件开头；
+*   先导入标准库模块，然后再导入自定义模块；
+*   最好不要使用星号导入，因为可能会造成同名；
+*   类的命名应采用驼峰命名法，且首字母须大写；
+*   实例和模块都应采用小写和下划线形式进行命名；
+*   项目早期不要试图编写全覆盖的测试用例。
