@@ -570,7 +570,7 @@ print(type(f1()))           # tuple
 
 <h3 id="function_call">函数的调用</h3>
 
-**函数的基本调用是直接传入相应个数的实参到相应的函数，函数会根据传入数据的位置确认参数**(这里传入的是引用，Python 中的变量都是引用，引用的是实际存在内存中的对象，**对象的id可以使用 `id(var)` 进行查看**，**当传入的是可改变变量(如列表和词典)时，可以在函数内部对变量进行修改，否则只是改变了引用的对象**，这在后面会继续深入)；
+**函数的基本调用是直接传入相应个数的实参到相应的函数，函数会根据传入数据的位置确认参数**(这里传入的是引用，Python 中的变量都是引用，引用的是实际存在于内存中的对象，**对象的id可以使用 `id(var)` 进行查看，运算符is用来判断两个变量是否指向同一个对象**。**当传入的是可改变变量(如列表和词典)时，可以在函数内部对变量进行修改，否则只是改变了引用的对象**)；
 
 实参未发生变化：
 
@@ -661,7 +661,7 @@ print('\nf3(1,2,3,4,e=5,f=6):')
 f3(1,2,3,4,e=5,f=6)
 ```
 
-解包裹传参，**若一个元组的元素个数与某个函数参数个数相同，那么使用一个星号加上这个元组名可以作为这个函数的参数，对应位置传参；词典则是加上两个星号，对应关键字传参**：
+解包裹传参--**若一个元组的元素个数与某个函数参数个数相同，那么使用一个星号加上这个元组名可以作为这个函数的参数，对应位置传参；词典则是加上两个星号，对应关键字传参**：
 
 ```python
 #! /usr/bin/env python3
@@ -721,14 +721,19 @@ print(b)                    # 10
 
 *	在 Python 中，**一个 `.py` 文件就是一个模块，通过模块，你可以调用其他文件中的函数、变量、以及后面要学习的[类](#class)**；
 *	使用关键字 import 引入模块；
-*	**关于引入模块时，Python 的搜索路径：首先是当前文件夹，然后是标准库，再然后是环境变量 PYTHONPATH 所包含的路径**；
+*	**关于引入模块时，Python 的搜索路径：首先是当前文件夹，然后是标准库安装路径，再然后是环境变量 PYTHONPATH 所包含的路径**；
 
 你可以通过引入 sys，然后打印出 `sys.path` 来查看所有搜索的路径：
 
 ```python
+$ export PYTHONPATH=/home/pengzhen/python3
+$ python3
+Python 3.5.2 (default, Nov 23 2017, 16:37:01)
+[GCC 5.4.0 20160609] on linux
+Type "help", "copyright", "credits" or "license" for more information.
 >>> import sys
 >>> sys.path
-['', '/usr/lib/python35.zip', '/usr/lib/python3.5', '/usr/lib/python3.5/plat-x86_64-linux-gnu', 
+['', '/home/pengzhen/python3', '/usr/lib/python35.zip', '/usr/lib/python3.5', '/usr/lib/python3.5/plat-x86_64-linux-gnu',
 '/usr/lib/python3.5/lib-dynload', '/usr/local/lib/python3.5/dist-packages', '/usr/lib/python3/dist-packages']
 ```
 
@@ -810,7 +815,7 @@ if(__name__ == "__main__"):
 
 #### 导入标准库
 
-Python **标准库也是一组模块**，安装的 Python 都包含它。要想使用标准库，只需要像上面那样导入相应的模块即可，例如你**想记录词典的添加顺序，可以使用模块 collections 中的 OrderedDict 类**：
+Python **标准库也是一组模块**，安装的 Python 都包含它。要想使用标准库，只需要像上面那样导入相应的模块即可，例如我**想记录词典的添加顺序，可以使用模块 collections 中的 OrderedDict 类**：
 
 ```python
 #! /usr/bin/env python3
@@ -1087,6 +1092,18 @@ add_five(3)                  # 3
 <h2 id="file">文件</h2>
 
 <h3 id="file_io">文件的读写</h3>
+
+**文件读写要注意的就是打开文件后要记得关闭文件**，但是因为 Python 的文件类**定义了特殊方法 `__enter__()` 和 `__exit__()`**，这使得你**可以使用上下文管理器 with 来打开文件，它会自动关闭文件**：
+
+```python
+>>> f = open('file','w')
+>>> dir(f)
+['_CHUNK_SIZE', '__class__', '__del__', '__delattr__', '__dict__', '__dir__', '__doc__', '__enter__', '__eq__', '__exit__', '__format__', '__ge__', 
+'__getattribute__', '__getstate__', '__gt__', '__hash__', '__init__', '__iter__', '__le__', '__lt__', '__ne__', '__new__', '__next__', '__reduce__', 
+'__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '_checkClosed', '_checkReadable', '_checkSeekable', 
+'_checkWritable', '_finalizing', 'buffer', 'close', 'closed', 'detach', 'encoding', 'errors', 'fileno', 'flush', 'isatty', 'line_buffering', 'mode', 
+'name', 'newlines', 'read', 'readable', 'readline', 'readlines', 'seek', 'seekable', 'tell', 'truncate', 'writable', 'write', 'writelines']
+```
 
 ### 全部读取
 
