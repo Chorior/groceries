@@ -841,6 +841,7 @@ print(a)   # OrderedDict([('a', 1), ('b', 2), ('c', 3)])
 
 *   该目录下必须包含一个 `__init__.py` 文件，表示该目录是一个模块包，`__init__.py` 可以为空；
 *   每个模块对象都有一个 `__name__` 属性，用于记录模块名；
+*   `__init__.py` 的模块名与模块包的名字相同，所以 `__init__.py` 也可以有 Python 代码；
 *   当一个 `.py` 文件作为主程序运行时，该模块对象的 `__name__` 属性为 `'__main__'`。
 
 假设有下面这样一个目录结构：
@@ -1231,8 +1232,8 @@ Python 提供了 **unittest 模块专门用于代码测试**：
 *   创建一个继承自 `unittest.TestCase` 的新类；
 *   所有该类的以 `test_`打头的方法都将自动运行；
 *   `test_` 方法中必须使用下面列表中的一个断言方法用以表明测试是否通过；
-*   如果创建了 `setUp()` 方法，那么 Python 会先运行该方法，然后再运行各个 `test_` 方法；
-*   `setUp` 方法用于创建所有 `test_` 方法公用的对象；
+*   如果创建了 `setUp()` 方法和 `tearDown` 方法，那么 Python 在运行各个 `test_` 方法前后会分别执行这两个方法；
+*   `setUp` 方法一般用于创建所有 `test_` 方法都要使用的对象，`tearDown` 方法一般用于删除或关闭这些对象；
 *   执行 `unittest.main()` 将运行这个文件中的所有测试。
 
 unittest 断言 | 用途
@@ -1263,6 +1264,10 @@ from new_class import NewClass
 class MyTestCase(unittest.TestCase):
     def setUp(self):
         self.test = NewClass()
+        print('setUp')
+
+    def tearDown(self):
+        print('tearDown')
 
     def test_1(self):
         sum = self.test.sum(1,2)
@@ -1271,6 +1276,10 @@ class MyTestCase(unittest.TestCase):
     def test_2(self):
         sum = self.test.sum(2,3)
         self.assertEqual(sum,4)
+
+    def test_3(self):
+        sum = self.test.sum(2,3)
+        self.assertEqual(sum,5)
 	
 unittest.main()
 ```
@@ -1284,17 +1293,23 @@ unittest.main()
 下面是上面测试的输出结果：
 
 ```text
-.F
+setUp
+tearDown
+.setUp
+tearDown
+FsetUp
+tearDown
+.
 ======================================================================
 FAIL: test_2 (__main__.MyTestCase)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "./main.py", line 16, in test_2
+  File "./main.py", line 20, in test_2
     self.assertEqual(sum,4)
 AssertionError: 5 != 4
 
 ----------------------------------------------------------------------
-Ran 2 tests in 0.000s
+Ran 3 tests in 0.000s
 
 FAILED (failures=1)
 ```
@@ -1315,6 +1330,7 @@ FAILED (failures=1)
 *   类中的方法可用一个空行进行分隔；
 *   所有的 import 语句都应放在文件开头；
 *   先导入标准库模块，然后再导入自定义模块；
+*   模块名不要使用中文、特殊字符，也不能与系统模块名相同；
 *   最好不要使用星号导入，因为可能会造成同名；
 *   类的命名应采用驼峰命名法，且首字母须大写；
 *   函数、实例和模块都应采用小写和下划线形式进行命名；
