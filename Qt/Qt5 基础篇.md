@@ -14,7 +14,7 @@ tags:
 
 #   本文结构
 
-*   [Qt 概述](#overview)
+* [Qt 概述](#overview)
 *	[Hello Qt](#hello_qt)
 *	[命令行参数](#qcommandlineparser)
 *   [字符串](#qstring_qbytearray)
