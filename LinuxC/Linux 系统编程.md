@@ -4,7 +4,7 @@
 
 ## 本文结构
 
-*	[概述](#overview)
+* [概述](#overview)
 * [文件 I/O](#file_io)
 
 <h2 id="overview">概述</h2>
