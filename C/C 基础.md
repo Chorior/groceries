@@ -174,3 +174,9 @@ The last interger is: 3
 ```
 
 <h2 id="string_functions">字符串函数</h2>
+
+函数 | 头文件 | 功能 | 返回值 | 可用性
+---- | ---- | ---- | ----- | -------
+`char *gets_s( char *str, rsize_t n )` | stdio.h | 从 stdin 读取字符直到发现换行符或出现文件尾 <br> 至多写入 n-1 个字符到 str 所指向的数组 <br> 始终写入空终止字符（除非 str 是空指针）<br> 若发现换行符，读取并将其舍弃 | 成功返回字符串地址 <br> 出错或遇到文件尾返回空 | c11
+`int puts( const char *str )` | stdio.h | 写入每个来自空终止字符串 str 的字符及**附加换行符** '\n' 到输出流 stdout | 正确返回非负值 <br> 错误返回 EOF | \-
+
