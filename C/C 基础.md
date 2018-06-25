@@ -177,6 +177,21 @@ The last interger is: 3
 
 函数 | 头文件 | 功能 | 返回值 | 可用性
 ---- | ---- | ---- | ----- | -------
-`char *gets_s( char *str, rsize_t n )` | stdio.h | 从 stdin 读取字符直到发现换行符或出现文件尾 <br> 至多写入 n-1 个字符到 str 所指向的数组 <br> 始终写入空终止字符（除非 str 是空指针）<br> 若发现换行符，读取并将其舍弃 | 成功返回字符串地址 <br> 出错或遇到文件尾返回空 | c11
-`int puts( const char *str )` | stdio.h | 写入每个来自空终止字符串 str 的字符及**附加换行符** '\n' 到输出流 stdout | 正确返回非负值 <br> 错误返回 EOF | \-
-
+`char *gets_s( char *str, rsize_t n )` | stdio.h | 从 stdin 读取字符直到发现换行符或出现文件尾 <br> 至多写入 n-1 个字符到 str 所指向的数组 <br> 始终写入空字符（除非 str 是空指针）<br> 若发现换行符，读取并将其舍弃 | 成功返回str <br> 出错或遇到eof返回NULL | c11
+`int puts( const char *str )` | stdio.h | 写入字符串 str 的字符到stdout <br> **附加换行符** | 正确返回非负值 <br> 错误返回 EOF | \-
+`char * fgets ( char * str, int num, FILE * stream )` | stdio.h | 从文件流里读取最多num-1个字符 <br> 若发现换行符，读取并将其存放在字符串里 | 成功返回str <br> 出错或遇到eof返回NULL | \-
+`int fputs ( const char * str, FILE * stream )` | stdio.h | 写入字符串 str 的字符到输出流 <br> 不添加换行符 | 正确返回非负值 <br> 错误返回 EOF | \-
+`int sprintf ( char * str, const char * format, ... )` | stdio.h | 写入格式化字符串到str | 成功返回写入字符个数(不包括空字符) <br> 失败返回负数 | \-
+`int sscanf ( const char * s, const char * format, ...)` | stdio.h | 从s中读取格式化字符 | 成功返回读入字符个数(不包括空字符) <br> 失败返回EOF | \-
+`size_t strlen ( const char * str )` | string.h | 返回从str开始直到空字符间(不包括)的长度 | \- | \-
+`char * strncat ( char * dst, const char * src, size_t num )` | string.h | 添加src的最多前num个字符到dst的末尾 <br> 遇到src的空字符时结束 | dst | \-
+`int strncmp ( const char * str1, const char * str2, size_t num )` | string.h | 字符序比较两个字符串的最多前num个字符 <br> 遇到空字符时结束 | 大于返回正数 <br> 等于返回0 <br> 小于返回负数 | \-
+`char * strncpy ( char * dst, const char * src, size_t n )` | string.h | 复制src的最多前n个字符到dst <br> 遇到src的空字符时结束 | dst | \-
+`const char * strchr ( const char * str, int ch )` | string.h | 返回指向str中存放字符ch的第一个位置的指针 <br> ch 可以为空字符 | 失败返回NULL | \-
+`const char * strrchr ( const char * str, int ch )` | string.h | 返回指向str中存放字符ch的最后一个位置的指针 <br> ch 可以为空字符 | 失败返回NULL | \-
+`const char * strstr ( const char * str1, const char * str2 )` | string.h | 返回str1中str2第一次出现的位置的指针 | 失败返回NULL | \-
+`void * memchr ( const void * ptr, int c, size_t num )` | string.h | 从ptr指向的前num个字节中查找c <br> c被转换为unsigned char | 成功返回c第一次出现处的指针 <br> 失败返回NULL
+`int memcmp ( const void * ptr1, const void * ptr2, size_t n )` | string.h | 比较ptr1与ptr2的前n个字节 <br> 把每个字节都解释为unsigned char <br> 遇到空字符时不结束| 大于返回正数 <br> 等于返回0 <br> 小于返回负数 | \-
+`void * memmove ( void * dst, const void * src, size_t n )` | string.h | 复制src的前n个字节到dst中 <br> 为防止溢出，dst和src至少n个字节 <br> 地址重叠时，src会被修改| dst | \-
+`void * memset ( void * ptr, int v, size_t n )` | string.h | v被转换为unsigned char <br> 然后被赋值到ptr指向的前n个字节 | ptr | \-
+`long int strtol (const char* str, char** endptr, int base)` | stdlib.h | 
