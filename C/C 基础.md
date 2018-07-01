@@ -235,5 +235,5 @@ C++ 里面用于文件处理的标准流是 fstream，C 里面处理文件的函
 `int fsetpos(FILE* fp, const fpos_t* pos)` | stdio.h | 将文件指针指向pos指定的位置 | 失败返回非零值
 `int fseek(FILE* fp, long offset, int fromwhere)` | stdio.h | 将文件指针设置为从fromwhere偏离offset距离的值 <br> fromwhere 有三个常量：`SEEK_SET`(文件开始),`SEEK_CUR`（当前位置）,`SEEK_END`(文件结尾) | 失败返回-1
 `long ftell(FILE* stream)` | stdio.h | 返回文件位置指针当前位置相对于文件首的偏移字节数 | \-
-`int rename(char* oldname, char* newname)` | 文件重命名 <br> 可以实现文件移动 | 成功返回0，失败返回-1
+`int rename(char* oldname, char* newname)` | stdio.h | 文件重命名 <br> 可以实现文件移动 | 成功返回0，失败返回-1
 
