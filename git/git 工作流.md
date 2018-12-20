@@ -11,6 +11,7 @@
 *	[基本操作](#basic_operation)
 *	[分支操作](#branch_operation)
 *	[远程仓库](#remote_repository)
+*	[常用操作](#common_operation)
 
 <h2 id="version_control">版本管理</h2>
 
