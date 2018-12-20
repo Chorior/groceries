@@ -42,8 +42,8 @@ git 除了具有 DVCS 的特点外，还有相当多的优点：
 ### 配置个人用户名和电子邮件
 
 ```bash
-git config --global user.name pengzhen
-git config --global user.email pengzhen@example.com
+$ git config --global user.name pengzhen
+$ git config --global user.email pengzhen@example.com
 ```
 
 ### 配置文本编辑器（可选）
@@ -51,13 +51,21 @@ git config --global user.email pengzhen@example.com
 git 在需要你输入一些信息的时候,会调用一个文本编译器，如果不设置的话，可能默认调用 nano 编辑器(linux)，一般使用 vi 或者 vim 会比较方便，所以配置编辑器为 vim：
 
 ```bash
-git config --global core.editor vim
+$ git config --global core.editor vim
+```
+
+### 配置自动换行符转换（可选）
+
+如果你在windows上修改linux上使用的文件，那么需要将windows的CRLF转换为LF：
+
+```bash
+$ git config --global core.autocrlf input
 ```
 
 ### 查看配置信息
 
 ```bash
-git config -l
+$ git config -l
 ```
 
 ### 提示
@@ -139,6 +147,7 @@ $ git reset file              # 移除暂存区域内的file
 $ git reset                   # 移除暂存区域内的所有文件
 $ git diff                    # 查看暂存区域文件与工作目录文件的差异
                               # 若无暂存则为当前版本数据库文件与工作目录文件的差异
+$ git diff --staged           # 查看暂存区域文件与当前版本数据库文件的差异
 $ git checkout -- file        # 取消对 file 的修改
 $ git commit -m "1.0"         # 将暂存区域内的文件提交到数据库，提交说明为 1.0
 $ git commit --amend -m "1.0" # 撤销上次的提交并重新开始新的提交
@@ -157,12 +166,12 @@ $ git log                     # 查看提交历史
 有时候一个功能可以使用多种方法进行实现，可能需要对各种方法进行性能评估，这时候就可以在当前版本的基础上建立多个分支，用以不同的实现方式。
 
 ```bash
-$ git branch                 # 查看分支列表，默认为 master
+$ git branch -a              # 查看所有分支列表
 $ git branch new_branch      # 建立当前版本的一个新分支 new_branch
 $ git checkout new_branch    # 切换到 new_branch 分支
 $ git checkout -b new_branch # 新建并切换到 new_branch 分支
 $ git log                    # 查看提交历史 SHA-1 校验和
-$ git checkout -b new SHA-1  # 为校验和为 SHA-1 的历史版本建立一个新分支 new
+$ git checkout SHA-1 -b new  # 为校验和为 SHA-1 的历史版本建立一个新分支 new
                              # SHA-1 不必写全，只要唯一即可，一般写6位
 $ git branch -d other_branch # 删除 other_branch 分支
 $ git branch -D other_branch # 强制删除 other_branch 分支
@@ -176,10 +185,43 @@ $ git rebase master          # 将当前分支的更新操作在 master 分支�
 当本地仓库修改完之后，可能需要合并到远程仓库：
 
 ```bash
-$ git remote add [shortname] [url]   # 添加远程仓库，远程仓库名为 shortname，地址为 url
-$ git remote rm [shortname]          # 删除名为 shortname 的远程仓库
-$ git remote rename [old] [new]      # 修改远程仓库 old 的名字为 new
-$ git fetch [shortname]              # 根据远程仓库 shortname 更新本地仓库
-$ git pull [shortname] [branch_name] # 抓取远程仓库 shortname 数据并自动合并到 branch_name 分支
-$ git push [shortname] [branch_name] # 推送 branch_name 分支到远程分支 shortname
+$ git remote add [shortname] [url]    # 添加远程仓库，远程仓库名为 shortname，地址为 url
+$ git remote rm [shortname]           # 删除名为 shortname 的远程仓库
+$ git remote rename [old] [new]       # 修改远程仓库 old 的名字为 new
+$ git fetch [shortname] [branch_name] # 获取远程仓库 shortname 的 branch_name 分支到本地数据库，通过 checkout 可以切换到该分支
+$ git pull [shortname] [branch_name]  # 抓取远程仓库 shortname 数据并自动合并到 branch_name 分支
+$ git push [shortname] [branch_name]  # 推送 branch_name 分支到远程分支 shortname
+```
+
+<h2 id="common_operation">常用操作</h2>
+
+生成 ssh 公匙：
+
+```bash
+$ ssh-keygen -t rsa -C pengzhen@example.com # 后面一直回车即可
+$ cat /c/Users/pengzhen/.ssh/id_rsa.pub     # 查看生成的密匙
+```
+
+回退版本：
+
+```bash
+$ git log                                    # 查看要回退的版本 SHA-1
+$ git reset --hard SHA-1                     # 回退到 SHA-1
+$ git push [shortname] [branch_name] --force # 强制推送到远端
+```
+
+清理本地 git 库：
+
+```bash
+$ git reset         # 移除暂存区域内的所有文件
+$ git clean -dfx    # 删除所有未被 git 跟踪的文件或文件夹
+$ git checkout -- . # 移除所有文件的修改
+```
+
+查询提交信息（下面的选项可以合并使用）：
+
+```bash
+$ git log --author=pengzhen  # 查询特定作者的提交记录
+$ git log --oneline          # 显示提交记录时，只显示一行
+$ git log --name-only        # 查询提交记录时，同时显示修改的文件列表
 ```
