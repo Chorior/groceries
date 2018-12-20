@@ -189,7 +189,7 @@ $ git rebase master          # 将当前分支的更新操作在 master 分支�
 $ git remote add [shortname] [url]    # 添加远程仓库，远程仓库名为 shortname，地址为 url
 $ git remote rm [shortname]           # 删除名为 shortname 的远程仓库
 $ git remote rename [old] [new]       # 修改远程仓库 old 的名字为 new
-$ git fetch [shortname] [branch_name] # 获取远程仓库 shortname 的 branch_name 分支到本地数据库，通过 checkout 可以切换到该分支
+$ git fetch [shortname] [branch_name] # 抓取远程仓库 shortname 的 branch_name 分支到本地数据库，checkout 切换到该分支
 $ git pull [shortname] [branch_name]  # 抓取远程仓库 shortname 数据并自动合并到 branch_name 分支
 $ git push [shortname] [branch_name]  # 推送 branch_name 分支到远程分支 shortname
 ```
