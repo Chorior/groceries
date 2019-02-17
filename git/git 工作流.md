@@ -246,4 +246,7 @@ $ git stash pop    # 应用最近的储藏，并删除堆栈
 $ git stash clear  # 删除所有储藏
 ```
 
-[`git rebase` 与 `git merge` 的差异](https://www.yiibai.com/git/git_rebase.html)
+其它：
+
+[git revert](https://www.cnblogs.com/0616--ataozhijia/p/3709917.html)
+[git rebase 与 git merge 的差异](https://www.yiibai.com/git/git_rebase.html)
