@@ -17,7 +17,7 @@
 
 **版本控制是一种记录若干文件内容变化，以便将来查阅特定版本修订情况的系统**。
 
-最开始的版本管理系统是 CVCS(Centralized Version Control Systems)，即集中式版本管理系统，该系统将所有版本的历史记录保存在单一的位置，类似于我们常说的备份，这种版本管理最大的缺点就是：**一旦保存记录的磁盘发生损坏，就可能丢失所有历史更新信息的风险**。
+最开始的版本管理系统是 CVCS(Centralized Version Control Systems)，即集中式版本管理系统，该系统将所有版本的历史记录保存在单一的位置，类似于我们常说的备份，这种版本管理最大的缺点就是：**一旦保存记录的磁盘发生损坏，就可能丢失所有历史更新信息**。
 
 后来 linus 大神团队花两三个月开发了 git，其系统为 DVCS(Distributed Version Control System)，即分布式管理系统，该系统不只提取最新版本的文件快照，而且把原始的代码仓库都完整地镜像下来，这意味着**只要有一个镜像没有损坏，那么所有的历史记录都能完整的恢复出来**。
 
@@ -57,7 +57,7 @@ $ git config --global core.editor vim
 
 ### 配置自动换行符转换（可选）
 
-如果你在windows上修改linux上使用的文件，那么需要将windows的CRLF转换为LF：
+如果你在 windows 上修改 linux 上使用的文件，那么需要将 windows 的 CRLF 转换为 LF：
 
 ```bash
 $ git config --global core.autocrlf input
@@ -81,14 +81,14 @@ $ git config -l
 
 有两种创建本地仓库的方法：
 
-*	在现存目录下，通过初始化创建新的 git 仓库，结束之后会在当前目录下生成一个 `.git` 隐藏目录：
+在现存目录下，通过初始化创建新的 git 仓库，结束之后会在当前目录下生成一个 `.git` 隐藏目录：
 
 ```bash
 $ cd dir
 $ git init
 ```
 
-*	克隆 github 上 git 组织开源的 git 仓库到本地仓库 mygit：
+克隆 github 上 git 组织开源的 git 仓库到本地仓库 mygit：
 
 ```bash
 $ git clone git://github.com/git/git.git mygit
@@ -143,8 +143,8 @@ Git 管理项目时，文件会流转三个区域：
 ```bash
 $ git status                  # 查看当前文件的状态
 $ git add file                # 添加 file 到暂存区域
-$ git add .                   # 添加所有修改到暂存区域
-$ git reset file              # 移除暂存区域内的file
+$ git add .                   # 添加当前目录下的所有修改到暂存区域
+$ git reset file              # 移除暂存区域内的 file
 $ git reset                   # 移除暂存区域内的所有文件
 $ git diff                    # 查看暂存区域文件与工作目录文件的差异
                               # 若无暂存则为当前版本数据库文件与工作目录文件的差异
@@ -162,23 +162,23 @@ $ git log                     # 查看提交历史
 *   第三行为提交时间；
 *   第四行缩进一个段落显示提交说明。
 
+![git log](gitlog.png)
+
 <h2 id="branch_operation">分支操作</h2>
 
 有时候一个功能可以使用多种方法进行实现，可能需要对各种方法进行性能评估，这时候就可以在当前版本的基础上建立多个分支，用以不同的实现方式。
 
 ```bash
-$ git branch -a              # 查看所有分支列表
-$ git branch new_branch      # 建立当前版本的一个新分支 new_branch
-$ git checkout new_branch    # 切换到 new_branch 分支
-$ git checkout -b new_branch # 新建并切换到 new_branch 分支
-$ git log                    # 查看提交历史 SHA-1 校验和
-$ git checkout SHA-1 -b new  # 为校验和为 SHA-1 的历史版本建立一个新分支 new
-                             # SHA-1 不必写全，只要唯一即可，一般写6位
-$ git branch -d other_branch # 删除 other_branch 分支
-$ git branch -D other_branch # 强制删除 other_branch 分支
-$ git merge new master       # 将 new 分支合并到 master 分支
-$ git rebase master          # 将当前分支的更新操作在 master 分支中重做一遍
-                             # 便于整理 log 说明
+$ git branch -a                        # 查看所有分支列表
+$ git branch [branch_name]             # 建立当前版本的一个新分支 branch_name
+$ git checkout [branch_name]           # 切换到 branch_name 分支
+$ git checkout -b [branch_name]        # 新建并切换到 branch_name 分支
+$ git log                              # 查看提交历史 SHA-1 校验和
+$ git checkout SHA-1 -b [branch_name]  # 为校验和为 SHA-1 的历史版本建立一个新分支 branch_name
+                                       # SHA-1 不必写全，只要唯一即可，一般写6位
+$ git branch -d [branch_name]          # 删除 branch_name 分支
+$ git branch -D [branch_name]          # 强制删除 branch_name 分支
+$ git merge [branch_name]              # 将 branch_name 分支合并到当前分支
 ```
 
 <h2 id="remote_repository">远程仓库</h2>
@@ -186,12 +186,13 @@ $ git rebase master          # 将当前分支的更新操作在 master 分支�
 当本地仓库修改完之后，可能需要合并到远程仓库：
 
 ```bash
+$ git remote -v                       # 查看远程分支列表
 $ git remote add [shortname] [url]    # 添加远程仓库，远程仓库名为 shortname，地址为 url
 $ git remote rm [shortname]           # 删除名为 shortname 的远程仓库
 $ git remote rename [old] [new]       # 修改远程仓库 old 的名字为 new
 $ git fetch [shortname] [branch_name] # 抓取远程仓库 shortname 的 branch_name 分支到本地数据库，checkout 切换到该分支
-$ git pull [shortname] [branch_name]  # 抓取远程仓库 shortname 数据并自动合并到 branch_name 分支
-$ git push [shortname] [branch_name]  # 推送 branch_name 分支到远程分支 shortname
+$ git pull [shortname] [branch_name]  # 抓取远程仓库 shortname 的 branch_name 数据并合并到当前分支
+$ git push [shortname] HEAD           # 推送当前分支到远程仓库 shortname 的同名分支
 ```
 
 <h2 id="common_operation">常用操作</h2>
@@ -208,15 +209,16 @@ $ cat /c/Users/pengzhen/.ssh/id_rsa.pub     # 查看生成的密匙
 ```bash
 $ git log                                    # 查看要回退的版本 SHA-1
 $ git reset --hard SHA-1                     # 回退到 SHA-1
+$ git reset --hard HEAD~[num]                # 回退到当前提交前的第 num 个提交
 $ git push [shortname] [branch_name] --force # 强制推送到远端
 ```
 
-清理本地 git 库：
+清理当前目录下的所有修改和临时文件：
 
 ```bash
 $ git reset         # 移除暂存区域内的所有文件
-$ git clean -dfx    # 删除所有未被 git 跟踪的文件或文件夹
-$ git checkout -- . # 移除所有文件的修改
+$ git clean -dfx    # 删除当前目录下所有未被 git 跟踪的文件或文件夹
+$ git checkout -- . # 移除当前目录下所有文件的修改
 ```
 
 查询提交信息（下面的选项可以合并使用）：
@@ -226,3 +228,22 @@ $ git log --author=pengzhen  # 查询特定作者的提交记录
 $ git log --oneline          # 显示提交记录时，只显示一行
 $ git log --name-only        # 查询提交记录时，同时显示修改的文件列表
 ```
+
+查询一个文件的某个改动：
+
+```bash
+$ git blame -L [start],[end] [filename]  # 查看 filename 从 start 到 end 行的最近的修改记录
+$ git log -L [filename],[end]:[filename] # 查看 filename 从 start 到 end 行的所有修改记录
+$ git log -S "[string]" [filename]       # 查看 string 被添加到 filename 的记录
+```
+
+取消当前修改，但是后面又想做一样的修改：
+
+```bash
+$ git stash        # 将当前修改储藏起来，并返回到原来未修改的状态
+$ git stash list   # 查看储藏列表
+$ git stash pop    # 应用最近的储藏，并删除堆栈
+$ git stash clear  # 删除所有储藏
+```
+
+[`git rebase` 与 `git merge` 的差异](https://www.yiibai.com/git/git_rebase.html)
