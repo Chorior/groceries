@@ -248,5 +248,6 @@ $ git stash clear  # 删除所有储藏
 
 其它：
 
-[git revert](https://www.cnblogs.com/0616--ataozhijia/p/3709917.html)
-[git rebase 与 git merge 的差异](https://www.yiibai.com/git/git_rebase.html)
+* [git revert](https://www.cnblogs.com/0616--ataozhijia/p/3709917.html)
+
+* [git rebase](https://www.yiibai.com/git/git_rebase.html)
