@@ -251,3 +251,5 @@ $ git stash clear  # 删除所有储藏
 * [git revert](https://www.cnblogs.com/0616--ataozhijia/p/3709917.html)
 
 * [git rebase](https://www.yiibai.com/git/git_rebase.html)
+
+* [git review](https://blog.csdn.net/aixiaoyang168/article/details/77179008)
