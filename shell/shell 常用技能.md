@@ -64,12 +64,51 @@ $ time [cmd]                            # 查看 cmd 执行的时间
 $ shutdown -r now                       # 立即重启
 $ last reboot                           # 查看系统启动日志，何时启动、何时关闭
 $ alias                                 # 查看别名列表，使用 \cmd 表示不使用别名
-$ iostat                                # 查看系统 IO 情况
+$ iostat                                # 查看系统 IO 数据
 ```
 
 ### 网络命令
 
-ifconfig,ip,route,netstat,lsof,service network restart,firewall,ping,arping,traceroute,lsof,tcpdump,ethtool
+```bash
+$ ifconfig                                      # 查看网络配置，网卡名、IP、网络掩码等
+$ ethtool [eth0]                                # 查看网卡参数，网速等
+$ ip rule                                       # 路由规则表
+$ ip addr show                                  # 显示所有网络地址，现在倾向于使用其代替 ifconfig
+$ ip route show                                 # 显示主路由表信息
+$ ip neigh show                                 # 显示邻居表
+$ route -n                                      # 显示路由表
+$ ping [host]                                   # 发送 TCMP 请求到 host
+$ arping [host]                                 # 发送 ARP 请求到 host
+$ telnet [host] [port]                          # 建立 telnet 连接，一般用于测试目标主机端口是否畅通
+$ ssh -p [port] [user@host]                     # 建立 ssh 连接，可以用于测试目标主机端口是否畅通
+$ traceroute -s [srctp] [dstip] -p [port] -n -F # 跟踪网络包的路由线路
+$ tracert [host]                                # windows 上的 traceroute 命令
+$ tcpdump -nli [eth0]                           # 抓 eth0 的网络数据包
+$ netstat -anp | grep [port]                    # 查看占用端口的应用程序
+$ lsof -i:[port]                                # 查看占用端口的应用程序
+$ ifdown/ifup [eth0]                            # 关闭/打开网卡
+$ service network restart                       # 重启网络
+```
+
+#### 防火墙
+
+Redhat/Centos：
+
+```bash
+$ service iptables off        # 7.0前关闭防火墙
+$ chkconfig iptables off      # 7.0前开机禁止启动防火墙
+$ systemctl stop firewalld    # 7.0后关闭防火墙
+$ systemctl disable firewalld # 7.0后开机禁止启动防火墙
+```
+
+SUSE：
+
+```bash
+$ /etc/init.d/SuSEfirewall2_setup stop
+$ /etc/init.d/SuSEfirewall2_init stop  # 关闭防火墙
+$ chkconfig SuSEfirewall2_setup off
+$ chkconfig SuSEfirewall2_init off     # 开机禁止启动防火墙
+```
 
 ### 数据操作
 
