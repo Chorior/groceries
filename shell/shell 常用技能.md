@@ -116,6 +116,8 @@ $ SuSEfirewall2 status                 # 查看防火墙状态
 $ SuSEfirewall2 stop                   # 停止防火墙
 ```
 
+当防火墙开启时，iptables 规则有可能不起作用，将自定义的链添加到 Firewall 创建的 IN_public 链上可解决该问题，`-A IN_public -j $chain`。
+
 ### 数据操作
 
 ```bash
