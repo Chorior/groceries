@@ -148,7 +148,7 @@ $ wc -l                                       # 显示行数
 ### VIM
 
 ```bash
-:set nu       #显示行数
+:set nu       # 显示行数
 :set hlsearch # 高亮显示匹配字段
 :set paste    # 设置粘贴模式，每行不会添加一个 tab 
 :wq!          # 强制保存并退出
@@ -172,18 +172,20 @@ Shell 脚本可以参照[菜鸟教程](http://www.runoob.com/linux/linux-shell.h
 * 常用的 test 命令要记牢：-z,-n,-e,-f,-d,-eq,-ne,-gt,-ge,-lt,-le;
 * 字符串比较时，如果含有变量，在字符串前加上 x，如 `x"oracle" == x"$val"`；
 * 单条件语句可以使用 `&&` 或 `||` 写作一行，如 `[ $? -ne 0] && return 0` 或 `[ $? -eq 0 ] || return 0`；
+* 获取命令输出时。尽量不要使用反引号方式，`$()`会更好；
 * 当使用 for 循环变量时、使用 cp 拷贝时，若存在星号，不能加引号；
 * 当编写定时任务脚本时，使用 flock 文件锁防止脚本重复执行；
-* 使用 `BASH_SOURCE` 获取脚本所在路径：？？？；
 * 使用 `date +%s` 可以获取从 1970 年 1 月 1 日 00:00:00 到目前经历的秒数，用于计时；
-* 重定向输入输出：`>> /dev/null 2>&1` 等；
+* 重定向输入输出：`>>/dev/null 2>&1` 等；
 * 从标准输入读取单行数据：`read -p [tips] -t [timeout] -n [length] value`；
 * 获取数组长度：`${#array[@]}`或`${#array[*]}`；
 * 获取字符串长度：`${#string}`；
+* 字符串替换：`${[string]//[substring]/[replacement]}`；
 * 知道 `dirname`,`basename`；
 * 当需要导入其它脚本时，使用 source 而非 \.；
+* 使用 `BASH_SOURCE` 获取脚本所在路径：`basepath=$(dirname $BASH_SOURCE)`；
 * [spawn + expect 实现脚本自动登录](https://www.cnblogs.com/lzrabbit/p/4298794.html)；
-* 提供一段简单的并发操作脚本：
+* 提供一段简单的并发操作脚本，该脚本写入管道的数据可能变得乱序，可以修改为只写入一个字符：
 
 ```bash
 #!/bin/bash
@@ -191,14 +193,14 @@ Shell 脚本可以参照[菜鸟教程](http://www.runoob.com/linux/linux-shell.h
 Njob=15 # 任务总数
 Nproc=5 # 最大并发数
 
-# 创建管道文件并删除，但脚本能继续使用直至退出
-mkfifo ./fifo.$$ && exec 777<> ./fifo.$$ && rm -f ./fifo.$$
+# 创建管道文件并删除，由于打开了该文件，删除后能继续使用直至退出
+mkfifo ./fifo.$$ && exec 777<>./fifo.$$ && rm -f ./fifo.$$
 
-for(( i=0;i<$Nproc;i++ ));do
+for((i=0;i<$Nproc;i++));do
   echo "init time add $i" >&777
 done
 
-for(( i=0;i<$Njob;i++ ));do
+for((i=0;i<$Njob;i++));do
 {
   read -u 777 # 从 fifo 中读取一行，没有数据时会堵塞
   echo "progress $i is sleeping for 3 seconds zzz..."
