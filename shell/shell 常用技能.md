@@ -63,12 +63,17 @@ $ tar -cvzf [123.tar.gz] [path]         # 打包文件
 $ tar -xvzf [123.tar.gz] [path]         # 解压文件到 path
 $ pidof [program_name]                  # 查询当前正在运行的 program_name 的 pid，对 java 程序无效
 $ ps -ef | grep [program_name]          # 查询当前 program_name 的进程快照,如 PID,启动时间,运行时间等
+$ ps -eo cmd,lstart,etime | grep [cmd]  # 查询 cmd 执行的确切开始时间、到现在的执行时间长度
 $ time [cmd]                            # 查看 cmd 执行的时间
 $ shutdown -r now                       # 立即重启
 $ last reboot                           # 查看系统启动日志，何时启动、何时关闭
 $ alias                                 # 查看别名列表，使用 \cmd 表示不使用别名
 $ head/tail -n [num] [file]             # 显示 file 前/后 num 行的数据
 $ tailf [file] | grep [pattern]         # 实时显示 file 最后 10 行的数据，并过滤出符合条件的行
+$ ldd [target_file]                     # 查看一个目标文件所需要的动态库列表，查找顺序：rpath,LD_LIB_PATH,ldconfig
+$ nm [target_file]                      # 查看一个目标文件的符号表，查询一些变量、函数是否存在
+$ readelf [target_file]                 # 显示一个目标文件的完整结构，查询该目标文件需要的内存大小等
+$ pmap -X [pid]                         # 查看进程 pid 的内存占用情况
 ```
 
 ### 网络命令
@@ -117,6 +122,8 @@ $ SuSEfirewall2 stop                   # 停止防火墙
 ```
 
 当防火墙开启时，iptables 规则有可能不起作用，将自定义的链添加到 Firewall 创建的 IN_public 链上可解决该问题，`-A IN_public -j $chain`。
+
+当一个网卡上出现多个 ip 时，使用 `-A $chain -i ${interface}+`，表示只要与 interface 匹配的都生效，直接使用带冒号的网卡名可能不会生效。
 
 ### 数据操作
 
