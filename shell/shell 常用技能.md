@@ -63,7 +63,7 @@ $ tar -cvzf [123.tar.gz] [path]         # 打包文件
 $ tar -xvzf [123.tar.gz] [path]         # 解压文件到 path
 $ pidof [program_name]                  # 查询当前正在运行的 program_name 的 pid，对 java 程序无效
 $ ps -ef | grep [program_name]          # 查询当前 program_name 的进程快照,如 PID,启动时间,运行时间等
-$ ps -eo cmd,lstart,etime | grep [cmd]  # 查询 cmd 执行的确切开始时间、到现在的执行时间长度
+$ ps -eo lstart,etime,cmd | grep [cmd]  # 查询 cmd 执行的确切开始时间、到现在的执行时间长度
 $ time [cmd]                            # 查看 cmd 执行的时间
 $ shutdown -r now                       # 立即重启
 $ last reboot                           # 查看系统启动日志，何时启动、何时关闭
