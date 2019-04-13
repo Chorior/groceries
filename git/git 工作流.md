@@ -233,7 +233,7 @@ $ git log --name-only        # 查询提交记录时，同时显示修改的文�
 
 ```bash
 $ git blame -L [start],[end] [filename]  # 查看 filename 从 start 到 end 行的最近的修改记录
-$ git log -L [filename],[end]:[filename] # 查看 filename 从 start 到 end 行的所有修改记录
+$ git log -L [start],[end]:[filename] # 查看 filename 从 start 到 end 行的所有修改记录
 $ git log -S "[string]" [filename]       # 查看 string 被添加到 filename 的记录
 ```
 
