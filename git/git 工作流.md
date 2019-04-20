@@ -208,7 +208,7 @@ $ cat /c/Users/pengzhen/.ssh/id_rsa.pub     # 查看生成的密匙
 
 ```bash
 $ git log                                    # 查看要回退的版本 SHA-1
-$ git reset --hard SHA-1                     # 回退到 SHA-1
+$ git reset --hard [SHA-1]                   # 回退到 SHA-1
 $ git reset --hard HEAD~[num]                # 回退到当前提交前的第 num 个提交
 $ git push [shortname] [branch_name] --force # 强制推送到远端
 ```
@@ -244,6 +244,14 @@ $ git stash        # 将当前修改储藏起来，并返回到原来未修改�
 $ git stash list   # 查看储藏列表
 $ git stash pop    # 应用最近的储藏，并删除堆栈
 $ git stash clear  # 删除所有储藏
+```
+
+将其它分支的一个或多个commit合并到本分支：
+
+```bash
+$ git cherry-pick [commit_id]                         # 合并单个 commit 到本分支
+$ git cherry-pick [commit_id1] [commit_id2]           # 合并多个 commit 到本分支
+$ git cherry-pick [commit_id_start]..[commit_id_end]  # 合并连续的 commit 到本分支，前开后闭
 ```
 
 其它：

@@ -221,3 +221,9 @@ done
 wait
 echo -e "time consuming: $SECONDS seconds"
 ```
+
+## 其它
+
+* locate 并不真正对硬盘上的文件系统进行查找，而是对文件名数据库进行检索；
+* whereis 只能用于搜索二进制文件(-b)、源代码文件(-s)和 man 说明文件(-m)；
+* which 通过环境信息查找可执行文件路径；
