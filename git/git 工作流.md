@@ -233,7 +233,7 @@ $ git log --name-only        # 查询提交记录时，同时显示修改的文�
 
 ```bash
 $ git blame -L [start],[end] [filename]  # 查看 filename 从 start 到 end 行的最近的修改记录
-$ git log -L [start],[end]:[filename] # 查看 filename 从 start 到 end 行的所有修改记录
+$ git log -L [start],[end]:[filename]    # 查看 filename 从 start 到 end 行的所有修改记录
 $ git log -S "[string]" [filename]       # 查看 string 被添加到 filename 的记录
 ```
 
@@ -252,6 +252,13 @@ $ git stash clear  # 删除所有储藏
 $ git cherry-pick [commit_id]                         # 合并单个 commit 到本分支
 $ git cherry-pick [commit_id1] [commit_id2]           # 合并多个 commit 到本分支
 $ git cherry-pick [commit_id_start]..[commit_id_end]  # 合并连续的 commit 到本分支，前开后闭
+```
+
+查看commit修改或合并多个commit:
+
+```bash
+$ git show [commit_id]      # 显示 commit_id 的修改
+$ git rebase -i [commit_id] # 合并 commit_id 之后的所有提交，将第二行后的所有 pick 改为 s
 ```
 
 其它：

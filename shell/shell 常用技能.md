@@ -36,7 +36,7 @@ $ df -h                                 # 查看系统磁盘空间占用率
 $ df [file]                             # 查看文件所属磁盘的空间占用率
 $ du -h -d 1 [dir]                      # 查看目录第一层的空间占用大小
 $ fdisk -l /dev/[disk]                  # 查看 disk 磁盘扇区大小等，当不指定 disk 时，打印所有磁盘信息
-$ blockdev --getss /dev/[disk]          # 读取 disk 的罗技扇区大小，还有其他的命令读取不同的属性
+$ blockdev --getss /dev/[disk]          # 读取 disk 的逻辑扇区大小，还有其他的命令读取不同的属性
 $ free -h                               # 查看系统内存使用情况
 $ cat /proc/meminfo                     # 查看系统内存使用情况，memfree+buffers+cached是当前能用的最大内存
 $ file [file]                           # 查看文件类型
